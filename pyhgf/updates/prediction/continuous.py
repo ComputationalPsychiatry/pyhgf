@@ -1,6 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
+from typing import Callable
 
 import jax.numpy as jnp
 from jax import Array, grad, jit
@@ -186,6 +187,9 @@ def predict_precision(
     and is consumed by the volatility-coupling posterior update at the volatility
     parent.
 
+    Leaves (input nodes) are not predicted by this function: see
+    :func:`continuous_node_prediction` and :func:`predict_noise_precision`.
+
     Parameters
     ----------
     attributes :
@@ -270,18 +274,10 @@ def predict_precision(
                 value_parent_idx
             ]["expected_precision"]
 
-    # Carried variance: input nodes carry 1/π (λ = 1 for precision, λ = 0 for
-    # the mean — no tonic volatility); other nodes scale by λ².
-    is_input_node = (
-        edges[node_idx].value_children is None
-        and edges[node_idx].volatility_children is None
-    )
-    if is_input_node:
-        carried_variance = 1.0 / attributes[node_idx]["precision"]
-    else:
-        carried_variance = (
-            attributes[node_idx]["autoconnection_strength"] ** 2
-        ) / attributes[node_idx]["precision"]
+    # Carried variance: scaling the belief by λ scales its variance by λ².
+    carried_variance = (
+        attributes[node_idx]["autoconnection_strength"] ** 2
+    ) / attributes[node_idx]["precision"]
 
     # Conditional π̄_a: carried variance + volatility, no parent bleed-through
     # (the parent's Schur complement acts on this; the marginal would double-count).
@@ -313,6 +309,12 @@ def continuous_node_prediction(
     See :func:`predict_precision` for the precise formula and its two additional
     variance terms (volatility-coupling moment-generating-function term and
     value-coupling Taylor term).
+
+    An input node is observed exactly. Without volatility parent, both of its
+    predicted precisions are its ``precision``, the fixed precision of the
+    observation noise. Its volatility parents are noise parents [1]_, which estimate
+    this precision: both predicted precisions are then the noise precision of
+    :func:`predict_noise_precision`, and its effective precision is 1.
 
     .. note::
         The parameter structure also incorporates the value and volatility coupling
@@ -347,53 +349,141 @@ def continuous_node_prediction(
        Mathys, C. (2026). The generalized hierarchical Gaussian filter.
        doi:10.7554/elife.110174.1
     """
-    # Store carried variance for the volatility-coupling posteriors (unbounded,
-    # eHGF), which re-predict from it — same quantity predict_precision uses.
-    # Input nodes carry 1/π (λ = 1 for precision); other nodes λ²/π.
-    if (
-        edges[node_idx].value_children is None
-        and edges[node_idx].volatility_children is None
-    ):
-        attributes[node_idx]["temp"]["current_variance"] = (
-            1.0 / attributes[node_idx]["precision"]
-        )
-    else:
-        attributes[node_idx]["temp"]["current_variance"] = (
-            attributes[node_idx]["autoconnection_strength"] ** 2
-        ) / attributes[node_idx]["precision"]
+    return _store_prediction(attributes, edges, node_idx, predict_precision)
 
-    # Get the new expected mean
-    expected_mean = predict_mean(attributes, edges, node_idx)
 
-    # Get the new marginal (π̂) and conditional (π̄) predicted precisions and the
-    # effective precision γ.
-    expected_precision, conditional_expected_precision, effective_precision = (
-        predict_precision(attributes, edges, node_idx)
+def is_noise_child(edges: Edges, node_idx: int) -> bool:
+    """Return whether a node is an input node with a noise parent.
+
+    A continuous leaf (a node of type 2 without value or volatility children) is an
+    input node. Following [1]_, a volatility parent of an input node is a noise
+    parent: it sets the variance of the observation noise rather than the volatility
+    of a random walk. Its noise child is updated with the noise prediction error of
+    :func:`pyhgf.updates.prediction_error.continuous.continuous_node_noise_prediction_error`.
+
+    Parameters
+    ----------
+    edges :
+        The edges of the probabilistic network.
+    node_idx :
+        Index of the node.
+
+    Returns
+    -------
+    is_noise_child :
+        ``True`` if the node is an input node with at least one volatility parent.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
+    """
+    edge = edges[node_idx]
+    return (
+        edge.node_type == 2
+        and edge.value_children is None
+        and edge.volatility_children is None
+        and edge.volatility_parents is not None
     )
 
-    # Update this node's parameters
 
-    # 1. input node without volatility parent
-    if (
-        (edges[node_idx].value_children is None)
-        and (edges[node_idx].volatility_children is None)
-        and (edges[node_idx].volatility_parents is None)
+def predict_noise_precision(attributes: dict, edges: Edges, node_idx: int) -> Array:
+    r"""Predict the precision of the observation noise of an input node.
+
+    For an input node :math:`u` with noise parents :math:`q`, Eq. 66 of [1]_ gives
+
+    .. math::
+
+        \hat{\pi}_u^{(k)} = \frac{1}{\exp\left(\epsilon_u
+            + \sum_q \kappa_{u,q} \hat{\mu}_q^{(k)}\right)},
+
+    with the tonic observation noise :math:`\epsilon_u` given by the
+    ``tonic_volatility`` of the input node, which is 0 for an input node. A tonic
+    observation noise is equivalent to shifting the mean of a noise parent by
+    :math:`\epsilon_u / \kappa_{u,q}`, since the updates of the noise parent depend
+    on :math:`\epsilon_u + \kappa_{u,q} \mu_q` only. The ``precision`` of the input
+    node is the precision of the observation noise of an input node without noise
+    parent, and is not used here. The noise parents enter at their predicted means;
+    [1]_ uses their previous posterior means, which are the same for a parent without
+    drift and with an autoconnection strength of 1. The variance of the observation
+    noise does not scale with the time step, and the noise parents enter as point
+    estimates, as in [1]_, under both the relaxed and the mean-field predictions.
+
+    Parameters
+    ----------
+    attributes :
+        The attributes of the probabilistic network.
+    edges :
+        The edges of the probabilistic network.
+    node_idx :
+        Index of the input node.
+
+    Returns
+    -------
+    noise_precision :
+        The predicted precision :math:`\hat{\pi}_u^{(k)}` of the observation noise.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
+    """
+    log_noise_variance = attributes[node_idx]["tonic_volatility"]
+    for noise_parent_idx, coupling in zip(
+        edges[node_idx].volatility_parents,  # type: ignore
+        attributes[node_idx]["volatility_coupling_parents"],
     ):
-        attributes[node_idx]["expected_precision"] = attributes[node_idx]["precision"]
-        # A leaf has no random walk, so conditional == marginal == prior precision.
-        attributes[node_idx]["temp"]["conditional_expected_precision"] = attributes[
-            node_idx
-        ]["precision"]
+        log_noise_variance += coupling * attributes[noise_parent_idx]["expected_mean"]
+    return jnp.exp(-log_noise_variance)
 
-    # 2. regular continuous state node, or input with volatility parent
+
+def _store_prediction(
+    attributes: dict, edges: Edges, node_idx: int, precision_fn: Callable
+) -> dict:
+    r"""Write the prediction of a continuous node to its attributes.
+
+    An input node is observed exactly and does not drift between observations, so
+    its predicted precisions do not come from ``precision_fn``. Without noise parent,
+    both are its ``precision``, the precision of the observation noise. With noise
+    parents, both are the noise precision of :func:`predict_noise_precision`, and
+    the effective precision is :math:`\gamma_u = 1`, as for the noise child of [1]_
+    (Eq. 73). Other nodes take the predicted precisions of ``precision_fn``.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
+    """
+    edge = edges[node_idx]
+    is_input_node = edge.value_children is None and edge.volatility_children is None
+
+    if is_input_node and edge.volatility_parents is not None:
+        noise_precision = predict_noise_precision(attributes, edges, node_idx)
+        expected_precision = conditional_expected_precision = noise_precision
+        effective_precision = jnp.ones_like(noise_precision)
+    elif is_input_node:
+        expected_precision = attributes[node_idx]["precision"]
+        conditional_expected_precision = attributes[node_idx]["precision"]
+        effective_precision = jnp.zeros_like(expected_precision)
     else:
-        attributes[node_idx]["expected_precision"] = expected_precision
-        attributes[node_idx]["temp"]["conditional_expected_precision"] = (
-            conditional_expected_precision
+        expected_precision, conditional_expected_precision, effective_precision = (
+            precision_fn(attributes, edges, node_idx)
         )
 
+    # Carried variance, which the eHGF and unbounded volatility updates re-predict
+    # from: the same quantity as in ``precision_fn``.
+    attributes[node_idx]["temp"]["current_variance"] = (
+        attributes[node_idx]["autoconnection_strength"] ** 2
+    ) / attributes[node_idx]["precision"]
+    attributes[node_idx]["expected_mean"] = predict_mean(attributes, edges, node_idx)
+    attributes[node_idx]["expected_precision"] = expected_precision
+    attributes[node_idx]["temp"]["conditional_expected_precision"] = (
+        conditional_expected_precision
+    )
     attributes[node_idx]["temp"]["effective_precision"] = effective_precision
-    attributes[node_idx]["expected_mean"] = expected_mean
 
     return attributes
 
@@ -482,18 +572,10 @@ def predict_precision_mean_field(
         predicted_volatility > 1e-128, predicted_volatility, jnp.nan
     )
 
-    # Input nodes carry their precision over (λ = 1 for precision); other nodes
-    # scale by λ². See :func:`predict_precision` for the full rationale.
-    is_input_node = (
-        edges[node_idx].value_children is None
-        and edges[node_idx].volatility_children is None
-    )
-    if is_input_node:
-        carried_variance = 1.0 / attributes[node_idx]["precision"]
-    else:
-        carried_variance = (
-            attributes[node_idx]["autoconnection_strength"] ** 2
-        ) / attributes[node_idx]["precision"]
+    # Carried variance: scaling the belief by λ scales its variance by λ².
+    carried_variance = (
+        attributes[node_idx]["autoconnection_strength"] ** 2
+    ) / attributes[node_idx]["precision"]
     expected_precision = 1 / jnp.maximum(
         carried_variance + predicted_volatility,
         MIN_PREDICTED_VARIANCE,
@@ -510,7 +592,8 @@ def continuous_node_prediction_mean_field(
     """Mean-field prediction step for a continuous node.
 
     Uses the canonical (g)HGF formula: no moment-generating-function term in the total
-    volatility and no Taylor value-coupling variance term.
+    volatility and no Taylor value-coupling variance term. Input nodes are predicted
+    as in :func:`continuous_node_prediction`.
 
     Parameters
     ----------
@@ -529,42 +612,4 @@ def continuous_node_prediction_mean_field(
     attributes :
         The updated attributes of the probabilistic nodes.
     """
-    # Store carried variance (input nodes: 1/π; others: λ²/π) for the
-    # volatility-coupling posteriors, which re-predict from it.
-    if (
-        edges[node_idx].value_children is None
-        and edges[node_idx].volatility_children is None
-    ):
-        attributes[node_idx]["temp"]["current_variance"] = (
-            1.0 / attributes[node_idx]["precision"]
-        )
-    else:
-        attributes[node_idx]["temp"]["current_variance"] = (
-            attributes[node_idx]["autoconnection_strength"] ** 2
-        ) / attributes[node_idx]["precision"]
-
-    expected_mean = predict_mean(attributes, edges, node_idx)
-
-    expected_precision, conditional_expected_precision, effective_precision = (
-        predict_precision_mean_field(attributes, edges, node_idx)
-    )
-
-    if (
-        (edges[node_idx].value_children is None)
-        and (edges[node_idx].volatility_children is None)
-        and (edges[node_idx].volatility_parents is None)
-    ):
-        attributes[node_idx]["expected_precision"] = attributes[node_idx]["precision"]
-        attributes[node_idx]["temp"]["conditional_expected_precision"] = attributes[
-            node_idx
-        ]["precision"]
-    else:
-        attributes[node_idx]["expected_precision"] = expected_precision
-        attributes[node_idx]["temp"]["conditional_expected_precision"] = (
-            conditional_expected_precision
-        )
-
-    attributes[node_idx]["temp"]["effective_precision"] = effective_precision
-    attributes[node_idx]["expected_mean"] = expected_mean
-
-    return attributes
+    return _store_prediction(attributes, edges, node_idx, predict_precision_mean_field)

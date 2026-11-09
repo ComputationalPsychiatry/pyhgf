@@ -69,8 +69,14 @@ def vectorised_continuous_prediction(
     The carried variance takes :math:`\lambda_a^2` (scaling the belief by
     :math:`\lambda_a` scales its variance by :math:`\lambda_a^2`):
     shrinking the mean by :math:`\lambda_a` shrinks the variance by
-    :math:`\lambda_a^2`. A clamped observation layer with a volatility parent has
-    :math:`\lambda_a = 0`, so its predicted variance is :math:`\Omega_a^{(k)}` alone.
+    :math:`\lambda_a^2`.
+
+    The clamped observation layer :math:`u` is observed exactly. Both of its predicted
+    precisions are the precision of its observation noise: its prior :math:`\pi_u`
+    without volatility parent; with one, the volatility parent :math:`q` is a noise
+    parent (Eq. 66 of [1]_), :math:`\hat{\pi}_u^{(k)} = \exp(-\omega_u
+    - \sum_j \kappa_{u,j} \hat{\mu}_{q,j})`, and :math:`\gamma_u = 1`, as in
+    :func:`pyhgf.updates.prediction.continuous.predict_noise_precision`.
 
     Parameters
     ----------
@@ -98,11 +104,8 @@ def vectorised_continuous_prediction(
         Volatility-coupling matrix :math:`\kappa`, shape ``(n_self, n_parent)``.
         Required with *volatility_parent_state*.
     is_input_layer :
-        If True, the layer is the clamped observation leaf. It carries its precision
-        over (λ = 1 for precision, λ = 0 for the mean): it has no tonic volatility,
-        so without a volatility parent both predicted precisions stay at the prior
-        π; with one, the parent contributes Ω on top of the carried 1/π. Distinct
-        from :attr:`~...posterior.ValueChild.precision_is_clamped`.
+        If True, the layer is the clamped observation leaf, whose predicted
+        precisions are the precision of its observation noise (see above).
     mean_field_updates :
         If ``True``, use the mean-field prediction: the volatility parent's MGF
         term :math:`\kappa^2 / (2 \hat{\pi})` and the value parent's Taylor variance
@@ -115,6 +118,12 @@ def vectorised_continuous_prediction(
     LayerState
         Updated layer state with ``expected_mean``, ``expected_precision``,
         ``conditional_expected_precision`` and ``effective_precision`` populated.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
     assert params.tonic_drift is not None
     assert params.tonic_volatility is not None
@@ -161,13 +170,9 @@ def vectorised_continuous_prediction(
         )
 
     # 4. Conditional (π̄) and marginal (π̂) predicted precisions, effective γ.
-    # Input layers carry 1/π (λ = 1 for precision, λ = 0 for the mean); other
-    # layers scale by λ². The drift is added after the autoregression, so the
-    # value-coupling term is unscaled.
-    if is_input_layer:
-        carried_variance = 1.0 / child_state.precision
-    else:
-        carried_variance = (params.autoconnection_strength**2) / child_state.precision
+    # Scaling the belief by λ scales its variance by λ². The drift is added after
+    # the autoregression, so the value-coupling term is unscaled.
+    carried_variance = (params.autoconnection_strength**2) / child_state.precision
     conditional_expected_precision = 1.0 / jnp.maximum(
         carried_variance + predicted_volatility, MIN_PREDICTED_VARIANCE
     )
@@ -177,11 +182,22 @@ def vectorised_continuous_prediction(
     )
     effective_precision = predicted_volatility * expected_precision
 
-    # 5. Input leaf without a volatility parent: no random walk between
-    # observations, so both predicted precisions stay at the prior π.
-    if is_input_layer and volatility_parent_state is None:
-        expected_precision = child_state.precision
-        conditional_expected_precision = child_state.precision
+    # 5. Input layer: observed exactly, without random walk between observations.
+    # Both predicted precisions are the precision of the observation noise: the
+    # prior π without volatility parent; with one, the noise parent sets it as in
+    # Eq. 66 of Weber et al. (2026), π̂ = exp(-(ω + κ μ̂)), and γ = 1 (Eq. 73).
+    if is_input_layer:
+        if volatility_parent_state is None:
+            expected_precision = child_state.precision
+            effective_precision = jnp.zeros_like(expected_precision)
+        else:
+            assert volatility_weights is not None
+            expected_precision = jnp.exp(
+                -params.tonic_volatility
+                - jnp.matmul(volatility_weights, volatility_parent_state.expected_mean)
+            )
+            effective_precision = jnp.ones_like(expected_precision)
+        conditional_expected_precision = expected_precision
 
     return dataclasses.replace(
         child_state,

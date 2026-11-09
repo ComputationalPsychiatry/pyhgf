@@ -1,9 +1,14 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
+import jax
 import jax.numpy as jnp
+import numpy as np
+import pytest
 
 from pyhgf import load_data
+from pyhgf.math import gaussian_surprise
 from pyhgf.model import Network
+from pyhgf.utils import beliefs_propagation
 
 
 def test_one_node_hgf():
@@ -31,18 +36,21 @@ def test_one_node_hgf():
 def test_two_nodes_hgf():
     r"""Test the two nodes HGF with one observation step.
 
-    The input node has λ = 0 for the mean but carries its precision over (λ = 1
-    for the precision), and has no tonic volatility. Its conditional predicted
-    precision is :math:`\bar{\pi}_0 = 1/(1 + \Omega_0) = 0.3753910`, with
-    :math:`\Omega_0 = e^{1/(2 \hat{\pi}_2)} = 1.66389` from the MGF term of the
-    volatility parent. Its marginal predicted precision adds the value parent's
-    variance: :math:`\hat{\pi}_0 = 1/(1 + \Omega_0 + 1/\hat{\pi}_1) = 0.2715764`. The
-    value parent conditions on the observation through :math:`\bar{\pi}_0`:
-    :math:`\pi_1 = \hat{\pi}_1 + \bar{\pi}_0` and :math:`\mu_1 = \bar{\pi}_0 \, u /
-    \pi_1`. The volatility parent (λ = 1) carries its full variance:
-    :math:`1/(1+e^{-4})`. Its unbounded update treats the input's predicted variance
-    as known variance plus volatility, the known part being the carried variance
-    :math:`1` and the value parent's variance :math:`1/\hat{\pi}_1`.
+    The volatility parent of the input (node 2) is its noise parent, and the values
+    follow Eqs. 64 to 78 of [1]_. The precision of the observation
+    noise is :math:`\hat{\pi}_0 = \exp(-\hat{\mu}_2) = 1` (Eq. 66). The value
+    parent is updated first, :math:`\pi_1 = \hat{\pi}_1 + \hat{\pi}_0` and
+    :math:`\mu_1 = \hat{\pi}_0 u / \pi_1` (Eqs. 69 and 70), with
+    :math:`\hat{\pi}_1 = 1/(1 + e^{-4})`. The noise prediction error reads this
+    posterior, :math:`\epsilon = \hat{\pi}_0 / \pi_1 + \hat{\pi}_0 (u - \mu_1)^2 - 1`
+    (Eq. 72), and the noise parent takes :math:`\pi_2 = \hat{\pi}_2 + \tfrac12 (1 +
+    \epsilon)` and :math:`\mu_2 = \epsilon / (2 \pi_2)` (Eqs. 74 and 78).
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
     # one level HGF with a volatility parent and one observation step
     two_nodes__hgf = (
@@ -55,17 +63,21 @@ def test_two_nodes_hgf():
 
     for key, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.0, 0.2715764, 0.2, 0.0],
+        [1.0, 1.0, 0.2, 0.0],
     ):
         assert jnp.isclose(two_nodes__hgf.node_trajectories[0][key], val)
+    assert jnp.isclose(
+        two_nodes__hgf.node_trajectories[0]["temp"]["volatility_prediction_error"],
+        -0.48564331,
+    )
     for key, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.3574047, 0.98201376, 0.0553101, 0.0],
+        [1.98201379, 0.98201379, 0.10090747, 0.0],
     ):
         assert jnp.isclose(two_nodes__hgf.node_trajectories[1][key], val)
     for key, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.0834352, 0.98201376, -0.10491979, 0.0],
+        [1.23919213, 0.98201379, -0.19595158, 0.0],
     ):
         assert jnp.isclose(two_nodes__hgf.node_trajectories[2][key], val)
 
@@ -124,23 +136,25 @@ def test_continuous_scan_loop():
         .input_data(input_data=timeserie)
     )
 
-    # Expected values reflect the rHGF prediction step and the conditional
-    # precision of the observed leaf (see the note in test_two_nodes_hgf above).
+    # Node 2 is the noise parent of the input (see test_two_nodes_hgf above). It
+    # learns the observation noise of this series: the predicted noise precision
+    # exp(-mu_2) of the input reaches about 2657. The Rust backend gives the same
+    # values to about 1e-6.
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.0, 0.77604926, 0.8241, 0.79476064],
+        [1.0, 2656.6162, 0.8241, 0.78762567],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[0][idx][-1], val)
 
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [7.3903637, 6.5092683, 0.79825854, 0.79476064],
+        [2710.1343, 53.518047, 0.82337976, 0.78762567],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[1][idx][-1], val)
 
     for idx, val in zip(
         ["precision", "expected_precision", "mean", "expected_mean"],
-        [1.3881866, 1.3537763, -2.3721757, -2.3721817],
+        [5.4241695, 4.9333544, -7.886501, -7.8848085],
     ):
         assert jnp.isclose(two_level_hgf.node_trajectories[2][idx][-1], val)
 
@@ -177,3 +191,76 @@ def test_record_trajectories():
                 net_with.last_attributes[node_idx][key],
                 net_without.last_attributes[node_idx][key],
             )
+
+
+@pytest.mark.parametrize("mean_field_updates", [False, True])
+def test_noise_parent_learns_the_observation_noise(mean_field_updates):
+    r"""The noise parent of an input recovers the variance of the observation noise.
+
+    The value of the input follows a random walk with step variance 0.5 and the
+    observation noise has variance 1, so the value parent adds a predicted variance
+    of about 1. The noise prediction error reads the posterior of the value parent,
+    so this variance is not attributed to the noise, in the relaxed and in the
+    mean-field updates: the predicted noise variance :math:`1/\hat{\pi}_u` converges
+    to the variance of the noise.
+    """
+    rng = np.random.default_rng(1)
+    n = 3000
+    value = np.cumsum(rng.normal(0.0, np.sqrt(0.5), n))
+    noise = rng.normal(0.0, 1.0, n)
+    network = (
+        Network(mean_field_updates=mean_field_updates)
+        .add_nodes()
+        .add_nodes(value_children=0, tonic_volatility=np.log(0.5))
+        .add_nodes(volatility_children=0, tonic_volatility=-6.0)
+        .input_data(input_data=value + noise)
+    )
+    noise_variance = 1.0 / np.asarray(
+        network.node_trajectories[0]["expected_precision"]
+    )
+    assert np.isclose(
+        np.mean(noise_variance[n // 2 :]), np.var(noise[n // 2 :]), rtol=0.1
+    )
+
+
+@pytest.mark.parametrize("mean_field_updates", [False, True])
+def test_noise_parent_has_finite_gradients(mean_field_updates):
+    """The surprise of an input with a noise parent is differentiable.
+
+    The gradient is taken with respect to the prior mean of the noise parent, through
+    ten trials, the first of which is an observation equal to its prediction.
+    """
+    network = (
+        Network(mean_field_updates=mean_field_updates)
+        .add_nodes()
+        .add_nodes(value_children=0)
+        .add_nodes(volatility_children=0)
+    )
+    network.create_belief_propagation_fn()
+    attributes, edges, update_sequence = network.get_network()
+    observations = jnp.concatenate([
+        jnp.zeros(1),
+        jnp.asarray(np.random.default_rng(7).normal(0.0, 2.0, 9)),
+    ])
+
+    def surprise(noise_parent_mean):
+        state = jax.tree_util.tree_map(lambda x: x, attributes)
+        state[2]["mean"] = noise_parent_mean
+        total = 0.0
+        for observation in observations:
+            state, _ = beliefs_propagation(
+                attributes=state,
+                inputs=(jnp.array([observation]), jnp.array([1]), 1.0, None),
+                update_sequence=update_sequence,
+                edges=edges,
+                input_idxs=(0,),
+            )
+            total += gaussian_surprise(
+                x=state[0]["mean"],
+                expected_mean=state[0]["expected_mean"],
+                expected_precision=state[0]["expected_precision"],
+            )
+        return total
+
+    assert jnp.isfinite(surprise(0.0))
+    assert jnp.isfinite(jax.grad(surprise)(0.0))

@@ -15,6 +15,7 @@ import dataclasses
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import pytest
 
 from pyhgf.model import Network
@@ -23,12 +24,18 @@ from pyhgf.typing.vectorised import LayerParams, LayerStack, LayerState
 from pyhgf.updates.vectorised.continuous import (
     ValueChild,
     VolatilityChild,
+    vectorised_continuous_noise_prediction_error,
     vectorised_continuous_posterior_update,
     vectorised_continuous_posterior_update_ehgf,
     vectorised_continuous_posterior_update_standard,
     vectorised_continuous_posterior_update_unbounded,
 )
 from pyhgf.utils.vectorised_belief_propagation import run_continuous_scan
+
+try:
+    from jax import enable_x64
+except ImportError:  # jax releases exporting it from jax.experimental only
+    from jax.experimental import enable_x64
 
 U = jnp.array([0.2, 0.5, -0.3, 1.0, 0.1, -0.7, 0.4])
 FIELDS = ("mean", "precision", "expected_mean", "expected_precision")
@@ -909,3 +916,129 @@ def test_posterior_dispatch_errors():
             volatility_child=_volatility_child(),
             volatility_updates="nonsense",
         )
+
+
+def test_noise_parent_hierarchy_follows_the_equations():
+    """The continuous layers follow the equations of a noise parent (float64).
+
+    Layer 0 is the input, layer 1 its value parent :math:`x`, layer 2 the volatility
+    parent of :math:`x`, layer 3 the noise parent :math:`a` of the input and layer 4
+    the volatility parent of :math:`a`, with unit couplings. Under the standard and
+    mean-field updates, every layer follows the transcription of [1]_ in
+    ``tests/test_noise_parent.py`` (:func:`_weber_filter`). Layer 3 is updated after
+    layer 1, since the noise prediction error reads the posterior of the value parent.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
+    """
+    from test_noise_parent import _inputs, _noise_shift, _parameters, _weber_filter
+
+    p = _parameters(hierarchy=True, unit_couplings=True)
+    u = _inputs()
+    reference = _weber_filter(u, p)
+
+    def layer(node, **children):
+        shift = _noise_shift(p) if node == "a" else 0.0
+        return dict(
+            kind="continuous",
+            mean=p[node]["mu"] + shift,
+            precision=p[node]["pi"],
+            tonic_volatility=p[node]["omega"],
+            **children,
+        )
+
+    with enable_x64(True):
+        vec = (
+            DeepNetwork(volatility_updates="standard", mean_field_updates=True)
+            .add_layer(1, kind="continuous")
+            .add_layer(1, **layer("x"))
+            .add_layer(1, **layer("x2", volatility_children=1, volatility_fully_connected=False))
+            .add_layer(1, **layer("a", volatility_children=0, volatility_fully_connected=False))
+            .add_layer(1, **layer("a2", volatility_children=3, volatility_fully_connected=False))
+            .input_data(jnp.asarray(u)[:, None], record=FIELDS)
+        )  # fmt: skip
+        traj = vec.trajectories
+        for field in ("expected_mean", "expected_precision"):
+            assert jnp.allclose(traj[field][0][:, 0], reference["u"][field], rtol=1e-9)
+        for layer_idx, node in ((1, "x"), (2, "x2"), (3, "a"), (4, "a2")):
+            for field in FIELDS:
+                shift = _noise_shift(p) if node == "a" and "mean" in field else 0.0
+                assert jnp.allclose(
+                    traj[field][layer_idx][:, 0],
+                    reference[node][field] + shift,
+                    rtol=1e-9,
+                ), f"layer {layer_idx} {field}"
+
+
+@pytest.mark.parametrize("volatility_updates", ["standard", "eHGF", "unbounded"])
+def test_noise_parent_below_the_value_parent(volatility_updates):
+    """A noise parent with a lower index than the value parent is updated after it.
+
+    The noise prediction error of the input reads the posterior of its value parent, so
+    the update sweep visits the value parent (layer 2) before the noise parent (layer
+    1), and the filter matches the network that adds them in the other order.
+    """
+    canonical = (
+        DeepNetwork(volatility_updates=volatility_updates)
+        .add_layer(1, kind="continuous")
+        .add_layer(1, kind="continuous")
+        .add_layer(1, kind="continuous", volatility_children=0, volatility_fully_connected=False)
+        .input_data(U, record=FIELDS)
+    )  # fmt: skip
+    swapped = (
+        DeepNetwork(volatility_updates=volatility_updates)
+        .add_layer(1, kind="continuous")
+        .add_layer(1, kind="continuous", volatility_children=0, volatility_fully_connected=False)
+        .add_layer(1, kind="continuous", value_children=0)
+        .input_data(U, record=FIELDS)
+    )  # fmt: skip
+    for field in FIELDS:
+        for canonical_layer, swapped_layer in ((0, 0), (1, 2), (2, 1)):
+            assert jnp.allclose(
+                canonical.trajectories[field][canonical_layer],
+                swapped.trajectories[field][swapped_layer],
+                rtol=1e-6,
+            ), f"{field} layer {canonical_layer}"
+
+
+def test_noise_prediction_error_of_the_observation_layer():
+    r"""The noise prediction error reads the posterior of the value-parent layer.
+
+    Two observed nodes with a two-node value-parent layer, coupling matrix :math:`W`,
+    coupling function :math:`\tanh` and time step :math:`t`:
+
+    .. math::
+
+        \epsilon_a = \hat{\pi}_a \left( \sum_b \frac{(t W_{a,b}
+            \tanh'(\mu_b))^2}{\pi_b} + (u_a - m_a)^2 \right) - 1,
+        \qquad m_a = \hat{\mu}_a + t \sum_b W_{a,b} (\tanh(\mu_b)
+            - \tanh(\hat{\mu}_b)).
+    """
+    weights = jnp.array([[0.5, -1.2], [0.8, 0.3]])
+    time_step = 0.7
+    leaf = dataclasses.replace(
+        LayerState.create_continuous(2, has_volatility_parent=True),
+        mean=jnp.array([0.4, -1.1]),
+        expected_mean=jnp.array([0.1, -0.2]),
+        expected_precision=jnp.array([1.5, 0.6]),
+    )
+    parent = dataclasses.replace(
+        LayerState.create_continuous(2),
+        mean=jnp.array([0.3, -0.5]),
+        expected_mean=jnp.array([0.1, -0.2]),
+        precision=jnp.array([2.0, 3.5]),
+    )
+    noise_pe = vectorised_continuous_noise_prediction_error(
+        leaf, parent, weights, jnp.tanh, time_step
+    ).volatility_prediction_error
+
+    tanh_prime = 1.0 / jnp.cosh(parent.mean) ** 2
+    variance = (time_step**2) * (weights**2) @ (tanh_prime**2 / parent.precision)
+    mean = leaf.expected_mean + time_step * weights @ (
+        jnp.tanh(parent.mean) - jnp.tanh(parent.expected_mean)
+    )
+    expected = leaf.expected_precision * (variance + (leaf.mean - mean) ** 2) - 1.0
+    assert jnp.allclose(noise_pe, expected, rtol=1e-6)

@@ -65,11 +65,25 @@ class VolatilityChild(NamedTuple):
     params :
         The child layer's parameters (``tonic_volatility`` is read by the eHGF
         and unbounded updates).
+    is_noise_child :
+        Whether the child is the clamped observation layer, for which the parent is
+        a noise parent: the child carries the noise prediction error of
+        :func:`~pyhgf.updates.vectorised.continuous.prediction_error.vectorised_continuous_noise_prediction_error`
+        with an effective precision of 1, and the parent takes the update of Eqs. 74
+        and 78 of [1]_ under every scheme (see
+        :func:`vectorised_continuous_posterior_update`).
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
 
     state: LayerState
     kappa: jnp.ndarray
     params: LayerParams
+    is_noise_child: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -638,8 +652,9 @@ def vectorised_continuous_posterior_update(
 
     Mirrors the assignment rule of
     :func:`pyhgf.utils.get_update_sequence.get_update_sequence`: layers without
-    a volatility child always take the standard update; layers with one take
-    the update named by *volatility_updates*.
+    a volatility child, and noise parents of the observation layer, always take the
+    standard update; layers with another volatility child take the update named by
+    *volatility_updates*.
 
     Parameters
     ----------
@@ -665,7 +680,13 @@ def vectorised_continuous_posterior_update(
     LayerState
         Updated layer state with posterior ``precision`` and ``mean``.
     """
-    if volatility_child is None or volatility_updates == "standard":
+    # A noise parent takes the update of Eqs. 74 and 78 of Weber et al. (2026) under
+    # every scheme.
+    if (
+        volatility_child is None
+        or volatility_child.is_noise_child
+        or volatility_updates == "standard"
+    ):
         return vectorised_continuous_posterior_update_standard(
             layer,
             value_child=value_child,

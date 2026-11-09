@@ -1,6 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 import jax.numpy as jnp
+import numpy as np
 import pytest
 
 from pyhgf.model import Network
@@ -9,6 +10,11 @@ from pyhgf.updates.posterior.continuous import (
     continuous_node_posterior_update_ehgf,
     continuous_node_posterior_update_unbounded,
 )
+
+try:
+    from jax import enable_x64
+except ImportError:  # jax releases exporting it from jax.experimental only
+    from jax.experimental import enable_x64
 
 
 def test_continuous_posterior_updates():
@@ -156,3 +162,61 @@ def test_volatility_update_counts_the_value_coupling_variance_as_known(
     # Without that variance, the same child reads as more volatile.
     without = update(1.0, expected_precision, expected_precision)
     assert not jnp.isclose(in_predictions[1], without[1])
+
+
+@pytest.mark.parametrize("volatility_updates", ["standard", "eHGF", "unbounded"])
+def test_noise_parent_of_two_inputs(volatility_updates):
+    r"""A noise parent of several inputs adds one term of Eqs. 74 and 78 per input.
+
+    Inputs 0 and 1 have value parents 2 and 3 and share the noise parent 4, with
+    couplings :math:`\kappa_0` and :math:`\kappa_1`:
+
+    .. math::
+
+        \pi_4 = \hat{\pi}_4 + \sum_i \tfrac12 \kappa_i^2 (1 + \epsilon_i), \qquad
+        \mu_4 = \hat{\mu}_4 + \frac{1}{2 \pi_4} \sum_i \kappa_i \epsilon_i,
+
+    with :math:`\epsilon_i` the noise prediction error of input :math:`i`, computed
+    here from the posteriors of the value parents (Eq. 72 of [1]_). A noise parent
+    takes this update under every ``volatility_updates`` setting.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
+    """
+    kappas = (1.0, 0.6)
+    observations = np.random.default_rng(1).normal(0.0, 2.0, (60, 2))
+    with enable_x64(True):
+        network = (
+            Network(volatility_updates=volatility_updates)
+            .add_nodes(n_nodes=2)
+            .add_nodes(value_children=0)
+            .add_nodes(value_children=1)
+            .add_nodes(volatility_children=([0, 1], list(kappas)))
+            .input_data(input_data=observations)
+        )
+        traj = network.node_trajectories
+
+        precision = np.asarray(traj[4]["expected_precision"])
+        mean_shift = np.zeros_like(precision)
+        for input_idx, value_parent_idx, kappa in ((0, 2, kappas[0]), (1, 3, kappas[1])):  # fmt: skip
+            noise_precision = np.asarray(traj[input_idx]["expected_precision"])
+            residual = observations[:, input_idx] - np.asarray(traj[value_parent_idx]["mean"])  # fmt: skip
+            epsilon = (
+                noise_precision / np.asarray(traj[value_parent_idx]["precision"])
+                + noise_precision * residual**2
+                - 1
+            )
+            assert np.allclose(
+                traj[input_idx]["temp"]["volatility_prediction_error"], epsilon
+            )
+            precision = precision + 0.5 * kappa**2 * (1 + epsilon)
+            mean_shift = mean_shift + 0.5 * kappa * epsilon
+        assert np.allclose(traj[4]["precision"], precision, rtol=1e-12)
+        assert np.allclose(
+            traj[4]["mean"],
+            np.asarray(traj[4]["expected_mean"]) + mean_shift / precision,
+            rtol=1e-12,
+        )

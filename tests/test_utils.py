@@ -339,6 +339,33 @@ def test_set_update_sequence():
     assert len(network4.update_sequence.update_steps) == 3
 
 
+def test_set_update_sequence_with_a_noise_parent():
+    """The noise prediction error runs between the updates of the two parents.
+
+    The volatility parent of an input node is a noise parent: the value parent of the
+    input is updated before its noise prediction error, and the noise parent after it,
+    whatever the order in which the nodes were added.
+    """
+    for network in (
+        Network().add_nodes().add_nodes(value_children=0).add_nodes(volatility_children=0),
+        Network().add_nodes().add_nodes(volatility_children=0).add_nodes(value_children=0),
+    ):  # fmt: skip
+        network.create_belief_propagation_fn()
+        steps = [
+            (idx, getattr(fn, "func", fn).__name__)
+            for idx, fn in network.update_sequence.update_steps
+        ]
+        value_parent = network.edges[0].value_parents[0]
+        noise_parent = network.edges[0].volatility_parents[0]
+        value_update = steps.index((value_parent, "continuous_node_posterior_update"))
+        noise_prediction_error = steps.index((
+            0,
+            "continuous_node_noise_prediction_error",
+        ))
+        noise_update = steps.index((noise_parent, "continuous_node_posterior_update"))
+        assert value_update < noise_prediction_error < noise_update
+
+
 def test_add_parent():
     """Test the add_parent function."""
     network = (

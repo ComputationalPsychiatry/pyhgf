@@ -8,6 +8,7 @@ from jax.nn import sigmoid, softmax
 
 from pyhgf.math import lambert_w0_log
 from pyhgf.typing import Edges
+from pyhgf.updates.prediction.continuous import is_noise_child
 
 from .posterior_update_mean_continuous_node import (
     posterior_update_mean_continuous_node,
@@ -133,8 +134,11 @@ def posterior_update_unbounded(
     carried variance.
 
     :math:`(\tilde{\pi}, \tilde{\mu})` is the prediction :math:`(\hat{\pi}, \hat{\mu})`
-    of the node or, when the node also has value children, the effective prior that
-    absorbs the value-coupling terms. The children whose ``observed`` flag is 0 are left
+    of the node or, when the node also has value children or noise children (input
+    nodes, see :func:`pyhgf.updates.prediction.continuous.is_noise_child`), the
+    effective prior that absorbs their terms: the value-coupling terms, and the
+    quadratic noise-coupling terms of Eqs. 74 and 78 of [2]_. The sum above runs over
+    the other volatility children. The children whose ``observed`` flag is 0 are left
     out of the sum.
 
     1. A first expansion at the prediction :math:`\hat{\mu}` keeps only the concave part
@@ -201,23 +205,35 @@ def posterior_update_unbounded(
     .. [1] Mathys, C., Legrand, N., Waade, P. T., Mikuš, N., & Weber, L. A. (2026).
        Robust volatility updates for Hierarchical Gaussian Filtering.
        arXiv:2605.00966. https://doi.org/10.48550/arXiv.2605.00966
+    .. [2] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
-    volatility_children_idxs = edges[node_idx].volatility_children
-    n_children = len(volatility_children_idxs)  # type: ignore
+    # The noise children enter the effective prior; the expansions run over the
+    # other volatility children.
+    volatility_children_idxs = tuple(
+        idx
+        for idx in edges[node_idx].volatility_children  # type: ignore
+        if not is_noise_child(edges, idx)
+    )
+    n_children = len(volatility_children_idxs)
     log_time_step = jnp.log(attributes[-1]["time_step"])
     expected_mean = attributes[node_idx]["expected_mean"]
 
-    # Effective prior (π̃, μ̃): the prediction, combined with the value-coupling terms
-    # when the node also has value children.
+    # Effective prior (π̃, μ̃): the prediction, combined with the value-coupling and
+    # noise-coupling terms when the node also has value or noise children.
     prior_precision, prior_mean = _value_children_effective_prior(
         attributes, edges, node_idx, mean_field_updates
     )
+    if n_children == 0:
+        return prior_precision, prior_mean
 
     # Per-child quantities. An unobserved child (``observed`` is 0) is left out: its
     # terms are multiplied by ``observed`` and its expansion gets a zero weight.
     couplings, tonic_volatilities, log_previous_variances = [], [], []
     be_auxs, volatility_prediction_errors, observed = [], [], []
-    for position, volatility_child_idx in enumerate(volatility_children_idxs):  # type: ignore
+    for volatility_child_idx in volatility_children_idxs:
+        position = edges[node_idx].volatility_children.index(volatility_child_idx)  # type: ignore
         observed.append(attributes[volatility_child_idx]["observed"])
         couplings.append(attributes[node_idx]["volatility_coupling_children"][position])
         tonic_volatilities.append(
@@ -365,33 +381,65 @@ def posterior_update_unbounded(
 def _value_children_effective_prior(
     attributes: dict, edges: Edges, node_idx: int, mean_field_updates: bool
 ) -> tuple[Array, Array]:
-    r"""Absorb the value-coupling terms of a node in an effective Gaussian prior.
+    r"""Absorb the value- and noise-coupling terms of a node in an effective prior.
 
     Each value child adds a concave quadratic term to the variational energy of the
-    node. Section 3.6 of Mathys et al. (2026) absorbs these terms in an effective prior
+    node. Section 3.6 of [1]_ absorbs these terms in an effective prior
     :math:`(\tilde{\pi}, \tilde{\mu})`. Here, this prior is the posterior that the
-    regular value-coupling update returns when the volatility children are left out, so
-    that value children are weighted as in the standard and eHGF updates (relaxed or
-    mean-field). Without value children, this is the prediction of the node.
+    standard update returns when the node keeps only its value children and its noise
+    children, so that value children are weighted as in the standard and eHGF updates
+    (relaxed or mean-field), and each noise child adds the quadratic term of Eqs. 74
+    and 78 of [2]_. Without value or noise children, this is the prediction of the
+    node.
+
+    References
+    ----------
+    .. [1] Mathys, C., Legrand, N., Waade, P. T., Mikuš, N., & Weber, L. A. (2026).
+       Robust volatility updates for Hierarchical Gaussian Filtering.
+       arXiv:2605.00966. https://doi.org/10.48550/arXiv.2605.00966
+    .. [2] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
-    if edges[node_idx].value_children is None:
+    volatility_children = edges[node_idx].volatility_children or ()
+    noise_positions = [
+        position
+        for position, child_idx in enumerate(volatility_children)
+        if is_noise_child(edges, child_idx)
+    ]
+    if edges[node_idx].value_children is None and not noise_positions:
         return (
             attributes[node_idx]["expected_precision"],
             attributes[node_idx]["expected_mean"],
         )
 
-    # Restrict the adjacency of the node to its value children, so that the existing
-    # value-coupling updates provide the effective prior unchanged.
-    value_only_edges = (
+    # Restrict the node to its value and noise children, with the coupling strengths
+    # of the noise children, so that the standard updates provide the effective prior.
+    restricted_edges = (
         edges[:node_idx]
-        + (edges[node_idx]._replace(volatility_children=None),)
+        + (
+            edges[node_idx]._replace(
+                volatility_children=tuple(
+                    volatility_children[position] for position in noise_positions
+                )
+                or None
+            ),
+        )
         + edges[node_idx + 1 :]
+    )
+    restricted_attributes = dict(attributes)
+    restricted_attributes[node_idx] = dict(attributes[node_idx])
+    restricted_attributes[node_idx]["volatility_coupling_children"] = tuple(
+        attributes[node_idx]["volatility_coupling_children"][position]
+        for position in noise_positions
     )
     precision_fn, mean_fn = (
         (precision_update_mean_field, posterior_update_mean_continuous_node_mean_field)
         if mean_field_updates
         else (precision_update, posterior_update_mean_continuous_node)
     )
-    precision = precision_fn(attributes, value_only_edges, node_idx)
-    mean = mean_fn(attributes, value_only_edges, node_idx, node_precision=precision)
+    precision = precision_fn(restricted_attributes, restricted_edges, node_idx)
+    mean = mean_fn(
+        restricted_attributes, restricted_edges, node_idx, node_precision=precision
+    )
     return precision, mean

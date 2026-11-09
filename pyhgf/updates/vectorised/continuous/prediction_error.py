@@ -3,6 +3,10 @@
 """Vectorised prediction errors for layers of regular continuous nodes."""
 
 import dataclasses
+from typing import Callable, Optional
+
+import jax.numpy as jnp
+from jax import grad, vmap
 
 from pyhgf.typing.vectorised import LayerState
 
@@ -44,6 +48,8 @@ def vectorised_continuous_volatility_prediction_error(layer: LayerState) -> Laye
             + \hat{\pi}_a^{(k)} \left( \delta_a^{(k)} \right)^2 - 1.
 
     Every volatility parent of the node receives the full :math:`\Delta_a^{(k)}`.
+    The clamped observation layer sends the noise prediction error of
+    :func:`vectorised_continuous_noise_prediction_error` instead.
 
     Parameters
     ----------
@@ -62,6 +68,79 @@ def vectorised_continuous_volatility_prediction_error(layer: LayerState) -> Laye
         - 1.0
     )
     return dataclasses.replace(layer, volatility_prediction_error=volatility_pe)
+
+
+def vectorised_continuous_noise_prediction_error(
+    layer: LayerState,
+    value_parent_state: Optional[LayerState] = None,
+    weights: Optional[jnp.ndarray] = None,
+    coupling_fn: Optional[Callable] = None,
+    time_step: float = 1.0,
+) -> LayerState:
+    r"""Compute the noise prediction error of the clamped observation layer.
+
+    This is the vectorised equivalent of
+    :func:`pyhgf.updates.prediction_error.continuous.continuous_node_noise_prediction_error`
+    (Eq. 72 of [1]_). The observation :math:`u_a` of each node is
+    compared with the posterior of the value-parent layer :math:`b`, which must
+    already be updated:
+
+    .. math::
+
+        \epsilon_a^{(k)} = \hat{\pi}_a^{(k)} \left( \sum_b
+            \frac{(t W_{a,b} \, g'(\mu_b^{(k)}))^2}{\pi_b^{(k)}}
+            + \left( u_a^{(k)} - m_a^{(k)} \right)^2 \right) - 1,
+
+    where :math:`m_a^{(k)}` is the predicted mean of :math:`u_a` with the value
+    parents moved from :math:`\hat{\mu}_b^{(k)}` to :math:`\mu_b^{(k)}`, and
+    :math:`\hat{\pi}_a^{(k)}` the precision of the observation noise.
+
+    Parameters
+    ----------
+    layer :
+        The clamped observation layer, with its observations in ``mean``.
+    value_parent_state :
+        The updated state of its value-parent layer, or ``None`` when it has none.
+    weights :
+        Value-coupling matrix, shape ``(n_self, n_parent)``. Required with
+        *value_parent_state*.
+    coupling_fn :
+        Coupling function of the value-parent layer. Required with
+        *value_parent_state*.
+    time_step :
+        Time step :math:`t^{(k)}`.
+
+    Returns
+    -------
+    LayerState
+        Updated layer state with the noise prediction error in
+        ``volatility_prediction_error``.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
+    """
+    posterior_mean = layer.expected_mean
+    posterior_variance = jnp.zeros_like(layer.mean)
+    if value_parent_state is not None:
+        assert weights is not None and coupling_fn is not None
+        posterior_mean = posterior_mean + time_step * jnp.matmul(
+            weights,
+            coupling_fn(value_parent_state.mean)
+            - coupling_fn(value_parent_state.expected_mean),
+        )
+        g_prime = vmap(grad(coupling_fn))(value_parent_state.mean)
+        posterior_variance = (time_step**2) * jnp.matmul(
+            weights**2, g_prime**2 / value_parent_state.precision
+        )
+    noise_pe = (
+        layer.expected_precision
+        * (posterior_variance + (layer.mean - posterior_mean) ** 2)
+        - 1.0
+    )
+    return dataclasses.replace(layer, volatility_prediction_error=noise_pe)
 
 
 def vectorised_continuous_prediction_error(

@@ -131,6 +131,8 @@ Continuous nodes
     predict_mean
     predict_precision
     predict_precision_mean_field
+    predict_noise_precision
+    is_noise_child
     continuous_node_prediction
     continuous_node_prediction_mean_field
 
@@ -180,6 +182,7 @@ Continuous state nodes
 
     continuous_node_value_prediction_error
     continuous_node_volatility_prediction_error
+    continuous_node_noise_prediction_error
     continuous_node_prediction_error
 
 Dirichlet state nodes
@@ -283,6 +286,7 @@ Continuous layers
     vectorised_continuous_prediction_error
     vectorised_continuous_value_prediction_error
     vectorised_continuous_volatility_prediction_error
+    vectorised_continuous_noise_prediction_error
     vectorised_continuous_posterior_update
     vectorised_continuous_posterior_update_standard
     vectorised_continuous_posterior_update_ehgf
