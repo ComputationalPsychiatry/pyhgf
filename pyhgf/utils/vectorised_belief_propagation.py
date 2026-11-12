@@ -2055,6 +2055,9 @@ def _continuous_update_sweep(
                 # Only layer 0 is clamped, and the update loop below skips it,
                 # so its posterior precision is the one that never moves.
                 precision_is_clamped=child_elem.is_input_layer,
+                # The time step scales the drift of a state layer, not that of the
+                # observation layer (see `vectorised_continuous_prediction`).
+                time_scale=1.0 if child_elem.is_input_layer else time_step,
             )
 
         volatility_child = None
@@ -2069,7 +2072,6 @@ def _continuous_update_sweep(
                     value_parent_state=None if vp is None else elements[vp].state,
                     weights=None if vp is None else elements[vp].weights_mean,
                     coupling_fn=None if vp is None else elements[vp].coupling_fn,
-                    time_step=time_step,
                 )
                 child_elem = dataclasses.replace(child_elem, state=noise_state)
                 elements[elem.volatility_child_idx] = child_elem

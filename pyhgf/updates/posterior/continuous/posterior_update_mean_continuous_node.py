@@ -45,7 +45,10 @@ def posterior_update_mean_continuous_node(
     :func:`~pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._relaxed_child_factors`.
     A Gaussian leaf is observed exactly and takes the fully observed limit
     :math:`\pi_{y,j} \to \infty`, :math:`g_{a,j} = \bar{\pi}_j`. Non-Gaussian
-    children use the canonical gain :math:`\hat{\pi}_j`.
+    children use the canonical gain :math:`\hat{\pi}_j`. With a time step
+    :math:`t \neq 1`, :math:`\alpha_j` becomes :math:`t \alpha_j` for a state child,
+    whose drift the time step scales, and stays :math:`\alpha_j` for an input node,
+    which its value parents generate rather than drift.
 
     .. rubric:: 2. Mean update from volatility coupling
 
@@ -133,6 +136,15 @@ def posterior_update_mean_continuous_node(
                 attributes, edges, value_child_idx
             )
 
+            # the time step scales the drift of a continuous state child (one with
+            # children), not the prediction of an input node
+            child_edges = edges[value_child_idx]
+            if child_edges.node_type == 2 and (
+                child_edges.value_children is not None
+                or child_edges.volatility_children is not None
+            ):
+                value_coupling = value_coupling * attributes[-1]["time_step"]
+
             # sum the precision weigthed prediction errors over all children
             value_precision_weigthed_prediction_error += (
                 (value_coupling * gain_precision * coupling_fn_prime) / node_precision
@@ -209,6 +221,9 @@ def posterior_update_mean_continuous_node_mean_field(
     its value child :math:`j` and :math:`\delta_j^{(k)}` is the value prediction error
     that was computed beforehand by
     :py:func:`pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error`.
+    With a time step :math:`t \neq 1`, :math:`\alpha_j` becomes :math:`t \alpha_j` for
+    a state child, whose drift the time step scales, and stays :math:`\alpha_j` for an
+    input node, which its value parents generate rather than drift.
 
     For non-linear value coupling:
 
@@ -310,6 +325,15 @@ def posterior_update_mean_continuous_node_mean_field(
                 coupling_fn_prime = 1
             else:
                 coupling_fn_prime = grad(coupling_fn)(attributes[node_idx]["mean"])
+
+            # the time step scales the drift of a continuous state child (one with
+            # children), not the prediction of an input node
+            child_edges = edges[value_child_idx]
+            if child_edges.node_type == 2 and (
+                child_edges.value_children is not None
+                or child_edges.volatility_children is not None
+            ):
+                value_coupling = value_coupling * attributes[-1]["time_step"]
 
             value_precision_weigthed_prediction_error += (
                 (

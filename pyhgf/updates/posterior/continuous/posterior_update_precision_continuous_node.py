@@ -121,12 +121,16 @@ def _value_coupling_pwpe(
     r"""Precision-weighted prediction error from value-coupled children.
 
     Implements eq. 50 of [1]_: each child contributes
-    :math:`\pi^{\mathrm{eff}}_a \alpha^2 g'^2 - g_a \alpha g'' \delta_a`, with
-    :math:`\alpha` the value-coupling strength and the child-precision factors
+    :math:`\pi^{\mathrm{eff}}_a (t_a \alpha)^2 g'^2 - g_a t_a \alpha g'' \delta_a`,
+    with :math:`\alpha` the value-coupling strength and the child-precision factors
     :math:`(\pi^{\mathrm{eff}}_a, g_a)` supplied by ``child_factors_fn`` (relaxed or
     mean-field). In the canonical update both factors are :math:`\hat{\pi}_a`. The
     :math:`g'`/:math:`g''` derivatives reduce to the linear case (:math:`\alpha^2`,
-    ``0``) when no coupling function is set.
+    ``0``) when no coupling function is set. :math:`t_a` is the time step for a
+    continuous state child, whose drift the time step scales (Eqs. 8 and 36 of [1]_),
+    so that its prediction moves by :math:`t \alpha g'` per unit of the parent, and 1
+    for an input node, which its value parents generate rather than drift (Eq. 64 of
+    [1]_), and for the other node types.
 
     References
     ----------
@@ -143,6 +147,15 @@ def _value_coupling_pwpe(
         attributes[node_idx]["value_coupling_children"],
         edges[node_idx].coupling_fn,
     ):
+        # Derivative of the child's prediction with respect to the parent's value, up
+        # to the coupling function: the time step scales the drift of a continuous
+        # state child (one with children), not the prediction of an input node.
+        child_edges = edges[value_child_idx]
+        if child_edges.node_type == 2 and (
+            child_edges.value_children is not None
+            or child_edges.volatility_children is not None
+        ):
+            value_coupling = value_coupling * attributes[-1]["time_step"]
         if coupling_fn is None:  # linear coupling
             coupling_fn_prime = value_coupling**2
             coupling_fn_second = 0
@@ -312,7 +325,10 @@ def posterior_update_precision_continuous_node(
             \alpha_j^2 \hat{\pi}_j^{(k)}
 
     where :math:`\alpha_j` is the value-coupling strength between the state node and
-    its value child :math:`j`.
+    its value child :math:`j`. With a time step :math:`t \neq 1`, :math:`\alpha_j`
+    becomes :math:`t \alpha_j` for a state child, whose drift the time step scales,
+    and stays :math:`\alpha_j` for an input node, which its value parents generate
+    rather than drift.
 
     For non-linear value coupling we use equation 50 from [1]_:
 
@@ -554,7 +570,10 @@ def posterior_update_precision_continuous_node_mean_field(
             \alpha_j^2 \hat{\pi}_j^{(k)}
 
     where :math:`\alpha_j` is the value-coupling strength between the state node and
-    its value child :math:`j`.
+    its value child :math:`j`. With a time step :math:`t \neq 1`, :math:`\alpha_j`
+    becomes :math:`t \alpha_j` for a state child, whose drift the time step scales,
+    and stays :math:`\alpha_j` for an input node, which its value parents generate
+    rather than drift.
 
     For non-linear value coupling we use equation 50 from [1]_:
 

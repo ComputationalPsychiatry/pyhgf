@@ -49,18 +49,19 @@ PARAMETERS = dict(
 )
 
 
-def _weber_filter(u, p):
+def _weber_filter(u, p, time_steps=None):
     r"""Filter the observations ``u`` with the equations of [1]_.
 
-    Every node has an autoconnection strength of 1, no drift and a time step of 1.
-    Each trial runs:
+    Every node has an autoconnection strength of 1 and no drift. The time steps
+    default to 1. Each trial runs:
 
     #. the prediction of the state nodes (Eqs. 34, 35 and 37), with
-       :math:`\Omega = \exp(\omega + \kappa \mu_{\check{a}}^{(k-1)})` and the
+       :math:`\Omega = t \exp(\omega + \kappa \mu_{\check{a}}^{(k-1)})` and the
        effective precision :math:`\gamma = \Omega \hat{\pi}` (Eq. 43);
     #. the prediction of the input (Eqs. 64 and 66),
        :math:`\hat{\mu}_u = \hat{\mu}_x` and
-       :math:`\hat{\pi}_u = 1 / \exp(\kappa_u \mu_a^{(k-1)} + \epsilon_u)`;
+       :math:`\hat{\pi}_u = 1 / \exp(\kappa_u \mu_a^{(k-1)} + \epsilon_u)`, neither
+       of which depends on the time step;
     #. the update of the value parent (Eqs. 68 to 70);
     #. the noise prediction error (Eq. 72), from the posterior of the value parent;
     #. the update of the noise parent (Eqs. 74 and 78, with Eq. 75 for
@@ -92,14 +93,16 @@ def _weber_filter(u, p):
         "surprise": [],
     }
 
-    for observation in u:
+    if time_steps is None:
+        time_steps = np.ones(len(u))
+    for observation, time_step in zip(u, time_steps):
         # Prediction step (Eqs. 34, 35, 37 and 43), from the posteriors at k - 1
         prediction = {}
         for node in nodes:
             log_volatility = p[node]["omega"]
             if node in volatility_parent:
                 log_volatility += coupling[node] * state[volatility_parent[node]][0]
-            volatility = math.exp(log_volatility)
+            volatility = time_step * math.exp(log_volatility)
             pihat = 1 / (1 / state[node][1] + volatility)
             prediction[node] = (state[node][0], pihat, volatility * pihat)
 
@@ -323,4 +326,29 @@ def test_hierarchy_with_noise_parent_follows_the_equations(cls):
     with enable_x64(True):
         net, idxs = _network(cls, p, "standard", True)
         net.input_data(input_data=np.asarray(u))
+        _assert_matches(net, idxs, reference, p, rtol=1e-9, atol=1e-12)
+
+
+@pytest.mark.parametrize("cls", [Network, RsNetwork], ids=["jax", "rust"])
+@pytest.mark.parametrize("hierarchy", [False, True])
+def test_noise_parent_with_irregular_time_steps(cls, hierarchy):
+    r"""The noise parent follows the equations of [1]_ with irregular time steps.
+
+    The time step scales the volatility of the state nodes (Eq. 37), but neither the
+    prediction of the input (Eq. 64) nor its noise precision (Eq. 66), so the noise
+    prediction error (Eq. 72) does not depend on it either.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
+    """
+    p = _parameters(hierarchy=hierarchy, unit_couplings=cls is RsNetwork)
+    u = _inputs()
+    time_steps = np.random.default_rng(11).choice([0.25, 0.5, 1.0, 2.0, 4.0], len(u))
+    reference = _weber_filter(u, p, time_steps)
+    with enable_x64(True):
+        net, idxs = _network(cls, p, "standard", True)
+        net.input_data(input_data=np.asarray(u), time_steps=time_steps)
         _assert_matches(net, idxs, reference, p, rtol=1e-9, atol=1e-12)
