@@ -312,19 +312,35 @@ def vectorised_layer_posterior_update(
         weights = weights[:, :-1]
 
     # Update precision first, then mean
-    posterior_precision = jnp.clip(
-        vectorised_posterior_update_precision_value_level(
-            layer,
-            child,
-            weights,
-            coupling_fn,
-            child_is_input_layer=child_is_input_layer,
-            mean_field_updates=mean_field_updates,
-        ),
-        layer.expected_precision,
-        max_posterior_precision,
+    precision = vectorised_posterior_update_precision_value_level(
+        layer,
+        child,
+        weights,
+        coupling_fn,
+        child_is_input_layer=child_is_input_layer,
+        mean_field_updates=mean_field_updates,
     )
 
+    # The first-order (information) term alone, with the effective child
+    # precision of vectorised_posterior_update_precision_value_level.
+    if mean_field_updates:
+        effective = child.expected_precision
+    elif child_is_input_layer:
+        effective = child.conditional_expected_precision
+    else:
+        pi_y = child.precision - child.expected_precision
+        effective = (
+            child.conditional_expected_precision
+            * pi_y
+            / (child.conditional_expected_precision + pi_y)
+        )
+    # Floor π at π̂ + Σ w²·γ_a·g′² instead of π̂
+    # to prevent the step exceeding the information.
+    g1 = vmap(jgrad(coupling_fn))(layer.expected_mean)
+    information = jnp.matmul((weights**2).T, effective) * g1**2
+    posterior_precision = jnp.clip(
+        precision, layer.expected_precision + information, max_posterior_precision
+    )
     posterior_mean = vectorised_posterior_update_mean_value_level(
         layer,
         child,
