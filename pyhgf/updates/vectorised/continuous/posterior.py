@@ -44,12 +44,18 @@ class ValueChild(NamedTuple):
         case for the clamped observation leaf. The relaxed (structured-Gaussian)
         factors then take their fully observed limit, the conditional predicted
         precision; see :func:`_relaxed_factors`.
+    time_scale :
+        Factor of the time step in the drift of the child: the time step for a state
+        layer, whose prediction moves by :math:`t W g'` per unit of the parent, and 1
+        for the observation layer, which its value parent generates rather than drifts.
+        The value messages to the parent take the same factor.
     """
 
     state: LayerState
     weights: jnp.ndarray
     coupling_fn: Callable
     precision_is_clamped: bool
+    time_scale: float | jnp.ndarray = 1.0
 
 
 class VolatilityChild(NamedTuple):
@@ -148,11 +154,11 @@ def _value_precision_pwpe(
 
     .. math::
 
-        \sum_a \left( \pi_a^{\mathrm{eff}} \, W_{a,m}^2 \, g'(\mu_m)^2
-            - g_a \, W_{a,m} \, g''(\mu_m) \, \delta_a \right),
+        \sum_a \left( \pi_a^{\mathrm{eff}} \, (t W_{a,m})^2 \, g'(\mu_m)^2
+            - g_a \, t W_{a,m} \, g''(\mu_m) \, \delta_a \right),
 
-    with :math:`\pi^{\mathrm{eff}}_a` and :math:`g_a` from :func:`_relaxed_factors`.
-    Derivatives
+    with :math:`\pi^{\mathrm{eff}}_a` and :math:`g_a` from :func:`_relaxed_factors`
+    and :math:`t` the ``time_scale`` of the child. Derivatives
     are evaluated at *eval_mean*: the parent's previous posterior mean in the
     standard scheme, its freshly updated posterior mean in the eHGF scheme
     (which updates the mean first), mirroring the nodalised call order.
@@ -162,11 +168,14 @@ def _value_precision_pwpe(
     coupling_prime = vmap(grad(child.coupling_fn))(eval_mean)
     coupling_second = vmap(grad(grad(child.coupling_fn)))(eval_mean)
 
-    first_order = jnp.matmul(child.weights.T**2, effective_child_precision) * (
+    # Derivative of the child's prediction with respect to the parent's value, up to
+    # the coupling function: the time step scales the drift of a state layer.
+    weights = child.time_scale * child.weights
+    first_order = jnp.matmul(weights.T**2, effective_child_precision) * (
         coupling_prime**2
     )
     second_order = -coupling_second * jnp.matmul(
-        child.weights.T, gain * child.state.value_prediction_error
+        weights.T, gain * child.state.value_prediction_error
     )
     return first_order + second_order
 
@@ -182,15 +191,19 @@ def _value_mean_pwpe(
     .. math::
 
         \Delta \mu_m = \frac{g'(\mu_m)}{\pi_m}
-            \sum_a W_{a,m} \, g_a \, \delta_a,
+            \sum_a t W_{a,m} \, g_a \, \delta_a,
 
-    with the joint-Gaussian gain :math:`g_a` from :func:`_relaxed_factors`.
+    with the joint-Gaussian gain :math:`g_a` from :func:`_relaxed_factors` and
+    :math:`t` the ``time_scale`` of the child.
     """
     _, gain = _relaxed_factors(child, mean_field_updates)
 
     coupling_prime = vmap(grad(child.coupling_fn))(eval_mean)
     return (
-        jnp.matmul(child.weights.T, gain * child.state.value_prediction_error)
+        jnp.matmul(
+            (child.time_scale * child.weights).T,
+            gain * child.state.value_prediction_error,
+        )
         * coupling_prime
         / node_precision
     )

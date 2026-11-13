@@ -70,8 +70,15 @@ fn relaxed_factors(network: &Network, child_idx: usize, mean_field: bool) -> (f6
 /// `(α g')²` term and the relaxed gain of the mean increment weights the
 /// `α g'' · δ_a` term (see `relaxed_factors`). Reduces to the canonical formula
 /// when the child is fully observed (π_y → ∞). When π̂_a = π̄_a, the relaxed gain
-/// equals π̂_a and the g'' term is the canonical one.
-fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: bool) -> f64 {
+/// equals π̂_a and the g'' term is the canonical one. The time step scales the drift of
+/// a continuous state child (one with children), so α becomes t α for a state child,
+/// and stays α for an input node, which its value parents generate rather than drift.
+fn value_coupling_precision_wpe(
+    network: &Network,
+    node_idx: usize,
+    mean_field: bool,
+    time_step: f64,
+) -> f64 {
     let mut precision_wpe = 0.0;
 
     if let Some(ref vc_idxs) = network.edges[node_idx].value_children {
@@ -82,7 +89,15 @@ fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: 
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
             let child_state = &network.attributes.states[child_idx];
             let observed = child_state.observed;
-            let alpha = coupling_strengths.get(i).copied().unwrap_or(1.0);
+            // Derivative of the child's prediction with respect to the parent's value,
+            // up to the coupling function: the time step scales the drift of a
+            // continuous state child, not the prediction of an input node.
+            let child_edges = &network.edges[child_idx];
+            let child_is_state = child_edges.node_type.as_str() == "continuous-state"
+                && (child_edges.value_children.is_some()
+                    || child_edges.volatility_children.is_some());
+            let alpha = coupling_strengths.get(i).copied().unwrap_or(1.0)
+                * if child_is_state { time_step } else { 1.0 };
 
             let (coupling_fn_prime_sq, coupling_fn_second_term) = match coupling_fn {
                 Some(cf) => {
@@ -119,12 +134,14 @@ fn value_coupling_precision_wpe(network: &Network, node_idx: usize, mean_field: 
 /// makes the multi-child mean exact rather than a sum of independent single-child
 /// RTS gains. A Gaussian leaf takes the fully observed limit π_y → ∞, g_a = π̄_a;
 /// non-Gaussian children use the canonical gain π̂_a (= `child.expected_precision`).
-/// With `mean_field`, every child uses π̂_a.
+/// With `mean_field`, every child uses π̂_a. As in [`value_coupling_precision_wpe`], α
+/// becomes t α for a state child.
 fn value_coupling_mean_wpe(
     network: &Network,
     node_idx: usize,
     node_precision: f64,
     mean_field: bool,
+    time_step: f64,
 ) -> f64 {
     let mut value_pwpe = 0.0;
 
@@ -136,7 +153,14 @@ fn value_coupling_mean_wpe(
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
             let child_state = &network.attributes.states[child_idx];
             let child_vape = child_state.value_prediction_error * child_state.observed;
-            let alpha = coupling_strengths.get(i).copied().unwrap_or(1.0);
+            // The time step scales the drift of a continuous state child, not the
+            // prediction of an input node.
+            let child_edges = &network.edges[child_idx];
+            let child_is_state = child_edges.node_type.as_str() == "continuous-state"
+                && (child_edges.value_children.is_some()
+                    || child_edges.volatility_children.is_some());
+            let alpha = coupling_strengths.get(i).copied().unwrap_or(1.0)
+                * if child_is_state { time_step } else { 1.0 };
 
             let coupling_fn_prime = match coupling_fn {
                 Some(cf) => (cf.df)(parent_mean),
@@ -158,8 +182,8 @@ fn value_coupling_mean_wpe(
 
 /// Compute the precision update contribution from value (relaxed) and volatility
 /// children.
-fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
-    let mut precision_wpe = value_coupling_precision_wpe(network, node_idx, false);
+fn precision_update_from_children(network: &Network, node_idx: usize, time_step: f64) -> f64 {
+    let mut precision_wpe = value_coupling_precision_wpe(network, node_idx, false, time_step);
 
     if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
         let vol_coupling_strengths =
@@ -183,8 +207,13 @@ fn precision_update_from_children(network: &Network, node_idx: usize) -> f64 {
 }
 
 /// Compute the mean update contribution from value (relaxed) and volatility children.
-fn mean_update_from_children(network: &Network, node_idx: usize, node_precision: f64) -> f64 {
-    let value_pwpe = value_coupling_mean_wpe(network, node_idx, node_precision, false);
+fn mean_update_from_children(
+    network: &Network,
+    node_idx: usize,
+    node_precision: f64,
+    time_step: f64,
+) -> f64 {
+    let value_pwpe = value_coupling_mean_wpe(network, node_idx, node_precision, false, time_step);
     let mut volatility_pwpe = 0.0;
 
     if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
@@ -265,15 +294,15 @@ fn effective_tonic_volatility(network: &Network, node_idx: usize, child_idx: usi
 pub fn posterior_update_continuous_state_node(
     network: &mut Network,
     node_idx: usize,
-    _time_step: f64,
+    time_step: f64,
 ) {
     let expected_mean = network.attributes.states[node_idx].expected_mean;
 
     let posterior_precision = observed_or_predicted_precision(network, node_idx, || {
-        precision_update_from_children(network, node_idx)
+        precision_update_from_children(network, node_idx, time_step)
     });
 
-    let mean_wpe = mean_update_from_children(network, node_idx, posterior_precision);
+    let mean_wpe = mean_update_from_children(network, node_idx, posterior_precision, time_step);
     let posterior_mean = expected_mean + mean_wpe;
 
     let state = &mut network.attributes.states[node_idx];
@@ -293,7 +322,7 @@ pub fn posterior_update_continuous_state_node_ehgf(
     let expected_precision = network.attributes.states[node_idx].expected_precision;
     let expected_mean = network.attributes.states[node_idx].expected_mean;
 
-    let mean_wpe = mean_update_from_children(network, node_idx, expected_precision);
+    let mean_wpe = mean_update_from_children(network, node_idx, expected_precision, time_step);
     let posterior_mean = expected_mean + mean_wpe;
     network.attributes.states[node_idx].mean = posterior_mean;
 
@@ -409,7 +438,7 @@ pub fn posterior_update_continuous_state_node_unbounded(
 
     // Effective prior (π̃, μ̃): the prediction, combined with the value-coupling and
     // noise-coupling terms when the node also has value or noise children.
-    let (prior_precision, prior_mean) = unbounded_effective_prior(network, node_idx);
+    let (prior_precision, prior_mean) = unbounded_effective_prior(network, node_idx, time_step);
 
     // The noise children enter the effective prior; the expansions run over the other
     // observed volatility children.
@@ -544,7 +573,7 @@ pub fn posterior_update_continuous_state_node_unbounded(
 /// Eqs. 74 and 78 of Weber et al. (2026) per noise child. Without value or noise
 /// children, this is the prediction of the node. Port of
 /// `_value_children_effective_prior` in the JAX backend.
-fn unbounded_effective_prior(network: &Network, node_idx: usize) -> (f64, f64) {
+fn unbounded_effective_prior(network: &Network, node_idx: usize, time_step: f64) -> (f64, f64) {
     let state = &network.attributes.states[node_idx];
     let noise_children: Vec<(usize, f64)> = match network.edges[node_idx].volatility_children {
         Some(ref idxs) => {
@@ -570,7 +599,7 @@ fn unbounded_effective_prior(network: &Network, node_idx: usize) -> (f64, f64) {
         })
         .sum();
     let precision = (state.expected_precision
-        + value_coupling_precision_wpe(network, node_idx, mean_field)
+        + value_coupling_precision_wpe(network, node_idx, mean_field, time_step)
         + noise_precision_wpe)
         .max(1e-128);
     let noise_mean_wpe: f64 = noise_children
@@ -580,7 +609,7 @@ fn unbounded_effective_prior(network: &Network, node_idx: usize) -> (f64, f64) {
         })
         .sum();
     let mean = state.expected_mean
-        + value_coupling_mean_wpe(network, node_idx, precision, mean_field)
+        + value_coupling_mean_wpe(network, node_idx, precision, mean_field, time_step)
         + noise_mean_wpe;
     (precision, mean)
 }
@@ -592,8 +621,12 @@ fn unbounded_effective_prior(network: &Network, node_idx: usize) -> (f64, f64) {
 /// Mean-field precision update from children.
 ///
 /// Uses `expected_precision` directly as the child-precision factor.
-fn precision_update_from_children_mean_field(network: &Network, node_idx: usize) -> f64 {
-    let mut precision_wpe = value_coupling_precision_wpe(network, node_idx, true);
+fn precision_update_from_children_mean_field(
+    network: &Network,
+    node_idx: usize,
+    time_step: f64,
+) -> f64 {
+    let mut precision_wpe = value_coupling_precision_wpe(network, node_idx, true, time_step);
 
     if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
         let vol_coupling_strengths =
@@ -688,7 +721,7 @@ fn ehgf_volatility_precision_wpe(network: &Network, node_idx: usize, time_step: 
 
 /// Enhanced-HGF precision update from children (relaxed value coupling).
 fn precision_update_from_children_ehgf(network: &Network, node_idx: usize, time_step: f64) -> f64 {
-    value_coupling_precision_wpe(network, node_idx, false)
+    value_coupling_precision_wpe(network, node_idx, false, time_step)
         + ehgf_volatility_precision_wpe(network, node_idx, time_step)
 }
 
@@ -698,7 +731,7 @@ fn precision_update_from_children_ehgf_mean_field(
     node_idx: usize,
     time_step: f64,
 ) -> f64 {
-    value_coupling_precision_wpe(network, node_idx, true)
+    value_coupling_precision_wpe(network, node_idx, true, time_step)
         + ehgf_volatility_precision_wpe(network, node_idx, time_step)
 }
 
@@ -709,8 +742,9 @@ fn mean_update_from_children_mean_field(
     network: &Network,
     node_idx: usize,
     node_precision: f64,
+    time_step: f64,
 ) -> f64 {
-    let value_pwpe = value_coupling_mean_wpe(network, node_idx, node_precision, true);
+    let value_pwpe = value_coupling_mean_wpe(network, node_idx, node_precision, true, time_step);
     let mut volatility_pwpe = 0.0;
 
     if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
@@ -739,15 +773,16 @@ fn mean_update_from_children_mean_field(
 pub fn posterior_update_continuous_state_node_mean_field(
     network: &mut Network,
     node_idx: usize,
-    _time_step: f64,
+    time_step: f64,
 ) {
     let expected_mean = network.attributes.states[node_idx].expected_mean;
 
     let posterior_precision = observed_or_predicted_precision(network, node_idx, || {
-        precision_update_from_children_mean_field(network, node_idx)
+        precision_update_from_children_mean_field(network, node_idx, time_step)
     });
 
-    let mean_wpe = mean_update_from_children_mean_field(network, node_idx, posterior_precision);
+    let mean_wpe =
+        mean_update_from_children_mean_field(network, node_idx, posterior_precision, time_step);
     let posterior_mean = expected_mean + mean_wpe;
 
     let state = &mut network.attributes.states[node_idx];
@@ -763,7 +798,8 @@ pub fn posterior_update_continuous_state_node_ehgf_mean_field(
     let expected_precision = network.attributes.states[node_idx].expected_precision;
     let expected_mean = network.attributes.states[node_idx].expected_mean;
 
-    let mean_wpe = mean_update_from_children_mean_field(network, node_idx, expected_precision);
+    let mean_wpe =
+        mean_update_from_children_mean_field(network, node_idx, expected_precision, time_step);
     let posterior_mean = expected_mean + mean_wpe;
     network.attributes.states[node_idx].mean = posterior_mean;
 

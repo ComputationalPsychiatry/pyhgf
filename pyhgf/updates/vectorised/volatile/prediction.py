@@ -120,10 +120,13 @@ def vectorised_layer_prediction(
         \bar{\pi}_a^{(k)} = \left( \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
             \right)^{-1}, \qquad
         \frac{1}{\hat{\pi}_a^{(k)}} = \frac{1}{\bar{\pi}_a^{(k)}}
-            + \sum_b \frac{ (t^{(k)} \, \alpha_b \, g'(\hat{\mu}_b))^2 }
+            + \sum_b \frac{ (\alpha_b \, g'(\hat{\mu}_b))^2 }
                           { \hat{\pi}_b },
 
-    where :math:`\bar{\pi}_a` (``conditional_expected_precision``) is the
+    without the time step: the expected mean is :math:`\sum_b \alpha_b
+    g(\hat{\mu}_b)`, a level rather than a drift, so the value parents and their
+    updates do not take the time step either. Here :math:`\bar{\pi}_a`
+    (``conditional_expected_precision``) is the
     AR-plus-volatility chain precision without parent-uncertainty bleed-through and
     :math:`\hat{\pi}_a` (``expected_precision``) adds the first-order Taylor
     value-coupling contribution from each value parent. The bleed-through term uses
@@ -245,7 +248,7 @@ def vectorised_layer_prediction(
     if predict_precision:
         # Taylor value-coupling term. Linearising g at μ̂_b and marginalising
         # over each parent's Gaussian yields, per child node i, the additional variance
-        #     Σ_j (t · W[i, j] · g'(μ̂_j))² / π̂_j,
+        #     Σ_j (W[i, j] · g'(μ̂_j))² / π̂_j,
         # using the parent's marginal predicted precision π̂_j (= `expected_precision`).
         # The constant-bias parent (if any) has infinite precision and contributes zero.
         if not feedforward_uncertainty:
@@ -265,10 +268,11 @@ def vectorised_layer_prediction(
                     jnp.array([jnp.inf]),
                 ])
                 g_prime = jnp.concatenate([g_prime, jnp.zeros(1)])
-            # Σ_j (t · W[i, j] · g'_j)² / π_j, computed as (W²) @ (g'² / π): the
+            # Σ_j (W[i, j] · g'_j)² / π_j, computed as (W²) @ (g'² / π): the
             # weight-dependent factor is a constant matrix, so the per-node sum is a
-            # matrix product with a per-node vector.
-            # The variance carries no time step (deviation from the Network class).
+            # matrix product with a per-node vector. No time step: the expected mean
+            # W @ g(μ̂) is a level, not a drift (unlike a state node of the Network
+            # class, whose drift the time step scales).
             per_parent_variance = g_prime**2 / parent_precision
             value_coupling_variance = jnp.matmul(weights**2, per_parent_variance)
 
