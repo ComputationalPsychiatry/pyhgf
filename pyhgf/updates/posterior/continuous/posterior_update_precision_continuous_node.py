@@ -727,6 +727,12 @@ def _ehgf_volatility_precision_increment(
     tonic_volatility = _effective_tonic_volatility(
         attributes, edges, node_idx, volatility_child_idx
     )
+    # adds the Σ_p κ_p²/(2 π̂_p) terms
+    for parent_idx, coupling in zip(
+        edges[volatility_child_idx].volatility_parents,
+        attributes[volatility_child_idx]["volatility_coupling_parents"],
+    ):
+        tonic_volatility += coupling**2 / (2.0 * attributes[parent_idx]["expected_precision"])
     # Known variance of the child's prediction: the carried variance λ²/π and the
     # variance its value parents add, neither of which depends on the parent's value.
     # The re-prediction below adds volatility to the same quantity the prediction
