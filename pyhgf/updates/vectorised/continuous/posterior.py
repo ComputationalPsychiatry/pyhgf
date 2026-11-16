@@ -264,6 +264,21 @@ def _value_coupling_variance(state: LayerState) -> jnp.ndarray:
     )
 
 
+def _volatility_parents_mgf(layer: LayerState, child: VolatilityChild) -> jnp.ndarray:
+    r"""Moment-generating-function term of the volatility parents of each child node.
+
+    .. math::
+
+        \sum_m \frac{\kappa_{a,m}^2}{2 \hat{\pi}_m},
+
+    the term the relaxed prediction step adds to the log-volatility of the child node
+    :math:`a`, with the expected precisions of the parents :math:`m`. Mirrors the
+    relaxed branch of
+    :func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._ehgf_volatility_precision_increment`.
+    """
+    return jnp.matmul(child.kappa**2, 1.0 / (2.0 * layer.expected_precision))
+
+
 def _child_previous_variance(
     layer: LayerState,
     child: VolatilityChild,
@@ -287,9 +302,7 @@ def _child_previous_variance(
         child.kappa, layer.expected_mean
     )
     if not mean_field_updates:
-        total_volatility = total_volatility + jnp.matmul(
-            child.kappa**2, 1.0 / (2.0 * layer.expected_precision)
-        )
+        total_volatility = total_volatility + _volatility_parents_mgf(layer, child)
     predicted_volatility = time_step * jnp.exp(total_volatility)
     return jnp.maximum(
         1.0 / child.state.conditional_expected_precision - predicted_volatility,
@@ -310,14 +323,18 @@ def _volatility_precision_pwpe_ehgf(
     :func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._ehgf_volatility_precision_increment`:
     for each :math:`\kappa_{a,m}` edge, the volatility of the child :math:`a` is
     re-predicted with the parent :math:`m` at its *just-updated* posterior mean and
-    the other parents :math:`m'` of the child at their predicted means (no MGF term),
+    the other parents :math:`m'` of the child at their predicted means,
 
     .. math::
 
         \nu_{a,m} = t \exp\left(\omega_a + \kappa_{a,m} \mu_m
-            + \sum_{m' \neq m} \kappa_{a,m'} \hat{\mu}_{m'}\right),
+            + \sum_{m' \neq m} \kappa_{a,m'} \hat{\mu}_{m'}
+            + \sum_{m''} \frac{\kappa_{a,m''}^2}{2 \hat{\pi}_{m''}}\right).
 
-    and each edge's increment :math:`\tfrac12 \kappa^2 \gamma (\gamma + w \Delta)`
+    The last sum is the moment-generating-function term of the relaxed prediction
+    step (:func:`_volatility_parents_mgf`), over every parent of the child; it is left
+    out when ``mean_field_updates`` is ``True``, as in the mean-field prediction step.
+    Each edge's increment :math:`\tfrac12 \kappa^2 \gamma (\gamma + w \Delta)`
     is floored at zero before summation, so the posterior precision can never fall
     below the predicted precision. The re-predicted volatility adds to the known
     variance of the child's prediction: the carried variance and the variance its
@@ -329,12 +346,16 @@ def _volatility_precision_pwpe_ehgf(
     ) + _value_coupling_variance(child.state)
 
     # Per-edge re-prediction, shape (n_child, n_parent): the parents at their
-    # predicted means, with the edge's own parent moved to its posterior mean.
-    predicted_volatility = time_step * jnp.exp(
+    # predicted means, with the edge's own parent moved to its posterior mean, and
+    # the MGF term the relaxed prediction step added to the child's volatility.
+    log_volatility = (
         child.params.tonic_volatility[:, None]
         + jnp.matmul(child.kappa, layer.expected_mean)[:, None]
         + child.kappa * (posterior_mean - layer.expected_mean)[None, :]
     )
+    if not mean_field_updates:
+        log_volatility = log_volatility + _volatility_parents_mgf(layer, child)[:, None]
+    predicted_volatility = time_step * jnp.exp(log_volatility)
     expected_precision = 1.0 / (previous_variance[:, None] + predicted_volatility)
     effective_precision = predicted_volatility * expected_precision
     volatility_error_weight = (
@@ -462,6 +483,11 @@ def vectorised_continuous_posterior_update_ehgf(
         Current time step (needed to re-predict the child's volatility).
     max_posterior_precision :
         Upper bound applied to the posterior precision write.
+    mean_field_updates :
+        Whether the prediction step ran the mean-field scheme. If ``True``, the
+        value-coupling messages use the canonical predicted precision, and the
+        re-predicted volatility of the volatility child leaves out the
+        moment-generating-function term, as the mean-field prediction step does.
 
     Returns
     -------

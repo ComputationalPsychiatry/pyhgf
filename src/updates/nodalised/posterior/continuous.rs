@@ -287,6 +287,24 @@ fn effective_tonic_volatility(network: &Network, node_idx: usize, child_idx: usi
     tonic_volatility
 }
 
+/// Moment-generating-function term Σ_p κ_p² / (2 π̂_p) of the volatility parents p of
+/// `child_idx`, the node included: the term the relaxed prediction step adds to the
+/// log-volatility of the child, with the expected precisions of the parents. The
+/// mean-field prediction step does not add it (mirrors `_volatility_parents_mgf` in the
+/// JAX backend).
+fn volatility_parents_mgf(network: &Network, child_idx: usize) -> f64 {
+    let mut mgf = 0.0;
+    if let Some(ref parent_idxs) = network.edges[child_idx].volatility_parents {
+        let parent_couplings = &network.attributes.vectors[child_idx].volatility_coupling_parents;
+        for (j, &parent_idx) in parent_idxs.iter().enumerate() {
+            let kappa = parent_couplings.get(j).copied().unwrap_or(1.0);
+            mgf +=
+                (kappa * kappa) / (2.0 * network.attributes.states[parent_idx].expected_precision);
+        }
+    }
+    mgf
+}
+
 // =============================================================================
 // Standard posterior update
 // =============================================================================
@@ -656,10 +674,13 @@ fn precision_update_from_children_mean_field(
 /// enhanced HGF volatility update (TAPAS `hgf_volatility_update` `'ehgf'` branch). This
 /// guarantees the posterior precision never drops below the predicted precision. The
 /// re-predicted volatility is ν = t exp(κ μ + ω̃), with `tonic_volatility` the effective
-/// tonic volatility ω̃ from [`effective_tonic_volatility`]. It adds to the known variance
-/// of the child's prediction, the carried variance λ²/π and the variance its value
-/// parents add ([`value_coupling_variance`]), so that at the predicted mean the
-/// re-predicted precision is the child's marginal predicted precision.
+/// tonic volatility ω̃ from [`effective_tonic_volatility`], to which the caller adds the
+/// moment-generating-function term of [`volatility_parents_mgf`] under the relaxed
+/// prediction step, as that step does. It adds to the known variance of the child's
+/// prediction, the carried variance λ²/π and the variance its value parents add
+/// ([`value_coupling_variance`]), so that at the predicted mean the re-predicted
+/// precision is the child's marginal predicted precision, under the relaxed and the
+/// mean-field prediction steps.
 fn ehgf_volatility_increment(
     child_state: &crate::model::network::NodeState,
     volatility_coupling: f64,
@@ -691,8 +712,17 @@ fn ehgf_volatility_increment(
 /// Precision increment of the eHGF update from the volatility children: the safe
 /// increment of [`ehgf_volatility_increment`] for state nodes, and the increment
 /// ½ κ² (1 + ε) of Eq. 78 of Weber et al. (2026) for noise children, which is never
-/// negative since ε ≥ −1.
-fn ehgf_volatility_precision_wpe(network: &Network, node_idx: usize, time_step: f64) -> f64 {
+/// negative since ε ≥ −1. Unless `mean_field` is set, the re-predicted volatility of a
+/// state child includes the moment-generating-function term of its volatility parents
+/// ([`volatility_parents_mgf`]), as in the relaxed prediction step; without it, the
+/// re-prediction disagrees with the effective precision and the volatility prediction
+/// error that the mean update reads.
+fn ehgf_volatility_precision_wpe(
+    network: &Network,
+    node_idx: usize,
+    time_step: f64,
+    mean_field: bool,
+) -> f64 {
     let mut precision_wpe = 0.0;
     if let Some(ref volc_idxs) = network.edges[node_idx].volatility_children {
         let vol_coupling_strengths =
@@ -705,7 +735,10 @@ fn ehgf_volatility_precision_wpe(network: &Network, node_idx: usize, time_step: 
             precision_wpe += if is_noise_child(network, child_idx) {
                 standard_volatility_increment(child_state, kappa)
             } else {
-                let tonic_volatility = effective_tonic_volatility(network, node_idx, child_idx);
+                let mut tonic_volatility = effective_tonic_volatility(network, node_idx, child_idx);
+                if !mean_field {
+                    tonic_volatility += volatility_parents_mgf(network, child_idx);
+                }
                 ehgf_volatility_increment(
                     child_state,
                     kappa,
@@ -719,10 +752,11 @@ fn ehgf_volatility_precision_wpe(network: &Network, node_idx: usize, time_step: 
     precision_wpe
 }
 
-/// Enhanced-HGF precision update from children (relaxed value coupling).
+/// Enhanced-HGF precision update from children (relaxed value coupling, and the
+/// moment-generating-function term in the re-predicted volatility).
 fn precision_update_from_children_ehgf(network: &Network, node_idx: usize, time_step: f64) -> f64 {
     value_coupling_precision_wpe(network, node_idx, false, time_step)
-        + ehgf_volatility_precision_wpe(network, node_idx, time_step)
+        + ehgf_volatility_precision_wpe(network, node_idx, time_step, false)
 }
 
 /// Enhanced-HGF precision update from children (mean-field value coupling).
@@ -732,7 +766,7 @@ fn precision_update_from_children_ehgf_mean_field(
     time_step: f64,
 ) -> f64 {
     value_coupling_precision_wpe(network, node_idx, true, time_step)
-        + ehgf_volatility_precision_wpe(network, node_idx, time_step)
+        + ehgf_volatility_precision_wpe(network, node_idx, time_step, true)
 }
 
 /// Mean-field mean update from children.

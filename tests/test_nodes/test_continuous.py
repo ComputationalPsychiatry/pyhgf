@@ -181,12 +181,16 @@ def test_ehgf_precision_increment_with_two_volatility_parents(cls, mean_field_up
 
     .. math::
 
-        \nu = t \exp(\omega_1 + \kappa_2 \mu_2^{(k)} + \kappa_3 \hat{\mu}_3^{(k)}),
+        \nu = t \exp\left(\omega_1 + \kappa_2 \mu_2^{(k)} + \kappa_3 \hat{\mu}_3^{(k)}
+            + \frac{\kappa_2^2}{2 \hat{\pi}_2^{(k)}}
+            + \frac{\kappa_3^2}{2 \hat{\pi}_3^{(k)}}\right),
 
-    and adds :math:`\max(0, \tfrac12 \kappa_2^2 \gamma (\gamma + w \Delta))` to the
-    predicted precision, with :math:`\gamma`, :math:`w` and :math:`\Delta` computed
-    from :math:`\nu` and the carried variance :math:`1/\pi_1^{(k-1)}`. The increment
-    is recomputed here from the recorded trajectories.
+    where the two fractions are the moment-generating-function terms of the relaxed
+    prediction step, left out under the mean-field prediction. It adds
+    :math:`\max(0, \tfrac12 \kappa_2^2 \gamma (\gamma + w \Delta))` to the predicted
+    precision, with :math:`\gamma`, :math:`w` and :math:`\Delta` computed from
+    :math:`\nu` and the carried variance :math:`1/\pi_1^{(k-1)}`. The increment is
+    recomputed here from the recorded trajectories.
     """
     tonic_volatility = -6.0
     net = (
@@ -207,9 +211,14 @@ def test_ehgf_precision_increment_with_two_volatility_parents(cls, mean_field_up
 
     # Step 0 is left out: its carried variance comes from the initial precision.
     carried_variance = 1.0 / child["precision"][:-1]
-    volatility = np.exp(
+    log_volatility = (
         tonic_volatility + parent["mean"][1:] + other_parent["expected_mean"][1:]
     )
+    if not mean_field_updates:
+        log_volatility += 1.0 / (2.0 * parent["expected_precision"][1:]) + 1.0 / (
+            2.0 * other_parent["expected_precision"][1:]
+        )
+    volatility = np.exp(log_volatility)
     expected_precision = 1.0 / (carried_variance + volatility)
     effective_precision = volatility * expected_precision
     volatility_error_weight = (volatility - carried_variance) * expected_precision
@@ -231,6 +240,41 @@ def test_ehgf_precision_increment_with_two_volatility_parents(cls, mean_field_up
         rtol=1e-3,
         atol=1e-5,
     )
+
+
+@pytest.mark.parametrize("cls", [PyNetwork, RsNetwork], ids=["jax", "rust"])
+def test_relaxed_ehgf_volatility_parent_keeps_its_precision(cls):
+    r"""The relaxed eHGF keeps the precision of a volatility parent from vanishing.
+
+    Under the relaxed prediction, the effective precision and the volatility
+    prediction error that the eHGF mean update of node 2 reads include the
+    moment-generating-function term :math:`\kappa^2 / (2 \hat{\pi}_2)`, and the
+    precision update re-predicts the volatility of node 1 with the same term. A
+    re-prediction without it disagrees with the mean update: on this series the
+    precision increment is then 0 at most time steps, :math:`\pi_2` decreases to
+    0.014 (0.012 without any observation), and :math:`\mu_2` drifts to about -64
+    as the term grows. With the term, the minimum of :math:`\pi_2` is 0.28 and
+    :math:`\mu_2` stays within 0.6 of the standard update, which reads the
+    prediction-step quantities in both steps.
+    """
+
+    def build(volatility_updates):
+        return (
+            cls(volatility_updates=volatility_updates)
+            .add_nodes(precision=1e4)
+            .add_nodes(value_children=0)
+            .add_nodes(volatility_children=1, tonic_volatility=-2.0)
+            .input_data(input_data=load_data("continuous"))
+        )
+
+    ehgf, standard = build("eHGF"), build("standard")
+    precision = np.asarray(ehgf.node_trajectories[2]["precision"], dtype=np.float64)
+    mean = np.asarray(ehgf.node_trajectories[2]["mean"], dtype=np.float64)
+    standard_mean = np.asarray(standard.node_trajectories[2]["mean"], dtype=np.float64)
+
+    assert np.all(np.isfinite(precision)) and np.all(np.isfinite(mean))
+    assert np.min(precision) > 0.1
+    assert np.max(np.abs(mean - standard_mean)) < 1.5
 
 
 @pytest.mark.parametrize("cls", [PyNetwork, RsNetwork], ids=["jax", "rust"])
