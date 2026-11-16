@@ -666,6 +666,8 @@ def _ehgf_volatility_precision_increment(
     node_idx: int,
     volatility_child_idx: int,
     volatility_coupling: float,
+    *,
+    relaxed_prediction: bool,
 ) -> Array:
     r"""Enhanced-HGF "safe" volatility-coupling precision increment.
 
@@ -682,12 +684,31 @@ def _ehgf_volatility_precision_increment(
        a negative value / ``NaN``.
 
     The re-predicted child volatility is
-    :math:`\nu = t \exp(\kappa \mu_b^{(k)} + \tilde{\omega}_a)`, where the effective
-    tonic volatility :math:`\tilde{\omega}_a` adds the other volatility parents of the
-    child at their predicted means (see :func:`_effective_tonic_volatility`). It is
-    added to the known variance :math:`\alpha_a` of the child's prediction, the part
-    that does not depend on :math:`x_b`: the carried variance
-    :math:`\lambda_a^2/\pi_a^{(k-1)}` and the variance its value parents add
+
+    .. math::
+
+        \nu = t \exp\left(\kappa \mu_b^{(k)} + \tilde{\omega}_a
+            + \sum_{p} \frac{\kappa_{a,p}^2}{2 \hat{\pi}_p}\right),
+
+    where the effective tonic volatility :math:`\tilde{\omega}_a` adds the other
+    volatility parents of the child at their predicted means (see
+    :func:`_effective_tonic_volatility`), and the sum runs over every volatility
+    parent :math:`p` of the child, :math:`b` included. The sum is the
+    moment-generating-function term of the relaxed prediction step
+    (:func:`pyhgf.updates.prediction.continuous.predict_precision`), with the expected
+    precisions of the parents; with ``relaxed_prediction=False`` it is left
+    out, as in the mean-field prediction step and in [1]_. The re-prediction
+    therefore uses the formula of the prediction step that produced the child's
+    effective precision and volatility prediction error, which the mean update of
+    :math:`b` reads. Under the relaxed prediction, a re-prediction without the sum
+    disagrees with the mean update: the sum grows as :math:`\hat{\pi}_b` decreases,
+    the mean update lowers :math:`\mu_b` accordingly, the re-predicted volatility
+    becomes negligible, and the increment stays at 0 while :math:`\pi_b` keeps
+    decreasing.
+
+    The re-predicted volatility is added to the known variance :math:`\alpha_a` of
+    the child's prediction, the part that does not depend on :math:`x_b`: the carried
+    variance :math:`\lambda_a^2/\pi_a^{(k-1)}` and the variance its value parents add
     (:func:`_value_coupling_variance`). With
     :math:`\hat{\pi} = 1/(\alpha_a + \nu)` the re-predicted child precision
     (``expected_precision``), :math:`\gamma = \nu \hat{\pi}` the
@@ -695,8 +716,9 @@ def _ehgf_volatility_precision_increment(
     volatility-error weight and :math:`\Delta` the child's
     ``volatility_prediction_error``, the increment is
     :math:`\max(0, \tfrac12 \kappa^2 \gamma (\gamma + w \Delta))`. At
-    :math:`\mu_b^{(k)} = \hat{\mu}_b^{(k)}` the re-predicted precision is the child's
-    marginal predicted precision.
+    :math:`\mu_b^{(k)} = \hat{\mu}_b^{(k)}`, the re-predicted precision is the child's
+    marginal predicted precision, under the relaxed and the mean-field prediction
+    steps.
 
     A noise child (an input node, see
     :func:`pyhgf.updates.prediction.continuous.is_noise_child`) contributes the
@@ -727,6 +749,16 @@ def _ehgf_volatility_precision_increment(
     tonic_volatility = _effective_tonic_volatility(
         attributes, edges, node_idx, volatility_child_idx
     )
+    if relaxed_prediction:
+        # The MGF term the relaxed prediction step added to the child's volatility:
+        # Σ_p κ_p² / (2 π̂_p) over every volatility parent p of the child.
+        for parent_idx, coupling in zip(
+            edges[volatility_child_idx].volatility_parents,  # type: ignore
+            attributes[volatility_child_idx]["volatility_coupling_parents"],
+        ):
+            tonic_volatility += coupling**2 / (
+                2.0 * attributes[parent_idx]["expected_precision"]
+            )
     # Known variance of the child's prediction: the carried variance λ²/π and the
     # variance its value parents add, neither of which depends on the parent's value.
     # The re-prediction below adds volatility to the same quantity the prediction
@@ -770,7 +802,9 @@ def precision_update_ehgf(attributes: dict, edges: Edges, node_idx: int) -> Arra
 
     The value-coupling contribution is identical to :func:`precision_update` (the
     posterior-step relaxation); the volatility-coupling contribution uses the
-    enhanced-HGF safe update via :func:`_ehgf_volatility_precision_increment`.
+    enhanced-HGF safe update via :func:`_ehgf_volatility_precision_increment`, which
+    re-predicts the child's volatility with the moment-generating-function term of the
+    relaxed prediction step.
 
     Parameters
     ----------
@@ -790,7 +824,10 @@ def precision_update_ehgf(attributes: dict, edges: Edges, node_idx: int) -> Arra
     """
     pwpe = _value_coupling_pwpe(attributes, edges, node_idx, _relaxed_child_factors)
     pwpe += _volatility_coupling_pwpe(
-        attributes, edges, node_idx, _ehgf_volatility_precision_increment
+        attributes,
+        edges,
+        node_idx,
+        partial(_ehgf_volatility_precision_increment, relaxed_prediction=True),
     )
     return _finalize_precision(attributes[node_idx]["expected_precision"], pwpe)
 
@@ -803,7 +840,9 @@ def precision_update_ehgf_mean_field(
 
     The value-coupling contribution is identical to :func:`precision_update_mean_field`
     (no posterior-step relaxation); the volatility-coupling contribution uses the
-    enhanced-HGF safe update via :func:`_ehgf_volatility_precision_increment`.
+    enhanced-HGF safe update via :func:`_ehgf_volatility_precision_increment`, which
+    re-predicts the child's volatility without the moment-generating-function term,
+    as the mean-field prediction step predicts it.
 
     Parameters
     ----------
@@ -823,7 +862,10 @@ def precision_update_ehgf_mean_field(
     """
     pwpe = _value_coupling_pwpe(attributes, edges, node_idx, _mean_field_child_factors)
     pwpe += _volatility_coupling_pwpe(
-        attributes, edges, node_idx, _ehgf_volatility_precision_increment
+        attributes,
+        edges,
+        node_idx,
+        partial(_ehgf_volatility_precision_increment, relaxed_prediction=False),
     )
     return _finalize_precision(attributes[node_idx]["expected_precision"], pwpe)
 

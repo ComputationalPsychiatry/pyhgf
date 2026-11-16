@@ -131,7 +131,7 @@ fn test_binary_3_levels_single_obs() {
     let n2 = &network.node_trajectories.nodes[2];
     assert_close(n2.mean[0], -0.590073315695407, "n2 mean");
     assert_close(n2.expected_mean[0], 1.0, "n2 expected_mean");
-    assert_close(n2.precision[0], 0.537517033851118, "n2 precision");
+    assert_close(n2.precision[0], 0.523112494202664, "n2 precision");
     assert_close(
         n2.expected_precision[0],
         0.268941421369995,
@@ -199,7 +199,7 @@ fn test_binary_3_levels_two_obs() {
     let n2 = &network.node_trajectories.nodes[2];
     assert_close(n2.mean[0], -0.590073315695407, "s0 n2 mean");
     assert_close(n2.expected_mean[0], 1.0, "s0 n2 expected_mean");
-    assert_close(n2.precision[0], 0.537517033851118, "s0 n2 precision");
+    assert_close(n2.precision[0], 0.523112494202664, "s0 n2 precision");
     assert_close(
         n2.expected_precision[0],
         0.268941421369995,
@@ -223,30 +223,30 @@ fn test_binary_3_levels_two_obs() {
     );
 
     // Node 1
-    assert_close(n1.mean[1], -4.287959232795414, "s1 n1 mean");
+    assert_close(n1.mean[1], -4.335322997470761, "s1 n1 mean");
     assert_close(
         n1.expected_mean[1],
         2.237863416338325,
         "s1 n1 expected_mean",
     );
-    assert_close(n1.precision[1], 0.138465072257898, "s1 n1 precision");
+    assert_close(n1.precision[1], 0.137467348066720, "s1 n1 precision");
     assert_close(
         n1.expected_precision[1],
-        0.051356825217268,
+        0.050359101026091,
         "s1 n1 expected_precision",
     );
 
     // Node 2
-    assert_close(n2.mean[1], 2.133602312876886, "s1 n2 mean");
+    assert_close(n2.mean[1], 2.152519907389344, "s1 n2 mean");
     assert_close(
         n2.expected_mean[1],
         -0.590073315695407,
         "s1 n2 expected_mean",
     );
-    assert_close(n2.precision[1], 0.789268236136739, "s1 n2 precision");
+    assert_close(n2.precision[1], 0.323965352591069, "s1 n2 precision");
     assert_close(
         n2.expected_precision[1],
-        0.218403176385631,
+        0.215986614913942,
         "s1 n2 expected_precision",
     );
 }
