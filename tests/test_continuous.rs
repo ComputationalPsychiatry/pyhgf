@@ -603,3 +603,122 @@ fn test_noise_parent_update_does_not_depend_on_the_scheme() {
         }
     }
 }
+
+/// Marginal posterior of `target` given one observation `y` of the node `observed` in
+/// a joint Gaussian: `(precision, mean)` from the prior covariance and means.
+fn conditioned(
+    cov: &[[f64; 3]; 3],
+    means: &[f64; 3],
+    observed: usize,
+    noise_variance: f64,
+    y: f64,
+    target: usize,
+) -> (f64, f64) {
+    let s = cov[observed][observed] + noise_variance;
+    let variance = cov[target][target] - cov[target][observed].powi(2) / s;
+    let mean = means[target] + cov[target][observed] / s * (y - means[observed]);
+    (1.0 / variance, mean)
+}
+
+/// A child with two linear value parents b and c, observed once.
+///
+/// With `interior`, the input u has the value parent a, which has the value parents b
+/// and c; without it, b and c are the value parents of u directly. Each parent's
+/// relaxed update conditions the child on that parent alone, with the other parent
+/// integrated over its predicted belief, which gives the exact marginal posterior of
+/// the joint Gaussian of u, a, b and c. Conditioning the child on both parents
+/// (treating the other parent as known) gives π_b ≈ 0.913 instead of 0.475 in the
+/// interior case at t = 1.
+fn two_value_parents_match_exact_conditioning(interior: bool, time_step: f64) {
+    let (pi_u, alpha_b, alpha_c, omega_a, omega_b, omega_c, y) =
+        (2.0, 1.0, 1.5, -1.0, 0.5, 1.0, 3.0);
+    let mut network = Network::new("standard");
+    network.add_nodes("continuous-state", 1, None, None, None, None, None, None);
+    let (a, b, c) = if interior {
+        network.add_nodes(
+            "continuous-state",
+            1,
+            None,
+            Some(vec![0].into()),
+            None,
+            None,
+            None,
+            None,
+        );
+        (Some(1), 2, 3)
+    } else {
+        (None, 1, 2)
+    };
+    let child = a.unwrap_or(0);
+    for _ in 0..2 {
+        network.add_nodes(
+            "continuous-state",
+            1,
+            None,
+            Some(vec![child].into()),
+            None,
+            None,
+            None,
+            None,
+        );
+    }
+    {
+        let vectors = &mut network.attributes.vectors;
+        vectors[b].value_coupling_children = vec![alpha_b];
+        vectors[c].value_coupling_children = vec![alpha_c];
+        vectors[child].value_coupling_parents = vec![alpha_b, alpha_c];
+        let states = &mut network.attributes.states;
+        states[0].precision = pi_u;
+        states[b].tonic_volatility = omega_b;
+        states[c].tonic_volatility = omega_c;
+        if let Some(a) = a {
+            states[a].tonic_volatility = omega_a;
+        }
+    }
+    network.set_update_sequence();
+    network.input_data(vec![vec![y]], Some(vec![time_step]), None, true);
+
+    // Prior covariance of (child, b, c) at the observation: unit prior precisions,
+    // random walks of variance t·exp(ω), and the drift t·(α_b x_b + α_c x_c) of a state
+    // child (an input takes no time step).
+    let t = time_step;
+    let var_b = 1.0 + t * omega_b.exp();
+    let var_c = 1.0 + t * omega_c.exp();
+    let (scale, own) = if interior {
+        (t, 1.0 + t * omega_a.exp())
+    } else {
+        (1.0, 0.0)
+    };
+    let cov = [
+        [
+            own + (scale * alpha_b).powi(2) * var_b + (scale * alpha_c).powi(2) * var_c,
+            scale * alpha_b * var_b,
+            scale * alpha_c * var_c,
+        ],
+        [scale * alpha_b * var_b, var_b, 0.0],
+        [scale * alpha_c * var_c, 0.0, var_c],
+    ];
+    let means = [0.0, 0.0, 0.0];
+    for (node, target) in [(b, 1), (c, 2)] {
+        let (precision, mean) = conditioned(&cov, &means, 0, 1.0 / pi_u, y, target);
+        let trajectories = &network.node_trajectories.nodes[node];
+        let label = format!("interior={interior} t={t} node{node}");
+        assert_close(
+            trajectories.precision[0],
+            precision,
+            &format!("{label} precision"),
+        );
+        assert_close(trajectories.mean[0], mean, &format!("{label} mean"));
+    }
+}
+
+#[test]
+fn test_two_value_parents_of_a_state_match_exact_conditioning() {
+    two_value_parents_match_exact_conditioning(true, 1.0);
+    two_value_parents_match_exact_conditioning(true, 0.5);
+}
+
+#[test]
+fn test_two_value_parents_of_an_input_match_exact_conditioning() {
+    two_value_parents_match_exact_conditioning(false, 1.0);
+}

@@ -22,7 +22,7 @@ import jax.numpy as jnp
 from jax import grad, vmap
 from jax.nn import sigmoid
 
-from pyhgf.math import lambert_w0_log
+from pyhgf.math import lambert_w0_log, relaxed_edge_factors
 from pyhgf.typing.vectorised import LayerParams, LayerState
 
 
@@ -98,48 +98,62 @@ class VolatilityChild(NamedTuple):
 
 
 def _relaxed_factors(
-    child: ValueChild, mean_field_updates: bool = False
+    child: ValueChild, parent: LayerState, mean_field_updates: bool = False
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     r"""Child-precision factors weighting the value messages sent to the parent.
 
-    Returns ``(effective_precision, gain)``. The effective precision weights the
-    first-order term of :func:`_value_precision_pwpe`; the gain weights its
-    second-order term and the mean shift of :func:`_value_mean_pwpe`. Both come from
-    the posterior-step relaxation (a structured Gaussian on the value-coupling edge)
-    and share a denominator:
+    Returns ``(effective_precision, gain)``, one factor per edge, each of shape
+    ``(n_child, n_parent)``. The effective precision weights the first-order term of
+    :func:`_value_precision_pwpe`; the gain weights its second-order term and the
+    mean shift of :func:`_value_mean_pwpe`. Both come from the posterior-step
+    relaxation (a joint Gaussian on the value-coupling edge) and share a
+    denominator:
 
     .. math::
 
-        \pi^{\mathrm{eff}}_a = \frac{\bar{\pi}_a \, \pi^y_a}{\bar{\pi}_a + \pi^y_a},
+        \pi^{\mathrm{eff}}_{a|m} = \frac{\bar{\pi}_{a|m} \, \pi^y_a}
+            {\bar{\pi}_{a|m} + \pi^y_a},
         \qquad
-        g_a = \frac{\bar{\pi}_a \, \pi_a}{\bar{\pi}_a + \pi^y_a},
+        g_{a|m} = \frac{\bar{\pi}_{a|m} \, \pi_a}{\bar{\pi}_{a|m} + \pi^y_a},
         \qquad
-        \pi^y_a = \pi_a - \hat{\pi}_a.
+        \pi^y_a = \pi_a - \hat{\pi}_a,
+
+    with :math:`\bar{\pi}_{a|m}` the predicted precision of the child node :math:`a`
+    given the parent node :math:`m` alone, the other parents of :math:`a` integrated
+    over their predicted beliefs through the Taylor terms
+    :math:`(t \, W_{a,m'} \, g'(\hat{\mu}_{m'}))^2 / \hat{\pi}_{m'}` of the
+    prediction step (see
+    :func:`pyhgf.math.relaxed_edge_factors`).
 
     The second-order term is the derivative of the mean shift's
     :math:`g'(\mu_m)` with respect to the parent mean, so it carries the same gain
-    :math:`g_a`.
+    :math:`g_{a|m}`.
 
     When the child's posterior precision is clamped (the observed leaf), its stored
     precision is the observation precision rather than a posterior, and both factors
     take the fully observed limit :math:`\pi^y_a \to \infty`:
-    :math:`\pi^{\mathrm{eff}}_a = g_a = \bar{\pi}_a`. Under ``mean_field_updates``
-    the relaxation is skipped for every child: the mean-field update weights all
-    messages by :math:`\hat{\pi}_a`
+    :math:`\pi^{\mathrm{eff}}_{a|m} = g_{a|m} = \bar{\pi}_{a|m}`. Under
+    ``mean_field_updates`` the relaxation is skipped for every child: the mean-field
+    update weights all messages by :math:`\hat{\pi}_a`
     (:func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._mean_field_child_factors`).
     """
     if mean_field_updates:
-        return child.state.expected_precision, child.state.expected_precision
+        expected = jnp.broadcast_to(
+            child.state.expected_precision[:, None], child.weights.shape
+        )
+        return expected, expected
 
-    conditional = child.state.conditional_expected_precision
-    if child.precision_is_clamped:
-        # Observed leaf: the fully observed limit π_y → ∞ of both factors.
-        return conditional, conditional
-
-    pi_y = child.state.precision - child.state.expected_precision
-    denominator = conditional + pi_y
-    return conditional * pi_y / denominator, conditional * child.state.precision / (
-        denominator
+    # Taylor term of every edge, as in the prediction step of the child.
+    g_prime = vmap(grad(child.coupling_fn))(parent.expected_mean)
+    edge_variance = (child.time_scale * child.weights * g_prime[None, :]) ** 2 / (
+        parent.expected_precision[None, :]
+    )
+    return relaxed_edge_factors(
+        child.state.conditional_expected_precision,
+        child.state.expected_precision,
+        child.state.precision,
+        edge_variance,
+        child.precision_is_clamped,
     )
 
 
@@ -147,6 +161,8 @@ def _value_precision_pwpe(
     eval_mean: jnp.ndarray,
     child: ValueChild,
     mean_field_updates: bool = False,
+    *,
+    parent: LayerState,
 ) -> jnp.ndarray:
     r"""Value-coupling precision-weighted prediction error.
 
@@ -154,16 +170,20 @@ def _value_precision_pwpe(
 
     .. math::
 
-        \sum_a \left( \pi_a^{\mathrm{eff}} \, (t W_{a,m})^2 \, g'(\mu_m)^2
-            - g_a \, t W_{a,m} \, g''(\mu_m) \, \delta_a \right),
+        \sum_a \left( \pi_{a|m}^{\mathrm{eff}} \, (t W_{a,m})^2 \, g'(\mu_m)^2
+            - g_{a|m} \, t W_{a,m} \, g''(\mu_m) \, \delta_a \right),
 
-    with :math:`\pi^{\mathrm{eff}}_a` and :math:`g_a` from :func:`_relaxed_factors`
-    and :math:`t` the ``time_scale`` of the child. Derivatives
+    with :math:`\pi^{\mathrm{eff}}_{a|m}` and :math:`g_{a|m}` from
+    :func:`_relaxed_factors`, :math:`t` the ``time_scale`` of the child, and
+    ``parent`` the state of the parent layer, whose predicted beliefs enter the
+    factors. Derivatives
     are evaluated at *eval_mean*: the parent's previous posterior mean in the
     standard scheme, its freshly updated posterior mean in the eHGF scheme
     (which updates the mean first), mirroring the nodalised call order.
     """
-    effective_child_precision, gain = _relaxed_factors(child, mean_field_updates)
+    effective_child_precision, gain = _relaxed_factors(
+        child, parent, mean_field_updates
+    )
 
     coupling_prime = vmap(grad(child.coupling_fn))(eval_mean)
     coupling_second = vmap(grad(grad(child.coupling_fn)))(eval_mean)
@@ -171,11 +191,11 @@ def _value_precision_pwpe(
     # Derivative of the child's prediction with respect to the parent's value, up to
     # the coupling function: the time step scales the drift of a state layer.
     weights = child.time_scale * child.weights
-    first_order = jnp.matmul(weights.T**2, effective_child_precision) * (
+    first_order = jnp.sum(weights**2 * effective_child_precision, axis=0) * (
         coupling_prime**2
     )
-    second_order = -coupling_second * jnp.matmul(
-        weights.T, gain * child.state.value_prediction_error
+    second_order = -coupling_second * jnp.sum(
+        weights * gain * child.state.value_prediction_error[:, None], axis=0
     )
     return first_order + second_order
 
@@ -185,24 +205,30 @@ def _value_mean_pwpe(
     child: ValueChild,
     node_precision: jnp.ndarray,
     mean_field_updates: bool = False,
+    *,
+    parent: LayerState,
 ) -> jnp.ndarray:
     r"""Value-coupling mean shift, accumulated across child nodes.
 
     .. math::
 
         \Delta \mu_m = \frac{g'(\mu_m)}{\pi_m}
-            \sum_a t W_{a,m} \, g_a \, \delta_a,
+            \sum_a t W_{a,m} \, g_{a|m} \, \delta_a,
 
-    with the joint-Gaussian gain :math:`g_a` from :func:`_relaxed_factors` and
-    :math:`t` the ``time_scale`` of the child.
+    with the joint-Gaussian gain :math:`g_{a|m}` from :func:`_relaxed_factors`,
+    :math:`t` the ``time_scale`` of the child, and ``parent`` the state of the parent
+    layer, whose predicted beliefs enter the gain.
     """
-    _, gain = _relaxed_factors(child, mean_field_updates)
+    _, gain = _relaxed_factors(child, parent, mean_field_updates)
 
     coupling_prime = vmap(grad(child.coupling_fn))(eval_mean)
     return (
-        jnp.matmul(
-            (child.time_scale * child.weights).T,
-            gain * child.state.value_prediction_error,
+        jnp.sum(
+            child.time_scale
+            * child.weights
+            * gain
+            * child.state.value_prediction_error[:, None],
+            axis=0,
         )
         * coupling_prime
         / node_precision
@@ -432,7 +458,9 @@ def vectorised_continuous_posterior_update_standard(
 
     pwpe = jnp.zeros_like(layer.precision)
     if value_child is not None:
-        pwpe = pwpe + _value_precision_pwpe(eval_mean, value_child, mean_field_updates)
+        pwpe = pwpe + _value_precision_pwpe(
+            eval_mean, value_child, mean_field_updates, parent=layer
+        )
     if volatility_child is not None:
         pwpe = pwpe + _volatility_precision_pwpe_standard(volatility_child)
     posterior_precision = _finalize_precision(
@@ -442,7 +470,11 @@ def vectorised_continuous_posterior_update_standard(
     mean_pwpe = jnp.zeros_like(layer.mean)
     if value_child is not None:
         mean_pwpe = mean_pwpe + _value_mean_pwpe(
-            eval_mean, value_child, posterior_precision, mean_field_updates
+            eval_mean,
+            value_child,
+            posterior_precision,
+            mean_field_updates,
+            parent=layer,
         )
     if volatility_child is not None:
         mean_pwpe = mean_pwpe + _volatility_mean_pwpe(
@@ -499,7 +531,11 @@ def vectorised_continuous_posterior_update_ehgf(
     mean_pwpe = jnp.zeros_like(layer.mean)
     if value_child is not None:
         mean_pwpe = mean_pwpe + _value_mean_pwpe(
-            eval_mean, value_child, layer.expected_precision, mean_field_updates
+            eval_mean,
+            value_child,
+            layer.expected_precision,
+            mean_field_updates,
+            parent=layer,
         )
     if volatility_child is not None:
         mean_pwpe = mean_pwpe + _volatility_mean_pwpe(
@@ -512,7 +548,7 @@ def vectorised_continuous_posterior_update_ehgf(
     pwpe = jnp.zeros_like(layer.precision)
     if value_child is not None:
         pwpe = pwpe + _value_precision_pwpe(
-            posterior_mean, value_child, mean_field_updates
+            posterior_mean, value_child, mean_field_updates, parent=layer
         )
     if volatility_child is not None:
         pwpe = pwpe + _volatility_precision_pwpe_ehgf(
