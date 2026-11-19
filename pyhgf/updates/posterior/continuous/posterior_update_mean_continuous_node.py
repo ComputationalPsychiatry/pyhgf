@@ -27,24 +27,28 @@ def posterior_update_mean_continuous_node(
         \Delta \mu_b \;\mathrel{+}=\;
             \frac{\alpha_j \, g'_{j,b}(\mu_b^{(k-1)}) \, g_{a,j}}{\pi_b} \, \delta_j^{(k)},
             \qquad
-        g_{a,j} \,=\, \frac{\bar{\pi}_j^{(k)} \, \pi_j^{(k)}}{\bar{\pi}_j^{(k)} + \pi_{y,j}},
+        g_{a,j} \,=\, \frac{\bar{\pi}_{j|b}^{(k)} \, \pi_j^{(k)}}
+            {\bar{\pi}_{j|b}^{(k)} + \pi_{y,j}},
             \qquad
         \pi_{y,j} \,=\, \pi_j^{(k)} - \hat{\pi}_j^{(k)},
 
     where :math:`\alpha_j` is the value-coupling strength, :math:`g'_{j,b}` is the
     derivative of the coupling function (1 for linear coupling),
-    :math:`\bar{\pi}_j` is the child's *conditional* predicted precision (stored as
-    ``child.temp["conditional_expected_precision"]``), :math:`\hat{\pi}_j` its
-    *marginal* predicted precision (``child.expected_precision``), and
-    :math:`\delta_j^{(k)}` is the value prediction error computed by
+    :math:`\bar{\pi}_{j|b}` is the predicted precision of the child given the parent
+    :math:`b` alone, with the child's other value parents integrated over their
+    predicted beliefs (its conditional predicted precision ``child.temp
+    ["conditional_expected_precision"]`` when :math:`b` is its only value parent),
+    :math:`\hat{\pi}_j` its marginal predicted precision
+    (``child.expected_precision``), and :math:`\delta_j^{(k)}` is the value
+    prediction error computed by
     :py:func:`pyhgf.updates.prediction_error.continuous.continuous_node_value_prediction_error`.
     The relaxed gain :math:`g_{a,j}` is the joint-Gaussian (Rauch-Tung-Striebel
-    smoother) gain of the posterior-step relaxation, derived from the
-    structured-Gaussian variational posterior on the value-coupling edge, and is
-    computed by
+    smoother) gain of the posterior-step relaxation: with linear coupling, it gives
+    the exact marginal posterior mean of :math:`x_b` in the joint Gaussian of the
+    child and its value parents. It is computed by
     :func:`~pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._relaxed_child_factors`.
     A Gaussian leaf is observed exactly and takes the fully observed limit
-    :math:`\pi_{y,j} \to \infty`, :math:`g_{a,j} = \bar{\pi}_j`. Non-Gaussian
+    :math:`\pi_{y,j} \to \infty`, :math:`g_{a,j} = \bar{\pi}_{j|b}`. Non-Gaussian
     children use the canonical gain :math:`\hat{\pi}_j`. With a time step
     :math:`t \neq 1`, :math:`\alpha_j` becomes :math:`t \alpha_j` for a state child,
     whose drift the time step scales, and stays :math:`\alpha_j` for an input node,
@@ -125,15 +129,16 @@ def posterior_update_mean_continuous_node(
                 # Compute the derivative of the coupling function
                 coupling_fn_prime = grad(coupling_fn)(attributes[node_idx]["mean"])
 
-            # Coupling gain precision g_a. From the joint (x_a, x_b) Gaussian the
-            # exact marginal-mean gain is
-            #     g_a = π̄_a · π_a / (π̄_a + π_y),    π_y = π_a − π̂_a,
+            # Coupling gain precision g_a. From the joint (x_a, x_b) Gaussian, with
+            # the other value parents of the child integrated out, the exact
+            # marginal-mean gain is
+            #     g_a = π̄_{a|b} · π_a / (π̄_{a|b} + π_y),    π_y = π_a − π̂_a,
             # accumulated across children and divided once by `node_precision` (π_b)
             # after the loop, which makes the multi-child mean exact rather than a
             # sum of independent RTS gains. It is the same gain that weights the
             # second-order term of the precision update.
             _, gain_precision = _relaxed_child_factors(
-                attributes, edges, value_child_idx
+                attributes, edges, value_child_idx, node_idx
             )
 
             # the time step scales the drift of a continuous state child (one with

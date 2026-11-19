@@ -412,3 +412,64 @@ def test_value_coupling_with_irregular_time_steps(cls, mean_field_updates):
                 assert np.allclose(
                     np.asarray(traj[idx][field]), expected, rtol=1e-9, atol=1e-12
                 ), f"{node} {field}"
+
+
+@pytest.mark.parametrize("cls", [Network, RsNetwork], ids=["jax", "rust"])
+@pytest.mark.parametrize("child", ["state", "input"])
+@pytest.mark.parametrize("time_step", [1.0, 0.5])
+def test_several_value_parents_match_exact_conditioning(cls, child, time_step):
+    r"""Each value parent of a child with two value parents gets its exact posterior.
+
+    The value parents :math:`b` and :math:`c` of a child predict it through
+    :math:`\alpha_b x_b + \alpha_c x_c`: either a state :math:`a`, the value parent of
+    the input :math:`u`, whose drift takes the time step, or the input :math:`u`
+    itself, which takes none. After one observation of :math:`u`, the relaxed update
+    of each parent conditions the child on that parent alone, with the other parent
+    integrated over its predicted belief, and matches the marginal posterior of the
+    joint Gaussian of the child and its parents. Conditioning the child on both parents
+    instead treats the other one as known: for the state child at :math:`t = 1`, it
+    gives :math:`\pi_b = 0.913` against the exact 0.475. The Rust backend takes unit
+    coupling strengths from Python.
+    """
+    alpha_b, alpha_c = (1.0, 1.0) if cls is RsNetwork else (1.0, 1.5)
+    input_precision, observation = 2.0, 3.0
+    omega_a, omega_b, omega_c = -1.0, 0.5, 1.0
+
+    def coupling(child_idx, strength):
+        return child_idx if cls is RsNetwork else ([child_idx], [strength])
+
+    with enable_x64(True):
+        net = cls(volatility_updates="standard").add_nodes(precision=input_precision)
+        child_idx = 0
+        if child == "state":
+            net = net.add_nodes(
+                value_children=coupling(0, 1.0), tonic_volatility=omega_a
+            )
+            child_idx = 1
+        net = net.add_nodes(
+            value_children=coupling(child_idx, alpha_b), tonic_volatility=omega_b
+        ).add_nodes(
+            value_children=coupling(child_idx, alpha_c), tonic_volatility=omega_c
+        )
+        net.input_data(
+            input_data=np.array([observation]), time_steps=np.array([time_step])
+        )
+        traj = net.node_trajectories
+
+    # Prior of the child and its parents at the observation: unit prior precisions,
+    # random walks of variance t exp(ω), and the drift t (α_b x_b + α_c x_c) of a state
+    # child (an input takes no time step).
+    t = time_step
+    var_b, var_c = 1 + t * math.exp(omega_b), 1 + t * math.exp(omega_c)
+    scale, own = (t, 1 + t * math.exp(omega_a)) if child == "state" else (1.0, 0.0)
+    var_child = own + (scale * alpha_b) ** 2 * var_b + (scale * alpha_c) ** 2 * var_c
+    var_observation = var_child + 1 / input_precision
+    for node, var, alpha in (
+        (child_idx + 1, var_b, alpha_b),
+        (child_idx + 2, var_c, alpha_c),
+    ):
+        covariance = scale * alpha * var
+        precision = 1 / (var - covariance**2 / var_observation)
+        mean = covariance / var_observation * observation
+        assert np.isclose(traj[node]["precision"][0], precision, rtol=1e-9), node
+        assert np.isclose(traj[node]["mean"][0], mean, rtol=1e-9), node
