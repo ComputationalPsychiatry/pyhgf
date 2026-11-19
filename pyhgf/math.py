@@ -579,3 +579,118 @@ def _lambert_w0_log_jvp(primals, tangents):
     (log_z,), (log_z_dot,) = primals, tangents
     w = lambert_w0_log(log_z)
     return w, log_z_dot * w / (1.0 + w)
+
+
+def leave_one_out_sum(values: ArrayLike) -> Array:
+    r"""Sum each row of a matrix without the entry of each column.
+
+    Returns ``out[i, j]``, the sum of ``values[i, k]`` over every column
+    :math:`k \neq j`. The sums are formed from exclusive prefix and suffix sums
+    rather than by subtracting each entry from its row total, so they keep their
+    precision when one entry dominates the row.
+
+    Parameters
+    ----------
+    values :
+        Matrix of shape ``(n_rows, n_columns)``.
+
+    Returns
+    -------
+    Array
+        Matrix of the same shape.
+    """
+    values = jnp.asarray(values)
+    zeros = jnp.zeros_like(values[:, :1])
+    prefix = jnp.concatenate([zeros, jnp.cumsum(values[:, :-1], axis=1)], axis=1)
+    suffix = jnp.concatenate(
+        [jnp.flip(jnp.cumsum(jnp.flip(values[:, 1:], axis=1), axis=1), axis=1), zeros],
+        axis=1,
+    )
+    return prefix + suffix
+
+
+def relaxed_edge_factors(
+    conditional_expected_precision: ArrayLike,
+    expected_precision: ArrayLike,
+    precision: ArrayLike,
+    edge_variance: ArrayLike,
+    child_is_clamped: bool,
+) -> tuple[Array, Array]:
+    r"""Relaxed child factors of every value-coupling edge between two layers.
+
+    For the edge from the parent node :math:`m` to the child node :math:`a`, the
+    posterior-step relaxation weights the first-order term of the parent's precision
+    update by :math:`\pi^{\mathrm{eff}}_{a|m}` and the second-order term and the
+    mean shift by the gain :math:`g_{a|m}`:
+
+    .. math::
+
+        \pi^{\mathrm{eff}}_{a|m} = \frac{\bar{\pi}_{a|m} \, \pi^y_a}
+            {\bar{\pi}_{a|m} + \pi^y_a},
+        \qquad
+        g_{a|m} = \frac{\bar{\pi}_{a|m} \, \pi_a}{\bar{\pi}_{a|m} + \pi^y_a},
+        \qquad
+        \pi^y_a = \pi_a - \hat{\pi}_a,
+
+    where :math:`\bar{\pi}_{a|m}` is the predicted precision of :math:`x_a` given
+    :math:`x_m` alone, with every other value parent :math:`m'` of :math:`a`
+    integrated over its predicted belief:
+
+    .. math::
+
+        \frac{1}{\bar{\pi}_{a|m}} = \frac{1}{\bar{\pi}_a}
+            + \sum_{m' \neq m} \tau_{a,m'},
+
+    with :math:`\bar{\pi}_a` the conditional predicted precision of the child and
+    :math:`\tau_{a,m'}` the variance that the edge from :math:`m'` adds to the
+    prediction of the child (the entry of ``edge_variance``). The joint Gaussian of
+    :math:`(x_a, x_m)` with this conditional has the marginal predicted precision
+    :math:`\hat{\pi}_a` for :math:`x_a`. A clamped child is observed exactly and
+    takes the fully observed limit :math:`\pi^y_a \to \infty` of both factors,
+    :math:`\pi^{\mathrm{eff}}_{a|m} = g_{a|m} = \bar{\pi}_{a|m}`.
+
+    For linear coupling, the factors of one child give the exact marginal posterior
+    of :math:`x_m` from the evidence of this child. The messages of several children
+    add up to the exact marginal posterior when no two children of :math:`m` share
+    another parent. When they do, as between two fully connected layers, each edge
+    integrates the other parents over their predicted beliefs and leaves out what
+    the other children say about them: the sum is an approximation, which can
+    understate or overstate the posterior precision of :math:`x_m`.
+
+    Parameters
+    ----------
+    conditional_expected_precision :
+        The conditional predicted precision :math:`\bar{\pi}_a` of each child node,
+        shape ``(n_child,)``.
+    expected_precision :
+        The marginal predicted precision :math:`\hat{\pi}_a` of each child node.
+    precision :
+        The posterior precision :math:`\pi_a` of each child node.
+    edge_variance :
+        The variance :math:`\tau_{a,m} = (W_{a,m} \, A_m)^2 / \hat{\pi}_m` of every
+        edge, shape ``(n_child, n_parent)``, with the time step of the child in
+        :math:`W` when its drift takes one. :math:`A_m` is the slope of the linear
+        function that replaces the coupling function of the parent in the prediction
+        step: its derivative :math:`g'(\hat{\mu}_m)`, or its mean slope
+        :math:`\mathbb{E}[g'(x_m)]` under the predicted belief of the parent with the
+        exact coupling moments (:meth:`pyhgf.coupling.Coupling.linearise`).
+    child_is_clamped :
+        Whether the child is the clamped observation leaf.
+
+    Returns
+    -------
+    effective_precision, gain :
+        The two factors, each of shape ``(n_child, n_parent)``.
+    """
+    conditional_expected_precision = jnp.asarray(conditional_expected_precision)
+    precision = jnp.asarray(precision)
+    conditional = 1.0 / (
+        1.0 / conditional_expected_precision[:, None] + leave_one_out_sum(edge_variance)
+    )
+    if child_is_clamped:
+        return conditional, conditional
+    pi_y = (precision - jnp.asarray(expected_precision))[:, None]
+    denominator = conditional + pi_y
+    return conditional * pi_y / denominator, (
+        conditional * precision[:, None] / denominator
+    )

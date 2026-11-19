@@ -21,6 +21,24 @@ use crate::vectorised::mat::{Float, Matrix, Vector};
 use crate::vectorised::optimiser::{OptState, Optimiser};
 use ndarray::{s, ArrayView1, ArrayView2};
 
+/// Whether a parent's posterior update integrates the other parents of `child`.
+///
+/// The posterior-step relaxation conditions a Gaussian child a on the updated parent b
+/// alone, with the other parents of a integrated over their predicted beliefs
+/// (π̄_{a|b}), when the prediction step integrates them too: with
+/// `feedforward_uncertainty` and `predict_precision`, the condition under which the
+/// predicted precision of a child carries the variance of its value parents.
+/// Otherwise the prediction step treats the parents as known, and so does the
+/// posterior step (π̄_a). Binary and categorical children keep their canonical
+/// factors. Mirrors `_integrates_other_parents` in the JAX backend.
+pub(crate) fn integrates_other_parents(
+    child: &Layer,
+    feedforward_uncertainty: bool,
+    predict_precision: bool,
+) -> bool {
+    feedforward_uncertainty && predict_precision && child.kind == LayerKind::Volatile
+}
+
 /// Predict a single child layer from its parent, in place, dispatching on the
 /// child kind. `child` is borrowed mutably; `parent` provides the read-only
 /// weights/coupling/bias.
@@ -186,6 +204,7 @@ impl DeepNet {
         let vol = self.volatility_updates;
         let max_pp = self.max_posterior_precision;
         let ffu = self.feedforward_uncertainty;
+        let predict_precision = self.predict_precision;
         let exact_moments = self.exact_moments();
 
         // Clamp observations and compute the leaf prediction error.
@@ -209,6 +228,7 @@ impl DeepNet {
                 max_pp,
                 child.is_input_layer,
                 exact_moments,
+                integrates_other_parents(child, ffu, predict_precision),
             );
             // Then the parent's own prediction error, in place.
             layer_pe(parent, vol, time_step, max_pp, ffu);
@@ -284,7 +304,8 @@ impl DeepNet {
         let n = self.layers.len();
         assert!(n >= 2, "input_prediction_error needs at least two layers");
         let top = &self.layers[n - 1];
-        let child = &self.layers[n - 2].state;
+        let child_layer = &self.layers[n - 2];
+        let child = &child_layer.state;
         let w = top
             .weights_in
             .as_ref()
@@ -294,19 +315,65 @@ impl DeepNet {
         let w = w.slice(s![.., ..cols]);
 
         // Relaxed gain of the child layer, identical to the gain of the
-        // interior posterior mean update, fused directly into the message so
-        // the top layer sees exactly the message any interior layer would see.
-        let mut message = Vector::zeros(child.mean.len());
-        ndarray::Zip::from(&mut message)
-            .and(&child.value_prediction_error)
-            .and(&child.conditional_expected_precision)
-            .and(&child.precision)
-            .and(&child.expected_precision)
-            .for_each(|out, &d, &cep, &prec, &ep| {
-                let pi_y = prec - ep;
-                *out = cep * prec / (cep + pi_y) * d;
-            });
-        let mut routed = w.t().dot(&message);
+        // interior posterior mean update, so the top layer sees exactly the
+        // message any interior layer would see.
+        let mut routed = if integrates_other_parents(
+            child_layer,
+            self.feedforward_uncertainty,
+            self.predict_precision,
+        ) {
+            // One gain per edge, the child's other parents integrated over their
+            // predicted beliefs (see `volatile::posterior::add_edge_messages`).
+            // The slope of each parent is the one of the prediction step: the mean
+            // slope E[g'] with the exact moments, g'(μ̂) otherwise.
+            let parent_variance = if self.exact_moments() {
+                ndarray::Zip::from(&top.state.linear_slope)
+                    .and(&top.state.expected_precision)
+                    .map_collect(|&slope, &ep| slope * slope / ep)
+            } else {
+                crate::math::with_coupling!(top.coupling_fn, |_f, df, _d2f| {
+                    ndarray::Zip::from(&top.state.expected_mean)
+                        .and(&top.state.expected_precision)
+                        .map_collect(|&m, &ep| {
+                            let gp = df(m as f64) as Float;
+                            gp * gp / ep
+                        })
+                })
+            };
+            let mut precision_sum = Vector::zeros(cols);
+            let mut message = Vector::zeros(cols);
+            let mut suffix = Vec::with_capacity(cols + 1);
+            for i in 0..child.mean.len() {
+                volatile::posterior::add_edge_messages(
+                    w.row(i),
+                    parent_variance.view(),
+                    volatile::posterior::ChildNode {
+                        conditional_expected_precision: child.conditional_expected_precision[i],
+                        expected_precision: child.expected_precision[i],
+                        precision: child.precision[i],
+                        value_prediction_error: child.value_prediction_error[i],
+                    },
+                    child_layer.is_input_layer,
+                    &mut suffix,
+                    precision_sum.view_mut(),
+                    message.view_mut(),
+                );
+            }
+            message
+        } else {
+            // Fused directly into the message: gain∘δ in one pass.
+            let mut message = Vector::zeros(child.mean.len());
+            ndarray::Zip::from(&mut message)
+                .and(&child.value_prediction_error)
+                .and(&child.conditional_expected_precision)
+                .and(&child.precision)
+                .and(&child.expected_precision)
+                .for_each(|out, &d, &cep, &prec, &ep| {
+                    let pi_y = prec - ep;
+                    *out = cep * prec / (cep + pi_y) * d;
+                });
+            w.t().dot(&message)
+        };
         if top.coupling_fn.kind != crate::math::CouplingKind::Linear {
             if self.exact_moments() {
                 // Mean slope E[g'] under the top layer's predicted belief, as in the
@@ -905,15 +972,19 @@ mod tests {
     /// both once. Covers networks with one and two nonlinear (tanh) hidden
     /// layers, Adam, and precision carrying. With two, a curved layer has a
     /// hidden child, so its posterior precision and mean are weighted by the
-    /// relaxed precision and gain of that child.
+    /// relaxed precision and gain of that child. With `feedforward_uncertainty`,
+    /// the factors of the posterior update depend on the edge, and the batched step
+    /// runs the per-sample pass for each sample.
     #[test]
     fn test_batch_update_matches_per_sample_reference() {
         for n_hidden in [1, 2] {
-            batch_update_matches_per_sample_reference(n_hidden);
+            for feedforward_uncertainty in [false, true] {
+                batch_update_matches_per_sample_reference(n_hidden, feedforward_uncertainty);
+            }
         }
     }
 
-    fn batch_update_matches_per_sample_reference(n_hidden: usize) {
+    fn batch_update_matches_per_sample_reference(n_hidden: usize, feedforward_uncertainty: bool) {
         use crate::math::resolve_coupling_fn;
 
         let make_net = || {
@@ -926,6 +997,7 @@ mod tests {
             }
             configs.push(LayerConfig::new(3));
             let mut net = DeepNet::from_configs(&configs).unwrap();
+            net.feedforward_uncertainty = feedforward_uncertainty;
             // Deterministic, non-uniform weights.
             for (l, layer) in net.layers.iter_mut().enumerate().skip(1) {
                 let w = layer.weights_in.as_mut().unwrap();
@@ -984,7 +1056,17 @@ mod tests {
             }
             for l in 0..n_layers {
                 let state = &reference.layers[l].state;
-                precision_sums[l] += &(&state.precision - &template[l].precision);
+                // The precision each layer carries into the next sample: with
+                // feedforward uncertainty, its posterior precision conditional on
+                // its value parents (see `DeepNet::carried_precision`).
+                let carried = ndarray::Zip::from(&state.precision)
+                    .and(&state.conditional_expected_precision)
+                    .and(&state.expected_precision)
+                    .map_collect(|&p, &c, &e| {
+                        // Taylor moments: no residual variance to leave out.
+                        reference.carried_precision(p, c, e, None).unwrap_or(p)
+                    });
+                precision_sums[l] += &(&carried - &template[l].precision);
                 vol_sums[l].0 +=
                     &(state.mean_vol.as_ref().unwrap() - template[l].mean_vol.as_ref().unwrap());
                 vol_sums[l].1 += &(state.precision_vol.as_ref().unwrap()

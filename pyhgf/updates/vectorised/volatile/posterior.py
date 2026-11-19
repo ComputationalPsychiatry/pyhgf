@@ -9,7 +9,77 @@ from typing import Callable
 import jax.numpy as jnp
 
 from pyhgf.coupling import Coupling
+from pyhgf.math import relaxed_edge_factors
 from pyhgf.typing.vectorised import LayerState
+
+
+def _value_messages(
+    layer: LayerState,
+    child: LayerState,
+    weights: jnp.ndarray,
+    coupling_prime: jnp.ndarray,
+    child_is_input_layer: bool,
+    mean_field_updates: bool,
+    integrate_other_parents: bool,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
+    r"""Weighted sums of the child's precisions and prediction errors, per parent.
+
+    Returns ``(precision_sum, message)``, both of shape ``(n_parent,)``:
+
+    .. math::
+
+        \sum_a W_{a,m}^2 \, \pi^{\mathrm{eff}}_{a|m},
+        \qquad
+        \sum_a W_{a,m} \, g_{a|m} \, \delta_a.
+
+    With ``integrate_other_parents``, the factors are those of
+    :func:`pyhgf.math.relaxed_edge_factors`, one per edge. The other parents
+    :math:`m'` of the child :math:`a` add the variance
+    :math:`(W_{a,m'} A_{m'})^2 / \hat{\pi}_{m'}` to its prediction, with
+    :math:`A_{m'}` (``coupling_prime``) the slope of the linear function that
+    replaces the coupling function in the prediction step: its derivative at the
+    expected mean of the parent or, with the exact coupling moments, its mean slope
+    under the predicted belief of the parent. Without ``integrate_other_parents``,
+    every edge into the child :math:`a` uses the conditional predicted precision
+    :math:`\bar{\pi}_a`, which treats the other parents of :math:`a` as known, and
+    the sums are matrix products. Under ``mean_field_updates`` both factors are
+    :math:`\hat{\pi}_a`.
+    """
+    if integrate_other_parents and not mean_field_updates:
+        edge_variance = (weights * coupling_prime[None, :]) ** 2 / (
+            layer.expected_precision[None, :]
+        )
+        effective_precision, gain = relaxed_edge_factors(
+            child.conditional_expected_precision,
+            child.expected_precision,
+            child.precision,
+            edge_variance,
+            child_is_input_layer,
+        )
+        precision_sum = jnp.sum(weights**2 * effective_precision, axis=0)
+        message = jnp.sum(
+            weights * gain * child.value_prediction_error[:, None], axis=0
+        )
+        return precision_sum, message
+
+    if mean_field_updates:
+        effective_child_precision = child.expected_precision
+        gain_precision = child.expected_precision
+    else:
+        pi_y = child.precision - child.expected_precision
+        denominator = child.conditional_expected_precision + pi_y
+        if child_is_input_layer:
+            effective_child_precision = child.conditional_expected_precision
+        else:
+            effective_child_precision = (
+                child.conditional_expected_precision * pi_y / denominator
+            )
+        gain_precision = (
+            child.conditional_expected_precision * child.precision / denominator
+        )
+    precision_sum = jnp.matmul(weights.T**2, effective_child_precision)
+    message = jnp.matmul(weights.T, gain_precision * child.value_prediction_error)
+    return precision_sum, message
 
 
 def vectorised_posterior_update_precision_value_level(
@@ -20,39 +90,44 @@ def vectorised_posterior_update_precision_value_level(
     child_is_input_layer: bool = False,
     mean_field_updates: bool = False,
     coupling_moments: str = "taylor",
+    integrate_other_parents: bool = False,
 ) -> jnp.ndarray:
     r"""Update the precision of the value level for all nodes in a layer.
 
     Implements the *posterior-step relaxation* of the relaxed HGF (rHGF) on
     value-coupling edges, which pairs with the prediction-step relaxation (the
     marginal predicted precision). Lifting the mean-field
-    delta-collapse approximation :math:`q(x_a, x_b) = q(x_a)\,q(x_b)` to a structured
+    delta-collapse approximation :math:`q(x_a, x_b) = q(x_a)\,q(x_b)` to a joint
     Gaussian on the value-coupling edge and applying the Schur complement to the joint
     precision matrix gives the value-coupling contribution of each child :math:`a`
     to :math:`\pi_b^{(k)}`:
 
     .. math::
 
-        \frac{\bar{\pi}_a^{(k)} \, \pi_y}{\bar{\pi}_a^{(k)} + \pi_y} \,
+        \frac{\bar{\pi}_{a|b}^{(k)} \, \pi_y}{\bar{\pi}_{a|b}^{(k)} + \pi_y} \,
             \alpha^2 \, g'^2, \qquad
         \pi_y = \pi_a^{(k)} - \hat{\pi}_a^{(k)},
 
-    with :math:`\alpha` the weight of the value-coupling edge. Here
-    :math:`\bar{\pi}_a` is the child's *conditional* predicted precision (own variance
-    plus volatility, without the parent-uncertainty bleed-through term
-    :math:`\alpha^2 g'^2 / \hat{\pi}_b`), stored as
-    ``child.conditional_expected_precision``, and :math:`\hat{\pi}_a` is its
-    *marginal* predicted precision stored as ``child.expected_precision``. The two
-    coincide in the canonical limit (no prediction-step relaxation); once the
-    prediction-step relaxation is in play they diverge, and the Schur complement
-    acts on the conditional. Substituting the marginal here would double-count
-    parent uncertainty.
+    with :math:`\alpha` the weight of the value-coupling edge and
+    :math:`\hat{\pi}_a` the child's marginal predicted precision
+    (``child.expected_precision``). :math:`\bar{\pi}_{a|b}` is the predicted
+    precision of :math:`x_a` given :math:`x_b`. With ``integrate_other_parents``,
+    it is the precision given :math:`x_b` alone, the other parents of :math:`a`
+    integrated over their predicted beliefs
+    (:func:`pyhgf.math.relaxed_edge_factors`). For linear coupling, this gives the
+    exact marginal posterior of :math:`x_b` when no two children of :math:`b`
+    share another parent; between two fully connected layers, where every child
+    shares its parents with the others, it is an approximation. Without
+    it, :math:`\bar{\pi}_{a|b}` is the conditional predicted precision
+    :math:`\bar{\pi}_a` (``child.conditional_expected_precision``), which conditions
+    on every parent of :math:`a`: the other parents are treated as known, as in a
+    prediction step that does not propagate their uncertainty.
 
     The :math:`(\alpha g')^2` term is weighted by the relaxed child precision
-    :math:`\bar{\pi}_a \pi_y / (\bar{\pi}_a + \pi_y)`. It reduces to
-    :math:`\bar{\pi}_a \, \alpha^2 g'^2` when the child is fully observed
+    :math:`\bar{\pi}_{a|b} \pi_y / (\bar{\pi}_{a|b} + \pi_y)`. It reduces to
+    :math:`\bar{\pi}_{a|b} \, \alpha^2 g'^2` when the child is fully observed
     (:math:`\pi_y \to \infty`), which is the canonical term when
-    :math:`\hat{\pi}_a = \bar{\pi}_a`, and it vanishes when the child gained no
+    :math:`\hat{\pi}_a = \bar{\pi}_{a|b}`, and it vanishes when the child gained no
     bottom-up information (:math:`\pi_y = 0`).
 
     .. note::
@@ -77,10 +152,12 @@ def vectorised_posterior_update_precision_value_level(
     :math:`x_b \sim \mathcal{N}(\hat{\mu}_b, 1/\hat{\pi}_b)` of the layer, as in
     :func:`~pyhgf.updates.vectorised.volatile.prediction.vectorised_layer_prediction`:
     :math:`g'` is the mean slope :math:`A = \mathbb{E}[g'(x_b)]`, so that each child
-    contributes :math:`(\alpha A)^2 \, \bar{\pi}_a \pi_y / (\bar{\pi}_a + \pi_y)`,
-    with the variance of the residual of the linear function counted in
-    :math:`\bar{\pi}_a`. A linear function has no second-order term, so this update
-    is first-order under both settings.
+    contributes
+    :math:`(\alpha A)^2 \, \bar{\pi}_{a|b} \pi_y / (\bar{\pi}_{a|b} + \pi_y)`, with
+    the variance of the residuals of the linear functions counted in
+    :math:`\bar{\pi}_a` and the mean slopes of the other parents in
+    :math:`\bar{\pi}_{a|b}`. A linear function has no second-order term, so this
+    update is first-order under both settings.
 
     .. note::
 
@@ -122,6 +199,13 @@ def vectorised_posterior_update_precision_value_level(
         at the expected mean of the layer. ``"exact"`` uses its statistical
         linearisation under the predicted belief of the layer. Not read with
         ``mean_field_updates``.
+    integrate_other_parents :
+        If ``True``, condition the child on each parent alone and integrate its other
+        parents over their predicted beliefs (:math:`\bar{\pi}_{a|b}`); if ``False``
+        (default), condition it on every parent (:math:`\bar{\pi}_a`). The network
+        sets it when the prediction step propagates the parents' uncertainty
+        (``feedforward_uncertainty`` and ``predict_precision``) and the child is
+        Gaussian.
 
     Returns
     -------
@@ -142,41 +226,26 @@ def vectorised_posterior_update_precision_value_level(
         "taylor" if mean_field_updates else coupling_moments,
     )
 
-    # Effective child precision under the posterior-step relaxation:
-    #     π̄_a · π_y / (π̄_a + π_y),    π_y = π_a − π̂_a.
-    # By the time this kernel runs for an interior child, the child layer's
-    # bottom-up posterior update has already populated `child.precision` (π_a);
-    # the marginal prediction-step value remains in `child.expected_precision`
-    # (π̂_a) and the conditional prediction-step value in
-    # `child.conditional_expected_precision` (π̄_a). The difference π_a − π̂_a
-    # is the fresh bottom-up evidence the parent should be credited with, while
-    # the conditional is the precision that appears in the joint (x_a, x_b)
-    # precision matrix the Schur complement acts on. Using the marginal in both
-    # numerator and denominator would double-count parent uncertainty.
-    #
-    # For a clamped leaf, pyhgf's convention sets π_a = π̂_a (= π̄_a, since
-    # leaves carry no value-coupling bleed-through) so π_y = 0 and the harmonic
-    # form would zero out. Short-circuit to the conditional predicted precision
-    # π̄_a, the fully observed limit (π_y → ∞) of the harmonic form.
-    if mean_field_updates:
-        # Mean-field: canonical predicted precision for every child, leaf or
-        # interior (a leaf's marginal equals its conditional anyway).
-        effective_child_precision = child.expected_precision
-    elif child_is_input_layer:
-        effective_child_precision = child.conditional_expected_precision
-    else:
-        pi_y = child.precision - child.expected_precision
-        effective_child_precision = (
-            child.conditional_expected_precision
-            * pi_y
-            / (child.conditional_expected_precision + pi_y)
-        )
+    # Σ_i w_ij² π^eff_ij. By the time this kernel runs for an interior child, the
+    # child layer's bottom-up posterior update has populated `child.precision` (π_a);
+    # the prediction-step values remain in `child.expected_precision` (π̂_a) and
+    # `child.conditional_expected_precision` (π̄_a), so π_y = π_a − π̂_a is the
+    # bottom-up evidence the parent is credited with. A clamped leaf keeps
+    # π_a = π̂_a, so π_y = 0 and the interior form would zero out: it takes the fully
+    # observed limit instead (see `_value_messages`).
+    precision_sum, _ = _value_messages(
+        layer,
+        child,
+        weights,
+        coupling_prime,
+        child_is_input_layer,
+        mean_field_updates,
+        integrate_other_parents,
+    )
 
-    # First-order term: Σ_i(w_ij² · effective_child_prec_i) · g'(m_j)². The
-    # second-order term of the coupling function is left out (see the docstring).
-    posterior_precision = layer.expected_precision + jnp.matmul(
-        weights.T**2, effective_child_precision
-    ) * (coupling_prime**2)
+    # First-order term: Σ_i(w_ij² · π^eff_ij) · g'(m_j)². The second-order term of
+    # the coupling function is left out (see the docstring).
+    posterior_precision = layer.expected_precision + precision_sum * coupling_prime**2
 
     return posterior_precision
 
@@ -189,6 +258,8 @@ def vectorised_posterior_update_mean_value_level(
     posterior_precision: jnp.ndarray,
     mean_field_updates: bool = False,
     coupling_moments: str = "taylor",
+    child_is_input_layer: bool = False,
+    integrate_other_parents: bool = False,
 ) -> jnp.ndarray:
     r"""Update the mean of the value level for all nodes in a layer.
 
@@ -197,18 +268,23 @@ def vectorised_posterior_update_mean_value_level(
 
     .. math::
 
-        \Delta \mu_b \mathrel{+}= \frac{\alpha \, g'(\hat{\mu}_b) \, g_a}
+        \Delta \mu_b \mathrel{+}= \frac{\alpha \, g'(\hat{\mu}_b) \, g_{a|b}}
             {\pi_b} \, \delta_a, \qquad
-        g_a = \frac{\bar{\pi}_a \, \pi_a}{\bar{\pi}_a + \pi_y}, \qquad
+        g_{a|b} = \frac{\bar{\pi}_{a|b} \, \pi_a}{\bar{\pi}_{a|b} + \pi_y}, \qquad
         \pi_y = \pi_a - \hat{\pi}_a,
 
     where :math:`\alpha` is the weight of the value-coupling edge,
     :math:`\pi_b` is the just-updated parent posterior precision
-    (``posterior_precision``); contributions accumulate across children and are
-    divided by :math:`\pi_b` once, after summation. For leaves :math:`\pi_y = 0`
-    and :math:`g_a` collapses to :math:`\hat{\pi}_a`, recovering the canonical
-    gain. With ``coupling_moments="exact"``, :math:`g'(\hat{\mu}_b)` is replaced by
-    the mean slope :math:`\mathbb{E}[g'(x_b)]` under the predicted belief
+    (``posterior_precision``), and :math:`\bar{\pi}_{a|b}` is the predicted
+    precision of :math:`x_a` given :math:`x_b` (see
+    :func:`vectorised_posterior_update_precision_value_level`); contributions
+    accumulate across children and are divided by :math:`\pi_b` once, after
+    summation. A clamped leaf takes the fully observed limit
+    :math:`g_{a|b} = \bar{\pi}_{a|b}`. Without ``integrate_other_parents``,
+    :math:`\bar{\pi}_{a|b} = \bar{\pi}_a = \pi_a` for a leaf, so the gain is
+    :math:`\pi_a` and the update is the canonical one. With
+    ``coupling_moments="exact"``, :math:`g'(\hat{\mu}_b)` is replaced by the mean
+    slope :math:`\mathbb{E}[g'(x_b)]` under the predicted belief
     :math:`x_b \sim \mathcal{N}(\hat{\mu}_b, 1/\hat{\pi}_b)` of the layer.
 
     .. note::
@@ -242,6 +318,14 @@ def vectorised_posterior_update_mean_value_level(
         ``"taylor"`` (default) takes the derivative of the coupling function at the
         expected mean of the layer. ``"exact"`` takes its mean slope under the
         predicted belief of the layer. Not read with ``mean_field_updates``.
+    child_is_input_layer :
+        If True, the child is the clamped observation leaf, which takes the fully
+        observed limit of the gain. Defaults to ``False``.
+    integrate_other_parents :
+        If ``True``, condition the child on each parent alone and integrate its other
+        parents over their predicted beliefs; see
+        :func:`vectorised_posterior_update_precision_value_level`. Defaults to
+        ``False``.
 
     Returns
     -------
@@ -258,31 +342,24 @@ def vectorised_posterior_update_mean_value_level(
 
     # Precision-weighted PE from children. From the joint Gaussian posterior over
     # (x_a, x_b), the per-child contribution is
-    #     Δμ_b = α · g'(μ̂_b) · g_a · δ_a / π_b,
-    #     g_a  = π̄_a · π_a / (π̄_a + π_y),    π_y = π_a − π̂_a,
+    #     Δμ_b = α · g'(μ̂_b) · g_ab · δ_a / π_b,
+    #     g_ab = π̄_{a|b} · π_a / (π̄_{a|b} + π_y),    π_y = π_a − π̂_a,
     # using PyHGF's precision-weighted PE δ_a = π_y · w / π_a (so the raw residual
-    # w = y − μ̂_a substitutes out). The identity π_a = π̄_a + π_y, which collapses
-    # g_a to π̄_a, holds only in the canonical scheme (π̂_a = π̄_a); with the
-    # prediction-step relaxation active π_a = π̂_a + π_y and g_a above is the
-    # joint-Gaussian-exact gain. The factor π_a/π_y relative to the
-    # `effective_child_precision` of the precision update reflects the different
-    # element of P^{-1}h selected by the mean update versus the precision update.
-    # For leaves PyHGF keeps π_a = π̂_a, so π_y = 0 and g_a → π_a = π̂_a, matching
-    # the canonical leaf treatment used by the precision update.
-    if mean_field_updates:
-        gain_precision = child.expected_precision
-    else:
-        pi_y = child.precision - child.expected_precision
-        gain_precision = (
-            child.conditional_expected_precision
-            * child.precision
-            / (child.conditional_expected_precision + pi_y)
-        )
-    weighted_pe = (
-        jnp.matmul(weights.T, gain_precision * child.value_prediction_error)
-        * coupling_prime
-        / posterior_precision
+    # w = y − μ̂_a substitutes out). With the prediction-step relaxation active,
+    # π_a = π̂_a + π_y and g_ab is the joint-Gaussian-exact gain. The factor π_a/π_y
+    # relative to the effective precision of the precision update reflects the
+    # different element of P^{-1}h selected by the mean update versus the precision
+    # update.
+    _, message = _value_messages(
+        layer,
+        child,
+        weights,
+        coupling_prime,
+        child_is_input_layer,
+        mean_field_updates,
+        integrate_other_parents,
     )
+    weighted_pe = message * coupling_prime / posterior_precision
 
     posterior_mean = layer.expected_mean + weighted_pe
 
@@ -299,6 +376,7 @@ def vectorised_layer_posterior_update(
     child_is_input_layer: bool = False,
     mean_field_updates: bool = False,
     coupling_moments: str = "taylor",
+    integrate_other_parents: bool = False,
 ) -> LayerState:
     """Update the value-level posterior for all nodes in a parent layer.
 
@@ -336,6 +414,11 @@ def vectorised_layer_posterior_update(
         ``"taylor"`` (default) or ``"exact"``: whether both helpers linearise the
         coupling function with its derivatives or with its statistical linearisation
         under the predicted belief of the layer.
+    integrate_other_parents :
+        If ``True``, both helpers condition the child on each parent alone and
+        integrate its other parents over their predicted beliefs; see
+        :func:`vectorised_posterior_update_precision_value_level`. Defaults to
+        ``False``.
 
     Returns
     -------
@@ -356,6 +439,7 @@ def vectorised_layer_posterior_update(
             child_is_input_layer=child_is_input_layer,
             mean_field_updates=mean_field_updates,
             coupling_moments=coupling_moments,
+            integrate_other_parents=integrate_other_parents,
         ),
         layer.expected_precision,
         max_posterior_precision,
@@ -369,6 +453,8 @@ def vectorised_layer_posterior_update(
         posterior_precision,
         mean_field_updates=mean_field_updates,
         coupling_moments=coupling_moments,
+        child_is_input_layer=child_is_input_layer,
+        integrate_other_parents=integrate_other_parents,
     )
 
     return dataclasses.replace(

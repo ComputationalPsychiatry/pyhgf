@@ -52,6 +52,7 @@ from pyhgf.updates.vectorised.volatile import (
     vectorised_posterior_update_precision_value_level,
     vectorised_root_prediction,
 )
+from pyhgf.updates.vectorised.volatile.posterior import _value_messages
 
 #: Floor applied to precisions before any division.
 _EPS = 1e-30
@@ -322,6 +323,28 @@ def _leaf_pe(
 # ---------------------------------------------------------------------------
 
 
+def _integrates_other_parents(
+    child_kind: str, feedforward_uncertainty: bool, predict_precision: bool
+) -> bool:
+    r"""Whether a parent's update integrates the other parents of its child.
+
+    The posterior-step relaxation conditions a Gaussian child :math:`a` on the updated
+    parent :math:`b` alone, with the other parents of :math:`a` integrated over their
+    predicted beliefs (:math:`\bar{\pi}_{a|b}`), when the prediction step integrates
+    them too: with ``feedforward_uncertainty`` and ``predict_precision``, the
+    condition under which the predicted precision of a child carries the variance of
+    its value parents (see :func:`_volatile_coupling_moments`). Otherwise the
+    prediction step treats the parents as known, and so does the posterior step
+    (:math:`\bar{\pi}_a`). Binary and categorical children keep their canonical
+    factors.
+    """
+    return (
+        feedforward_uncertainty
+        and predict_precision
+        and child_kind in ("volatile", "continuous")
+    )
+
+
 def _posterior_pe_layer(
     parent: Layer,
     child_state,
@@ -333,11 +356,13 @@ def _posterior_pe_layer(
     mean_field_updates: bool = False,
     coupling_moments: str = "taylor",
     feedforward_uncertainty: bool = False,
+    integrate_other_parents: bool = False,
 ):
     """Single-layer posterior update + prediction error.
 
     ``feedforward_uncertainty`` is the network's flag, which the layer's own volatility
-    update reads.
+    update reads. ``integrate_other_parents`` is :func:`_integrates_other_parents` for
+    the child.
     """
     new_state = vectorised_layer_posterior_update(
         layer=parent.state,
@@ -349,6 +374,7 @@ def _posterior_pe_layer(
         child_is_input_layer=child_is_input_layer,
         mean_field_updates=mean_field_updates,
         coupling_moments=coupling_moments,
+        integrate_other_parents=integrate_other_parents,
     )
     if parent.kind == "binary":
         new_state = vectorised_binary_prediction_error(layer=new_state)
@@ -373,6 +399,7 @@ def _top_precision_only(
     max_posterior_precision: float,
     mean_field_updates: bool = False,
     coupling_moments: str = "taylor",
+    integrate_other_parents: bool = False,
 ):
     r"""Update the top layer's precision from the layer below, leaving its mean clamped.
 
@@ -413,6 +440,7 @@ def _top_precision_only(
             child_is_input_layer=child_is_input_layer,
             mean_field_updates=mean_field_updates,
             coupling_moments=coupling_moments,
+            integrate_other_parents=integrate_other_parents,
         ),
         parent.state.expected_precision,
         max_posterior_precision,
@@ -465,6 +493,8 @@ def _posterior_pe_stack(
     mean_field_updates: bool = False,
     coupling_moments: str = "taylor",
     feedforward_uncertainty: bool = False,
+    predict_precision: bool = True,
+    integrate_other_parents: bool = False,
 ):
     r"""Bottom-up sweep over a ``LayerStack``.
 
@@ -484,7 +514,10 @@ def _posterior_pe_stack(
     interior by construction, so the scan runs with ``child_is_input_layer=False``.
 
     ``feedforward_uncertainty`` is the network's flag, which the volatility updates of
-    the stack's slices read.
+    the stack's slices read. ``integrate_other_parents`` is
+    :func:`_integrates_other_parents` for the external child of slice 0; the scanned
+    slices have a stack slice as their child, and use the stack's kind with
+    ``feedforward_uncertainty`` and ``predict_precision``.
     """
     # The scan carry becomes a stack slice each step, so seed it with the
     # child's state coerced to the stack's volatility structure.
@@ -493,7 +526,12 @@ def _posterior_pe_stack(
     )
 
     def slice_posterior_pe(
-        slice_state, slice_params, slice_weights, child_state, is_leaf_child
+        slice_state,
+        slice_params,
+        slice_weights,
+        child_state,
+        is_leaf_child,
+        integrate_slice_parents,
     ):
         new_state = vectorised_layer_posterior_update(
             layer=slice_state,
@@ -505,6 +543,7 @@ def _posterior_pe_stack(
             child_is_input_layer=is_leaf_child,
             mean_field_updates=mean_field_updates,
             coupling_moments=coupling_moments,
+            integrate_other_parents=integrate_slice_parents,
         )
         return vectorised_layer_prediction_error(
             layer=new_state,
@@ -524,12 +563,21 @@ def _posterior_pe_stack(
         slice0_weights,
         child_state_init,
         child_is_input_layer,
+        integrate_other_parents,
+    )
+    integrate_stack_parents = _integrates_other_parents(
+        stack.kind, feedforward_uncertainty, predict_precision
     )
 
     def body(child_carry_state, slice_data):
         slice_state, slice_params, slice_weights = slice_data
         new_state = slice_posterior_pe(
-            slice_state, slice_params, slice_weights, child_carry_state, False
+            slice_state,
+            slice_params,
+            slice_weights,
+            child_carry_state,
+            False,
+            integrate_stack_parents,
         )
         return new_state, new_state
 
@@ -563,9 +611,13 @@ def _bottomup_posterior_pe(
     mean_field_updates: bool = False,
     coupling_moments: str = "taylor",
     feedforward_uncertainty: bool = False,
+    predict_precision: bool = True,
 ):
     """Posterior update + prediction error for ``parent_elem`` from ``child_elem``."""
-    child_state, _, child_is_input_layer = _child_view(child_elem)
+    child_state, child_kind, child_is_input_layer = _child_view(child_elem)
+    integrate_other_parents = _integrates_other_parents(
+        child_kind, feedforward_uncertainty, predict_precision
+    )
     if isinstance(parent_elem, LayerStack):
         return _posterior_pe_stack(
             parent_elem,
@@ -577,6 +629,8 @@ def _bottomup_posterior_pe(
             mean_field_updates=mean_field_updates,
             coupling_moments=coupling_moments,
             feedforward_uncertainty=feedforward_uncertainty,
+            predict_precision=predict_precision,
+            integrate_other_parents=integrate_other_parents,
         )
     return _posterior_pe_layer(
         parent_elem,
@@ -588,6 +642,7 @@ def _bottomup_posterior_pe(
         mean_field_updates=mean_field_updates,
         coupling_moments=coupling_moments,
         feedforward_uncertainty=feedforward_uncertainty,
+        integrate_other_parents=integrate_other_parents,
     )
 
 
@@ -1076,11 +1131,12 @@ def _update_sweep(
             mean_field_updates=network.mean_field_updates,
             coupling_moments=_volatile_coupling_moments(network),
             feedforward_uncertainty=network.feedforward_uncertainty,
+            predict_precision=network.predict_precision,
         )
 
     # The top element, when asked for: precision only, mean left on the predictors.
     if _sweeps_reach_top(network):
-        child_state, _, child_is_input_layer = _child_view(elements[-2])
+        child_state, child_kind, child_is_input_layer = _child_view(elements[-2])
         elements[-1] = _top_precision_only(
             elements[-1],
             child_state,
@@ -1088,6 +1144,9 @@ def _update_sweep(
             max_posterior_precision=network.max_posterior_precision,
             mean_field_updates=network.mean_field_updates,
             coupling_moments=_volatile_coupling_moments(network),
+            integrate_other_parents=_integrates_other_parents(
+                child_kind, network.feedforward_uncertainty, network.predict_precision
+            ),
         )
 
     return dataclasses.replace(network, layers=tuple(elements))
@@ -1164,27 +1223,12 @@ def _input_prediction_error(network: VectorisedNetwork) -> jnp.ndarray:
             "The network has a single layer: there is no layer below the "
             "input layer to route an error from."
         )
-    child_state, _, _ = _child_view(network.layers[-2])
+    child_state, child_kind, child_is_input_layer = _child_view(network.layers[-2])
 
     weights = top.weights_mean
     if top.add_constant_input:
         # The bias column connects the constant node, not a real input.
         weights = weights[:, :-1]
-
-    # Relaxed gain of the child layer, identical to the gain used by the
-    # interior posterior mean update, so the top layer sees exactly the
-    # message any interior layer would see. Under mean-field the interior mean
-    # update weights by the canonical predicted precision, so the same factor
-    # is used here.
-    if network.mean_field_updates:
-        gain = child_state.expected_precision
-    else:
-        pi_y = child_state.precision - child_state.expected_precision
-        gain = (
-            child_state.conditional_expected_precision
-            * child_state.precision
-            / (child_state.conditional_expected_precision + pi_y)
-        )
 
     # Slope of the coupling function, as in the interior posterior mean update: its
     # derivative at the expected mean or, with the exact moments, its mean slope
@@ -1194,10 +1238,24 @@ def _input_prediction_error(network: VectorisedNetwork) -> jnp.ndarray:
         1.0 / top.state.expected_precision,
         _volatile_coupling_moments(network),
     )
-    return (
-        jnp.matmul(weights.T, gain * child_state.value_prediction_error)
-        * coupling_prime
+
+    # Relaxed gain of the child layer, identical to the gain used by the
+    # interior posterior mean update, so the top layer sees exactly the
+    # message any interior layer would see. Under mean-field the interior mean
+    # update weights by the canonical predicted precision, so the same factor
+    # is used here.
+    _, message = _value_messages(
+        top.state,
+        child_state,
+        weights,
+        coupling_prime,
+        child_is_input_layer,
+        network.mean_field_updates,
+        _integrates_other_parents(
+            child_kind, network.feedforward_uncertainty, network.predict_precision
+        ),
     )
+    return message * coupling_prime
 
 
 @eqx.filter_jit

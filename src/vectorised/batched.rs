@@ -16,11 +16,13 @@ use crate::math::sigmoid;
 use crate::updates::vectorised::learning::WeightKind;
 use crate::updates::vectorised::softmax_inplace;
 use crate::updates::vectorised::volatile::guarded_volatility;
+use crate::updates::vectorised::volatile::posterior::{add_edge_messages, ChildNode};
 use crate::updates::vectorised::volatile::prediction_error::{
     ehgf_vol_node, standard_vol_node, unbounded_vol_node, volatility_pe_node,
 };
 use crate::vectorised::layer::{DeepNet, Layer, LayerKind, LayerState, VolatilityUpdate};
 use crate::vectorised::mat::{Float, Matrix, Vector};
+use crate::vectorised::network::integrates_other_parents;
 use ndarray::parallel::prelude::*;
 use ndarray::{s, ArrayView2, Axis, Zip};
 
@@ -629,9 +631,81 @@ fn gain_and_effective(child: &BatchedLayerState, child_is_input_layer: bool) -> 
     (gain, eff)
 }
 
+/// The relaxed value messages of a child layer to its parents over the whole batch,
+/// with one factor per edge: `(precision_sum, message)`, each
+/// `(n_parent, n_samples)`, holding Σ_a W[a, m]² π_eff(a|m) and Σ_a W[a, m] g(a|m) δ_a
+/// (see [`add_edge_messages`]). The factors depend on the edge, so the sums are not
+/// matrix products: each sample runs the per-sample pass, in parallel over samples.
+fn batched_edge_messages(
+    parent: &BatchedLayerState,
+    child: &BatchedLayerState,
+    w: ArrayView2<Float>,
+    parent_layer: &Layer,
+    child_is_input_layer: bool,
+    exact_moments: bool,
+) -> (Matrix, Matrix) {
+    let (n_child, n_parent) = w.dim();
+    let n_samples = child.mean.ncols();
+    // h[m, s] = A_m² / π̂_m, so that W[a, m]² h[m, s] is the variance that the edge
+    // adds to the prediction of the child. A_m is the slope of the linear function
+    // that replaces the coupling function in the prediction step: the mean slope
+    // E[g'] cached by the prediction sweep with the exact moments, g'(μ̂_m) otherwise.
+    let parent_variance = if exact_moments {
+        Zip::from(&parent.linear_slope)
+            .and(&parent.expected_precision)
+            .map_collect(|&slope, &ep| slope * slope / ep)
+    } else {
+        crate::math::with_coupling!(parent_layer.coupling_fn, |_f, df, _d2f| {
+            Zip::from(&parent.expected_mean)
+                .and(&parent.expected_precision)
+                .map_collect(|&m, &ep| {
+                    let gp = df(m as f64) as Float;
+                    gp * gp / ep
+                })
+        })
+    };
+    let columns: Vec<(Vector, Vector)> = (0..n_samples)
+        .into_par_iter()
+        .map(|s| {
+            let mut precision_sum = Vector::zeros(n_parent);
+            let mut message = Vector::zeros(n_parent);
+            let mut suffix = Vec::with_capacity(n_parent + 1);
+            let h = parent_variance.column(s);
+            for i in 0..n_child {
+                add_edge_messages(
+                    w.row(i),
+                    h,
+                    ChildNode {
+                        conditional_expected_precision: child.conditional_expected_precision
+                            [[i, s]],
+                        expected_precision: child.expected_precision[[i, s]],
+                        precision: child.precision[[i, s]],
+                        value_prediction_error: child.value_prediction_error[[i, s]],
+                    },
+                    child_is_input_layer,
+                    &mut suffix,
+                    precision_sum.view_mut(),
+                    message.view_mut(),
+                );
+            }
+            (precision_sum, message)
+        })
+        .collect();
+    let mut precision_sum = Matrix::zeros((n_parent, n_samples));
+    let mut message = Matrix::zeros((n_parent, n_samples));
+    for (s, (p, m)) in columns.into_iter().enumerate() {
+        precision_sum.column_mut(s).assign(&p);
+        message.column_mut(s).assign(&m);
+    }
+    (precision_sum, message)
+}
+
 /// Value-level posterior (precision then mean) of a parent layer from its
 /// child's prediction errors, over the whole batch; mirrors the per-sample
-/// `layer_posterior_update` with the three weight contractions as gemms.
+/// `layer_posterior_update` with the three weight contractions as gemms. With
+/// `integrate_other_parents`, the factors depend on the edge and the contractions
+/// run per sample instead (see [`batched_edge_messages`]).
+#[allow(clippy::too_many_arguments)]
 fn batched_posterior_update(
     parent: &mut BatchedLayerState,
     child: &BatchedLayerState,
@@ -640,6 +714,7 @@ fn batched_posterior_update(
     max_posterior_precision: Float,
     child_is_input_layer: bool,
     exact_moments: bool,
+    integrate_other_parents: bool,
 ) {
     let ncols = weights.ncols();
     let w = if parent_layer.add_constant_input {
@@ -647,14 +722,23 @@ fn batched_posterior_update(
     } else {
         weights.view()
     };
-    let w2 = w.mapv(|x| x * x);
 
-    let (gain, eff) = gain_and_effective(child, child_is_input_layer);
-    let gd = &gain * &child.value_prediction_error;
-
-    // The weight contractions, one gemm each over the whole batch.
-    let pc1_base = w2.t().dot(&eff);
-    let msg = w.t().dot(&gd);
+    let (pc1_base, msg) = if integrate_other_parents {
+        batched_edge_messages(
+            parent,
+            child,
+            w,
+            parent_layer,
+            child_is_input_layer,
+            exact_moments,
+        )
+    } else {
+        let w2 = w.mapv(|x| x * x);
+        let (gain, eff) = gain_and_effective(child, child_is_input_layer);
+        let gd = &gain * &child.value_prediction_error;
+        // The weight contractions, one gemm each over the whole batch.
+        (w2.t().dot(&eff), w.t().dot(&gd))
+    };
 
     if parent_layer.coupling_fn.kind == crate::math::CouplingKind::Linear {
         // Linear coupling: g' ≡ 1, so no derivative matrix is needed.
@@ -804,6 +888,11 @@ pub fn batched_update_sweep(
             max_pp,
             net.layers[i - 1].is_input_layer,
             net.exact_moments(),
+            integrates_other_parents(
+                &net.layers[i - 1],
+                net.feedforward_uncertainty,
+                net.predict_precision,
+            ),
         );
         batched_prediction_error(parent, parent_layer, vol, time_step, max_pp, ffu);
     }
@@ -816,6 +905,7 @@ pub fn batched_input_prediction_error(net: &DeepNet, states: &[BatchedLayerState
     let n = net.layers.len();
     assert!(n >= 2, "input_prediction_error needs at least two layers");
     let top_layer = &net.layers[n - 1];
+    let child_layer = &net.layers[n - 2];
     let child = &states[n - 2];
     let w = top_layer
         .weights_in
@@ -826,19 +916,37 @@ pub fn batched_input_prediction_error(net: &DeepNet, states: &[BatchedLayerState
     let w = w.slice(s![.., ..cols]);
 
     // Relaxed gain of the child layer, identical to the gain of the
-    // interior posterior mean update, fused directly into the message:
-    // gain∘δ in one pass, no gain matrix materialised.
-    let mut message = Matrix::zeros(child.mean.raw_dim());
-    Zip::from(&mut message)
-        .and(&child.value_prediction_error)
-        .and(&child.conditional_expected_precision)
-        .and(&child.precision)
-        .and(&child.expected_precision)
-        .for_each(|out, &d, &cep, &prec, &ep| {
-            let pi_y = prec - ep;
-            *out = cep * prec / (cep + pi_y) * d;
-        });
-    let mut routed = w.t().dot(&message);
+    // interior posterior mean update.
+    let mut routed = if integrates_other_parents(
+        child_layer,
+        net.feedforward_uncertainty,
+        net.predict_precision,
+    ) {
+        // One gain per edge (see `batched_edge_messages`).
+        let (_, message) = batched_edge_messages(
+            &states[n - 1],
+            child,
+            w,
+            top_layer,
+            child_layer.is_input_layer,
+            net.exact_moments(),
+        );
+        message
+    } else {
+        // Fused directly into the message: gain∘δ in one pass, no gain matrix
+        // materialised.
+        let mut message = Matrix::zeros(child.mean.raw_dim());
+        Zip::from(&mut message)
+            .and(&child.value_prediction_error)
+            .and(&child.conditional_expected_precision)
+            .and(&child.precision)
+            .and(&child.expected_precision)
+            .for_each(|out, &d, &cep, &prec, &ep| {
+                let pi_y = prec - ep;
+                *out = cep * prec / (cep + pi_y) * d;
+            });
+        w.t().dot(&message)
+    };
     if top_layer.coupling_fn.kind != crate::math::CouplingKind::Linear {
         if net.exact_moments() {
             // Mean slope E[g'] under the top layer's predicted belief, as in the

@@ -9,6 +9,7 @@ import pytest
 from pyhgf.rshgf import Network as RsNetwork
 
 from pyhgf import load_data
+from pyhgf.coupling import resolve_coupling_fn
 from pyhgf.math import gaussian_surprise
 from pyhgf.model import Network
 from pyhgf.utils import beliefs_propagation
@@ -412,3 +413,163 @@ def test_value_coupling_with_irregular_time_steps(cls, mean_field_updates):
                 assert np.allclose(
                     np.asarray(traj[idx][field]), expected, rtol=1e-9, atol=1e-12
                 ), f"{node} {field}"
+
+
+@pytest.mark.parametrize("cls", [Network, RsNetwork], ids=["jax", "rust"])
+@pytest.mark.parametrize("child", ["state", "input"])
+@pytest.mark.parametrize("time_step", [1.0, 0.5])
+def test_several_value_parents_match_exact_conditioning(cls, child, time_step):
+    r"""Each value parent of a child with two value parents gets its exact posterior.
+
+    The value parents :math:`b` and :math:`c` of a child predict it through
+    :math:`\alpha_b x_b + \alpha_c x_c`: either a state :math:`a`, the value parent of
+    the input :math:`u`, whose drift takes the time step, or the input :math:`u`
+    itself, which takes none. After one observation of :math:`u`, the relaxed update
+    of each parent conditions the child on that parent alone, with the other parent
+    integrated over its predicted belief, and matches the marginal posterior of the
+    joint Gaussian of the child and its parents. Conditioning the child on both parents
+    instead treats the other one as known: for the state child at :math:`t = 1`, it
+    gives :math:`\pi_b = 0.913` against the exact 0.475. The Rust backend takes unit
+    coupling strengths from Python.
+    """
+    alpha_b, alpha_c = (1.0, 1.0) if cls is RsNetwork else (1.0, 1.5)
+    input_precision, observation = 2.0, 3.0
+    omega_a, omega_b, omega_c = -1.0, 0.5, 1.0
+
+    def coupling(child_idx, strength):
+        return child_idx if cls is RsNetwork else ([child_idx], [strength])
+
+    with enable_x64(True):
+        net = cls(volatility_updates="standard").add_nodes(precision=input_precision)
+        child_idx = 0
+        if child == "state":
+            net = net.add_nodes(
+                value_children=coupling(0, 1.0), tonic_volatility=omega_a
+            )
+            child_idx = 1
+        net = net.add_nodes(
+            value_children=coupling(child_idx, alpha_b), tonic_volatility=omega_b
+        ).add_nodes(
+            value_children=coupling(child_idx, alpha_c), tonic_volatility=omega_c
+        )
+        net.input_data(
+            input_data=np.array([observation]), time_steps=np.array([time_step])
+        )
+        traj = net.node_trajectories
+
+    # Prior of the child and its parents at the observation: unit prior precisions,
+    # random walks of variance t exp(ω), and the drift t (α_b x_b + α_c x_c) of a state
+    # child (an input takes no time step).
+    t = time_step
+    var_b, var_c = 1 + t * math.exp(omega_b), 1 + t * math.exp(omega_c)
+    scale, own = (t, 1 + t * math.exp(omega_a)) if child == "state" else (1.0, 0.0)
+    var_child = own + (scale * alpha_b) ** 2 * var_b + (scale * alpha_c) ** 2 * var_c
+    var_observation = var_child + 1 / input_precision
+    for node, var, alpha in (
+        (child_idx + 1, var_b, alpha_b),
+        (child_idx + 2, var_c, alpha_c),
+    ):
+        covariance = scale * alpha * var
+        precision = 1 / (var - covariance**2 / var_observation)
+        mean = covariance / var_observation * observation
+        assert np.isclose(traj[node]["precision"][0], precision, rtol=1e-9), node
+        assert np.isclose(traj[node]["mean"][0], mean, rtol=1e-9), node
+
+
+@pytest.mark.parametrize("cls", [Network, RsNetwork], ids=["jax", "rust"])
+def test_several_curved_value_parents_with_the_exact_moments(cls):
+    r"""Each curved value parent of an input gets the linearised Kalman update.
+
+    The input :math:`u = g_b(x_b) + g_c(x_c) + \varepsilon` has two value parents with
+    different coupling functions. With ``coupling_moments="exact"``, each function is
+    replaced by its statistical linearisation under the predicted belief of its
+    parent, :math:`m + A (x - \hat{\mu}) + e` with :math:`\mathrm{Var}[e] = R`. The
+    update of each parent conditions the input on that parent alone: the other parent
+    enters through its mean slope, and the residuals of both parents through the
+    predicted precision of the input. This is the Kalman update of the linear model.
+    """
+    input_precision, observation = 4.0, 2.0
+    parents = {"tanh": (0.3, 1.0), "relu": (-0.4, 2.0)}  # prior mean and precision
+    coupling_fns = {"tanh": jnp.tanh, "relu": jax.nn.relu}
+
+    with enable_x64(True):
+        net = cls(volatility_updates="standard", coupling_moments="exact").add_nodes(
+            precision=input_precision
+        )
+        for name, (mean, precision) in parents.items():
+            net = net.add_nodes(
+                value_children=0,
+                coupling_fn=name if cls is RsNetwork else (coupling_fns[name],),
+                mean=mean,
+                precision=precision,
+                # the predicted precision is the prior precision
+                tonic_volatility=-30.0,
+            )
+        net.input_data(input_data=np.array([observation]))
+        traj = net.node_trajectories
+
+        moments = {
+            name: [
+                float(moment)
+                for moment in resolve_coupling_fn(name).moments(mean, 1 / precision)
+            ]
+            for name, (mean, precision) in parents.items()
+        }
+    expected_observation = sum(value for value, _, _ in moments.values())
+    observation_variance = 1 / input_precision + sum(
+        variance for _, variance, _ in moments.values()
+    )
+    for node, (name, (mean, precision)) in enumerate(parents.items(), start=1):
+        slope = moments[name][2]
+        gain = slope / precision / observation_variance
+        np.testing.assert_allclose(
+            traj[node]["mean"][0],
+            mean + gain * (observation - expected_observation),
+            rtol=1e-6,
+            err_msg=name,
+        )
+        np.testing.assert_allclose(
+            traj[node]["precision"][0],
+            1 / (1 / precision - gain * slope / precision),
+            rtol=1e-6,
+            err_msg=name,
+        )
+
+
+@pytest.mark.parametrize("coupling_moments", ["taylor", "exact"])
+def test_several_curved_value_parents_match_across_backends(coupling_moments):
+    """The JAX and Rust backends agree for a state with two curved value parents.
+
+    The posterior update of each parent integrates the other one through the slope
+    that the prediction step gives it: the derivative of its coupling function at its
+    predicted mean, or its mean slope with ``coupling_moments="exact"``.
+    """
+    timeseries = np.asarray(load_data("continuous"))[:60]
+
+    def run(cls):
+        tanh, relu = (
+            ("tanh", "relu") if cls is RsNetwork else ((jnp.tanh,), (jax.nn.relu,))
+        )
+        return (
+            cls(volatility_updates="standard", coupling_moments=coupling_moments)
+            .add_nodes(precision=4.0)
+            .add_nodes(value_children=0, tonic_volatility=-3.0)
+            .add_nodes(value_children=1, coupling_fn=tanh, tonic_volatility=-2.0)
+            .add_nodes(value_children=1, coupling_fn=relu, tonic_volatility=-2.5)
+            .input_data(input_data=timeseries)
+            .node_trajectories
+        )
+
+    with enable_x64(True):
+        py_traj, rs_traj = run(Network), run(RsNetwork)
+        for node in range(4):
+            for key in ("mean", "precision", "expected_mean", "expected_precision"):
+                expected = np.asarray(py_traj[node][key])
+                assert np.all(np.isfinite(expected))
+                np.testing.assert_allclose(
+                    np.asarray(rs_traj[node][key], dtype=float),
+                    expected,
+                    rtol=1e-7,
+                    atol=1e-9,
+                    err_msg=f"node {node}, {key}",
+                )
