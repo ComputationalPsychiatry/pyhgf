@@ -42,6 +42,10 @@ from pyhgf.updates.vectorised.learning import (
     clamped_layer_evidence,
     evidence_pullback,
     learning_weights_vectorised,
+    step_gram_surprise,
+    vectorised_input_gram_update,
+    vectorised_step_gram_update,
+    vectorised_step_rows_update,
     vectorised_synaptic_uncertainty_update,
 )
 from pyhgf.updates.vectorised.volatile import (
@@ -1247,6 +1251,75 @@ def _importance_pair(factors) -> Optional[tuple]:
     return factors[2], jnp.where(jnp.isfinite(squared), squared, 0.0)
 
 
+def _batch_gram(
+    factors, weights: jnp.ndarray, evidence: bool = False
+) -> Optional[jnp.ndarray]:
+    r"""Return the weighted batch mean of :math:`h h^\top`, shaped by the evidence.
+
+    Without ``evidence`` this is :math:`\sum_t \omega_t h_t h_t^\top`, whose diagonal
+    is the parent side of :func:`_importance_pair`'s increment. With it, sample
+    :math:`t` is weighted by :math:`r_t`, the mean over the child's units of the
+    evidence factor (``factors[2]``), and the result is rescaled to the trace of the
+    unweighted matrix:
+
+    .. math::
+
+        \tilde G = \frac{\sum_t \omega_t \lVert h_t \rVert^2}
+                        {\sum_t \omega_t r_t \lVert h_t \rVert^2}
+                   \sum_t \omega_t r_t h_t h_t^\top .
+
+    A batch that received no evidence at all keeps the unweighted matrix. The leading
+    slice axis of a ``LayerStack`` is carried through, one matrix per slice. The
+    factors come from
+    :func:`~pyhgf.updates.vectorised.learning.learning_weights_vectorised`, which
+    already sets their non-finite entries to zero.
+    """
+    if factors is None:
+        return None
+    h = factors[1]
+    plain = jnp.einsum("b,b...i,b...j->...ij", weights, h, h)
+    if not evidence:
+        return plain
+    r = jnp.mean(factors[2], axis=-1)
+    norms = jnp.sum(h**2, axis=-1)
+    plain_trace = jnp.einsum("b,b...->...", weights, norms)
+    weighted_trace = jnp.einsum("b,b...,b...->...", weights, r, norms)
+    weighted = jnp.einsum("b,b...,b...i,b...j->...ij", weights, r, h, h)
+    received = weighted_trace > 0
+    scale = plain_trace / jnp.where(received, weighted_trace, 1.0)
+    return jnp.where(
+        received[..., None, None], weighted * scale[..., None, None], plain
+    )
+
+
+def _records_gram(elem) -> bool:
+    """Whether an element carries an input, step or batch Gram matrix to advance."""
+    return (
+        getattr(elem, "weights_input_gram", None) is not None
+        or getattr(elem, "weights_step_gram", None) is not None
+        or getattr(elem, "weights_batch_gram", None) is not None
+    )
+
+
+def _row_evidence(importance, mask: Optional[jnp.ndarray]) -> jnp.ndarray:
+    r"""Return the row sums of one element's importance increment, over its edges.
+
+    ``importance`` is the factor pair ``(p, h**2)`` of one sample or the contracted
+    increment matrix of a batch, as :func:`_apply_synaptic_uncertainty_updates` takes
+    it. Row :math:`a` sums to :math:`\sum_t \omega_t p_{a,t} \lVert h_t \rVert^2` in a
+    fully connected element. A one-to-one element connects row :math:`a` to input
+    :math:`a` only, so there the sum is :math:`\sum_t \omega_t p_{a,t} h_{a,t}^2`.
+    """
+    if isinstance(importance, tuple):
+        p, q = importance
+        increment = p[..., :, None] * q[..., None, :]
+    else:
+        increment = importance
+    if mask is not None:
+        increment = jnp.where(mask, increment, 0.0)
+    return increment.sum(axis=-1)
+
+
 def _edge_mask(elem) -> Optional[jnp.ndarray]:
     """Boolean mask of the weights that are edges, or ``None`` when all of them are.
 
@@ -1297,8 +1370,9 @@ def _apply_synaptic_uncertainty_updates(
     grads: tuple,
     importance: tuple,
     settings: SynapticUncertaintySettings,
+    grams: Optional[tuple] = None,
 ) -> VectorisedNetwork:
-    """Advance every weight belief one step, mean and precision together.
+    r"""Advance every weight belief one step, mean and precision together.
 
     The rule needs no optimiser: the step size is the belief's own variance
     (see
@@ -1307,6 +1381,30 @@ def _apply_synaptic_uncertainty_updates(
     accumulated precision (``weights_precision_delta``) are written back to
     the element that carries them. In a one-to-one element, only the diagonal
     beliefs move.
+
+    The recorded fields an element carries (see
+    :class:`~pyhgf.typing.vectorised.Layer`) are written here and never read by the
+    update:
+
+    - ``weights_gradient`` is overwritten with this step's gradient.
+    - ``weights_input_gram`` is advanced by
+      :func:`pyhgf.updates.vectorised.learning.vectorised_input_gram_update`.
+    - ``weights_step_gram`` and ``weights_step_mass`` are advanced by
+      :func:`pyhgf.updates.vectorised.learning.vectorised_step_gram_update`, at the
+      element's ``weights_step_rate`` where it carries one. A ``weights_step_surprise``
+      is first overwritten with
+      :func:`pyhgf.updates.vectorised.learning.step_gram_surprise` of this batch
+      against the running Gram matrix before the batch is mixed in, and a
+      ``weights_step_rows`` is advanced at the same rate by
+      :func:`pyhgf.updates.vectorised.learning.vectorised_step_rows_update`.
+    - ``weights_batch_gram`` is overwritten with this step's batch Gram matrix.
+
+    In a one-to-one element every recorded quantity is restricted to the edges. The
+    gradient is masked to the diagonal. Each Gram matrix keeps only its diagonal: row
+    :math:`a` has the single input :math:`h_a`, so a product :math:`h_i h_j` with
+    :math:`i \neq j` is the curvature of no weight, and a step solved against it would
+    mix the gradients of weights that are not edges. The row evidence sums over the
+    edges only (see :func:`_row_evidence`).
 
     Parameters
     ----------
@@ -1318,11 +1416,15 @@ def _apply_synaptic_uncertainty_updates(
         One importance entry per element, aligned with ``grads``.
     settings :
         The resolved settings of the rule.
+    grams :
+        One batch mean :math:`h h^\top` per element, aligned with ``grads``,
+        ``None`` for an element that records no Gram matrix. ``None`` (default)
+        when no element records one.
 
     Returns
     -------
     VectorisedNetwork
-        The network with updated weights and precisions.
+        The network with updated weights, precisions and recorded fields.
 
     Raises
     ------
@@ -1340,6 +1442,49 @@ def _apply_synaptic_uncertainty_updates(
                 "with add_layer(weight_belief=True), or let "
                 "learning_kind='synaptic_uncertainty' install it."
             )
+        mask = _edge_mask(elem)
+        fields = {}
+        if getattr(elem, "weights_gradient", None) is not None:
+            fields["weights_gradient"] = (
+                grads[i] if mask is None else jnp.where(mask, grads[i], 0.0)
+            )
+        batch_gram = None if grams is None else grams[i]
+        if batch_gram is not None:
+            if mask is not None:
+                batch_gram = batch_gram * jnp.eye(
+                    batch_gram.shape[-1], dtype=batch_gram.dtype
+                )
+            if getattr(elem, "weights_input_gram", None) is not None:
+                fields["weights_input_gram"] = vectorised_input_gram_update(
+                    elem.weights_input_gram, batch_gram, settings
+                )
+            if getattr(elem, "weights_batch_gram", None) is not None:
+                fields["weights_batch_gram"] = batch_gram
+            if getattr(elem, "weights_step_gram", None) is not None:
+                rate = getattr(elem, "weights_step_rate", None)
+                if getattr(elem, "weights_step_surprise", None) is not None:
+                    fields["weights_step_surprise"] = step_gram_surprise(
+                        elem.weights_step_gram,
+                        elem.weights_step_mass,
+                        batch_gram,
+                        settings.natural_ridge,
+                    )
+                gram, mass = vectorised_step_gram_update(
+                    elem.weights_step_gram,
+                    elem.weights_step_mass,
+                    batch_gram,
+                    settings,
+                    rate=rate,
+                )
+                fields["weights_step_gram"] = gram
+                fields["weights_step_mass"] = mass
+                if getattr(elem, "weights_step_rows", None) is not None:
+                    fields["weights_step_rows"] = vectorised_step_rows_update(
+                        elem.weights_step_rows,
+                        _row_evidence(importance[i], mask),
+                        settings,
+                        rate=rate,
+                    )
         new_weights, new_delta = vectorised_synaptic_uncertainty_update(
             elem.weights_mean,
             elem.weights_precision_delta,
@@ -1347,14 +1492,16 @@ def _apply_synaptic_uncertainty_updates(
             importance[i],
             settings,
         )
-        mask = _edge_mask(elem)
         if mask is not None:
             # The reversion towards the prior mean moves every weight whatever its
             # gradient, so the masked weights and precisions keep their values.
             new_weights = jnp.where(mask, new_weights, elem.weights_mean)
             new_delta = jnp.where(mask, new_delta, elem.weights_precision_delta)
         elements[i] = dataclasses.replace(
-            elem, weights_mean=new_weights, weights_precision_delta=new_delta
+            elem,
+            weights_mean=new_weights,
+            weights_precision_delta=new_delta,
+            **fields,
         )
     return dataclasses.replace(network, layers=tuple(elements))
 
@@ -1382,8 +1529,17 @@ def _learn_sweep(
     grads = tuple(_gradient_matrix(f) for f in factors)
     if synaptic_uncertainty_settings is not None:
         importance = tuple(_importance_pair(f) for f in factors)
+        # One sample: the batch mean of h h^T is that sample's outer product. The
+        # evidence weighting of gram_evidence is rescaled to the unweighted trace,
+        # which for a lone sample cancels it exactly, so it is not applied here.
+        grams = tuple(
+            f[1][..., :, None] * f[1][..., None, :]
+            if f is not None and _records_gram(elem)
+            else None
+            for f, elem in zip(factors, network.layers)
+        )
         return _apply_synaptic_uncertainty_updates(
-            network, grads, importance, synaptic_uncertainty_settings
+            network, grads, importance, synaptic_uncertainty_settings, grams
         ), opt_state
     return _apply_weight_updates(network, grads, opt_state, optimiser)
 
@@ -1757,8 +1913,27 @@ def _batch_step(
                 _contract_factors(_importance_pair(f), learning_weights)
                 for f in factors
             )
+            # Contracted with the same weights as the importance, so the Gram's
+            # diagonal follows the parent side of the increment, weight reuse
+            # and sample weights included. Weight reuse scales the gradient and
+            # the Gram matrix alike, so it cancels from a natural-gradient step
+            # taken from the recorded fields. Under gram_evidence each sample is
+            # weighted by its evidence within the batch, the matrix keeping its
+            # unweighted trace.
+            grams = tuple(
+                _batch_gram(
+                    f, learning_weights, synaptic_uncertainty_settings.gram_evidence
+                )
+                if _records_gram(elem)
+                else None
+                for f, elem in zip(factors, network.layers)
+            )
             new_network = _apply_synaptic_uncertainty_updates(
-                new_network, mean_grads, importance, synaptic_uncertainty_settings
+                new_network,
+                mean_grads,
+                importance,
+                synaptic_uncertainty_settings,
+                grams,
             )
         else:
             new_network, opt_state = _apply_weight_updates(

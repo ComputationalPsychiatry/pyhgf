@@ -5,7 +5,9 @@
 
 from typing import Callable, NamedTuple, Optional, Union
 
+import jax
 import jax.numpy as jnp
+import jax.scipy.linalg
 from jax import grad as jgrad
 from jax import vmap
 
@@ -243,7 +245,17 @@ SYNAPTIC_UNCERTAINTY_DEFAULTS: dict = {
     "prior_mean": 0.0,
     "learning_rate": 1.0,
     "increment_scale": 1.0,
+    "importance_source": "evidence",
+    "natural_memory": 10.0,
+    "natural_ridge": 1e-2,
+    "gram_evidence": False,
 }
+
+#: The accepted values of the ``importance_source`` setting.
+IMPORTANCE_SOURCES = ("evidence",)
+
+#: Power iterations used for the largest eigenvalue of :func:`step_gram_surprise`.
+_POWER_ITERATIONS = 30
 
 
 class SynapticUncertaintySettings(NamedTuple):
@@ -259,6 +271,10 @@ class SynapticUncertaintySettings(NamedTuple):
     learning_rate: float
     increment_scale: float
     prior_precision: float
+    importance_source: str = "evidence"
+    natural_memory: float = 10.0
+    natural_ridge: float = 1e-2
+    gram_evidence: bool = False
 
 
 def resolve_synaptic_uncertainty_settings(
@@ -291,7 +307,9 @@ def resolve_synaptic_uncertainty_settings(
 
     Both halves are mean-field: each weight's gradient is divided by its own
     precision, and the joint structure across the weights feeding one child is
-    not retained.
+    not retained. A layer can record that structure without using it (its input
+    Gram matrices, see :class:`~pyhgf.typing.vectorised.Layer`), for a step a
+    caller takes from the recorded fields.
 
     Parameters
     ----------
@@ -329,6 +347,40 @@ def resolve_synaptic_uncertainty_settings(
             :math:`c` times more, while the step size before any importance
             accumulates, the reversion rate and the window are unchanged. A
             uniform scale leaves rank orderings unchanged.
+        ``importance_source``
+            Where the child-side factor :math:`p` of the importance increment
+            :math:`p \otimes h^2` comes from. The only accepted value is
+            ``"evidence"`` (the default): the evidence precision carried up each
+            network from its clamped layer (see :func:`learning_weights_vectorised`),
+            so a network whose clamped layer is continuous seeds it with that
+            layer's own precision, one number for every unit.
+        ``natural_memory``
+            Memory :math:`M`, in learning steps, of the running input Gram matrix
+            ``weights_step_gram``: each step mixes in the current batch at weight
+            :math:`1/M` (see :func:`vectorised_step_gram_update`), unless the layer
+            carries its own ``weights_step_rate``. At least 1; at 1 the running
+            matrix is the current batch's alone.
+        ``natural_ridge``
+            Ridge :math:`\rho` of :func:`step_gram_surprise`, relative to the mean
+            eigenvalue of the running Gram matrix: :math:`\delta = \rho
+            \operatorname{tr} \bar G / d`. Positive.
+        ``gram_evidence``
+            Whether each sample's outer product :math:`h_t h_t^\top` enters the
+            recorded Gram matrices (``weights_input_gram``, ``weights_step_gram``
+            and ``weights_batch_gram``) weighted by the evidence its child layer
+            received, :math:`r_t = \frac{1}{n} \sum_a p_{a,t}`: the mean over the
+            child's :math:`n` units of the child-side importance factor :math:`p`,
+            the evidence precision of :func:`learning_weights_vectorised`. Within
+            each batch the weights are rescaled so that the weighted Gram matrix
+            keeps the trace of the unweighted one, so the evidence decides which
+            samples' inputs shape the matrix and leaves its scale alone. Where the
+            evidence is one constant across samples (a continuous clamped child)
+            the matrix is unchanged. At a categorical child :math:`r_t = (1 -
+            \lVert \mathbf{p}_t \rVert^2) / K`, with :math:`\mathbf{p}_t` the
+            predicted probabilities over :math:`K` classes, so a sample the model
+            already predicts confidently counts less. ``False`` (the default)
+            weights every sample equally. A single-sample step is unaffected
+            either way, since the rescaling cancels the weight of a lone sample.
 
         The gradient the rule descends is not among them: it is fixed to
         ``"synaptic_uncertainty"``.
@@ -374,6 +426,18 @@ def resolve_synaptic_uncertainty_settings(
     increment_scale = float(settings["increment_scale"])
     if increment_scale <= 0:
         raise ValueError(f"increment_scale must be positive, got {increment_scale}.")
+    natural_memory = float(settings["natural_memory"])
+    if natural_memory < 1:
+        raise ValueError(f"natural_memory must be at least 1, got {natural_memory}.")
+    natural_ridge = float(settings["natural_ridge"])
+    if natural_ridge <= 0:
+        raise ValueError(f"natural_ridge must be positive, got {natural_ridge}.")
+    importance_source = str(settings["importance_source"])
+    if importance_source not in IMPORTANCE_SOURCES:
+        raise ValueError(
+            f"importance_source must be one of {IMPORTANCE_SOURCES}, got "
+            f"{importance_source!r}."
+        )
     return SynapticUncertaintySettings(
         window=window,
         prior_variance=prior_variance,
@@ -381,6 +445,10 @@ def resolve_synaptic_uncertainty_settings(
         learning_rate=learning_rate,
         increment_scale=increment_scale,
         prior_precision=1.0 / prior_variance,
+        importance_source=importance_source,
+        natural_memory=natural_memory,
+        natural_ridge=natural_ridge,
+        gram_evidence=bool(settings["gram_evidence"]),
     )
 
 
@@ -564,3 +632,252 @@ def vectorised_synaptic_uncertainty_update(
     new_delta = precision_delta + increment - precision_delta / settings.window
 
     return weights + update, new_delta
+
+
+def create_input_gram(weights: jnp.ndarray) -> jnp.ndarray:
+    r"""Initialise the input Gram matrix of one weight matrix at zero.
+
+    The Gram matrix spans the parent side of ``weights``, so its shape is the last
+    axis of ``weights`` on both sides, ``(n_parents[+1], n_parents[+1])``, and a bias
+    column is included. Zero is the state before any evidence, matching a freshly
+    installed ``weights_precision_delta``.
+
+    Parameters
+    ----------
+    weights :
+        The weight matrix the Gram matrix accompanies, ``(n_children,
+        n_parents[+1])``.
+
+    Returns
+    -------
+    jnp.ndarray
+        Zeros of shape ``(n_parents[+1], n_parents[+1])``, stored as a layer's
+        ``weights_input_gram``.
+    """
+    n_inputs = weights.shape[-1]
+    return jnp.zeros((n_inputs, n_inputs), dtype=weights.dtype)
+
+
+def vectorised_input_gram_update(
+    gram: jnp.ndarray,
+    increment: jnp.ndarray,
+    settings: SynapticUncertaintySettings,
+) -> jnp.ndarray:
+    r"""Advance the input Gram matrix of one weight matrix by one learning step.
+
+    .. math::
+
+        G \leftarrow G + c\,\overline{h h^\top} - \frac{G}{N}
+
+    where :math:`\overline{h h^\top}` is the weighted batch mean of the outer
+    product of the coupled parent activations :math:`h`, :math:`c` is the
+    increment scale and :math:`N` the window. This is the update
+    :func:`vectorised_synaptic_uncertainty_update` applies to the accumulated
+    precision, :math:`\Delta \leftarrow \Delta + c\,\overline{p \otimes h^2} -
+    \Delta / N`, with the child-side factor :math:`p` left out and the parent
+    side kept as a full matrix rather than its diagonal.
+
+    Two consequences follow. Where the child-side factor is one constant
+    :math:`\xi` across units and samples (a continuous clamped layer), every row
+    :math:`a` of the accumulated precision is :math:`\Delta_{a,\cdot} = \xi \,
+    \operatorname{diag}(G)`, so :math:`G` holds the off-diagonal terms that the
+    per-weight precision discards. Where it varies, :math:`\bar{p}_a\, G` is the
+    Kronecker-factored approximation of the precision of row :math:`a`.
+
+    Parameters
+    ----------
+    gram :
+        The accumulated Gram matrix, ``(n_parents[+1], n_parents[+1])``.
+    increment :
+        The weighted batch mean of :math:`h h^\top`, same shape, before the
+        increment scale is applied.
+    settings :
+        The resolved settings of the weight-belief rule.
+
+    Returns
+    -------
+    jnp.ndarray
+        The advanced Gram matrix.
+    """
+    return gram + settings.increment_scale * increment - gram / settings.window
+
+
+def create_step_gram(weights: jnp.ndarray) -> tuple[jnp.ndarray, jnp.ndarray]:
+    r"""Initialise the running input Gram matrix of one weight matrix at zero.
+
+    Parameters
+    ----------
+    weights :
+        The weight matrix the Gram matrix accompanies, ``(n_children,
+        n_parents[+1])``.
+
+    Returns
+    -------
+    tuple of jnp.ndarray
+        Zeros of shape ``(n_parents[+1], n_parents[+1])``, stored as
+        ``weights_step_gram``, and a zero scalar, stored as
+        ``weights_step_mass``.
+    """
+    return create_input_gram(weights), jnp.zeros((), dtype=weights.dtype)
+
+
+def vectorised_step_gram_update(
+    gram: jnp.ndarray,
+    mass: jnp.ndarray,
+    batch_gram: jnp.ndarray,
+    settings: SynapticUncertaintySettings,
+    rate: Optional[jnp.ndarray] = None,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
+    r"""Mix one batch into the running input Gram matrix of one weight matrix.
+
+    .. math::
+
+        G \leftarrow (1 - \alpha) G + \alpha\, \overline{h h^\top},
+        \qquad
+        m \leftarrow (1 - \alpha) m + \alpha,
+
+    with :math:`\alpha = 1 / M` and :math:`M` the ``natural_memory``, or
+    :math:`\alpha` the layer's own ``weights_step_rate`` where one is given.
+    Starting from :math:`G = 0` and :math:`m = 0`, :math:`G / m` is the
+    weighted average of the batches seen, each batch weighted by the product
+    of the :math:`1 - \alpha` factors of the steps after it, so its first value
+    is the first batch's Gram matrix whatever :math:`\alpha` is.
+
+    Parameters
+    ----------
+    gram, mass :
+        ``weights_step_gram`` and ``weights_step_mass``.
+    batch_gram :
+        The weighted batch mean of :math:`h h^\top`, before any increment scale.
+    settings :
+        The resolved settings of the weight-belief rule.
+    rate :
+        The mixing rate :math:`\alpha` of this step, a scalar in :math:`(0, 1]`,
+        or ``None`` (default) for :math:`1/M`.
+
+    Returns
+    -------
+    tuple of jnp.ndarray
+        The advanced Gram matrix and normaliser.
+    """
+    alpha = 1.0 / settings.natural_memory if rate is None else rate
+    return (1.0 - alpha) * gram + alpha * batch_gram, (1.0 - alpha) * mass + alpha
+
+
+def vectorised_step_rows_update(
+    rows: jnp.ndarray,
+    batch_rows: jnp.ndarray,
+    settings: SynapticUncertaintySettings,
+    rate: Optional[jnp.ndarray] = None,
+) -> jnp.ndarray:
+    r"""Mix one batch's row evidence into the running row evidence.
+
+    .. math::
+
+        e_a \leftarrow (1 - \alpha)\, e_a + \alpha\, \sum_t \omega_t\, p_{a,t}
+        \lVert h_t \rVert^2,
+
+    with :math:`p_{a,t}` the evidence child unit :math:`a` received from sample
+    :math:`t` (the child-side importance factor of
+    :func:`learning_weights_vectorised`), :math:`h_t` the coupled parent
+    activations, :math:`\omega_t` the normalised sample weights, and :math:`\alpha`
+    the rate :func:`vectorised_step_gram_update` uses on the same step. The batch
+    term is the row sum of the batch's importance increment :math:`p \otimes h^2`,
+    taken over the edges only: in a one-to-one element row :math:`a` has the single
+    input :math:`h_a`, and its term is :math:`\sum_t \omega_t\, p_{a,t} h_{a,t}^2`.
+
+    Divided by its mean over rows, :math:`e` is the row scale :math:`s_a` of the
+    Kronecker-factored curvature :math:`s_a G` of row :math:`a`, whose input side
+    :math:`G` is ``weights_step_gram`` (trace matching: :math:`s_a \operatorname{tr}
+    G` equals the row's own curvature trace up to one factor common to all rows).
+    Where the evidence is one constant across units, every :math:`s_a` is 1.
+
+    Parameters
+    ----------
+    rows :
+        ``weights_step_rows``, shape ``(n_children,)``.
+    batch_rows :
+        The batch's row evidence, same shape.
+    settings :
+        The resolved settings of the weight-belief rule.
+    rate :
+        The mixing rate of this step, or ``None`` (default) for :math:`1/M`.
+
+    Returns
+    -------
+    jnp.ndarray
+        The advanced row evidence.
+    """
+    alpha = 1.0 / settings.natural_memory if rate is None else rate
+    return (1.0 - alpha) * rows + alpha * batch_rows
+
+
+def step_gram_surprise(
+    gram: jnp.ndarray,
+    mass: jnp.ndarray,
+    batch_gram: jnp.ndarray,
+    ridge: float,
+) -> jnp.ndarray:
+    r"""How far a batch's input Gram matrix lies outside the running one.
+
+    .. math::
+
+        s = \lambda_{max}\!\left((\bar G + \delta I)^{-1} G_b\right),
+        \qquad
+        \bar G = G / m,
+        \qquad
+        \delta = \rho\, \frac{\operatorname{tr} \bar G}{d},
+
+    with :math:`G_b` the batch's Gram matrix and :math:`\bar G` the running
+    average before this batch is mixed in. :math:`s` is the largest factor by
+    which the batch drives an input direction more strongly than the recent
+    batches did: about 1 when the batch resembles them, and large when it
+    drives a direction they left near the ridge. It is computed by
+    :data:`_POWER_ITERATIONS` steps of power iteration. Before any batch has been mixed in (:math:`m = 0`) there is no running
+    average, and :math:`s = 1`.
+
+    Parameters
+    ----------
+    gram, mass :
+        ``weights_step_gram`` and ``weights_step_mass``, before this step's
+        batch is mixed in.
+    batch_gram :
+        The weighted batch mean of :math:`h h^\top`.
+    ridge :
+        :math:`\rho`, relative to the mean eigenvalue of :math:`\bar G`.
+
+    Returns
+    -------
+    jnp.ndarray
+        The scalar :math:`s`.
+    """
+    average = _symmetrised(gram / jnp.maximum(mass, _EPS))
+    d = average.shape[-1]
+    delta = jnp.maximum(ridge * jnp.trace(average) / d, _EPS)
+    factor = jax.scipy.linalg.cho_factor(
+        average + delta * jnp.eye(d, dtype=average.dtype)
+    )
+    largest = _largest_relative_eigenvalue(factor, _symmetrised(batch_gram))
+    return jnp.where(mass > 0, largest, jnp.ones_like(largest))
+
+
+def _largest_relative_eigenvalue(factor, batch_gram: jnp.ndarray) -> jnp.ndarray:
+    r"""Largest eigenvalue of :math:`A^{-1} G_b`, with ``factor`` the Cholesky of A.
+
+    Found by :data:`_POWER_ITERATIONS` power iterations from the normalised vector of
+    ones.
+    """
+    d = batch_gram.shape[-1]
+
+    def power(_, vector):
+        vector = jax.scipy.linalg.cho_solve(factor, batch_gram @ vector)
+        return vector / jnp.maximum(jnp.linalg.norm(vector), _EPS)
+
+    start = jnp.ones(d, dtype=batch_gram.dtype) / jnp.sqrt(d)
+    vector = jax.lax.fori_loop(0, _POWER_ITERATIONS, power, start)
+    return jnp.linalg.norm(jax.scipy.linalg.cho_solve(factor, batch_gram @ vector))
+
+
+def _symmetrised(gram: jnp.ndarray) -> jnp.ndarray:
+    """Average a Gram matrix with its transpose, removing float32 asymmetry."""
+    return 0.5 * (gram + jnp.swapaxes(gram, -1, -2))

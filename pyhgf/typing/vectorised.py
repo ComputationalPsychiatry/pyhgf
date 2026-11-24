@@ -272,6 +272,72 @@ class Layer(eqx.Module):
         connecting the volatility child named by ``volatility_child_idx`` into
         this layer. Fixed at construction — never part of the learned weights
         (excluded from :meth:`VectorisedNetwork.weights_tuple`).
+    weights_input_gram :
+        Accumulated second moment of the coupled parent activations, or ``None``
+        when none is installed. Shape ``(n_self[+1], n_self[+1])``, the last
+        axis of ``weights_mean`` on both sides, so a bias column is included.
+        Under ``learning_kind="synaptic_uncertainty"`` each learning step
+        advances it as ``weights_precision_delta`` is advanced, with the same
+        increment scale and the same ``1 / window`` decay, but with the full
+        outer product :math:`h h^\top` of the parent activations in place of
+        the increment :math:`p \otimes h^2` (see
+        :func:`pyhgf.updates.vectorised.learning.vectorised_input_gram_update`).
+        In a one-to-one layer (``fully_connected=False``) each row has a single
+        input, so only the diagonal :math:`h_i^2` is recorded. It is recorded
+        only and does not enter the weight update.
+    weights_gradient :
+        The descent gradient of the most recent learning step, same shape as
+        ``weights_mean``, or ``None`` when none is installed. Under
+        ``learning_kind="synaptic_uncertainty"`` each learning step overwrites
+        it with the batch mean gradient that the mean update divided by the
+        precision, masked to the edges in a one-to-one layer. It is recorded
+        only and does not enter the weight update.
+    weights_step_gram :
+        Running average of the second moment of the coupled parent activations
+        over the last ``natural_memory`` learning steps, or ``None`` when none is
+        installed. Same shape as ``weights_input_gram``, and diagonal in a
+        one-to-one layer as that matrix is. Under
+        ``learning_kind="synaptic_uncertainty"`` each learning step advances it
+        as :math:`G \leftarrow (1 - \alpha) G + \alpha \overline{h h^\top}`, with
+        :math:`\alpha` the ``weights_step_rate`` or :math:`1/M` (see
+        :func:`pyhgf.updates.vectorised.learning.vectorised_step_gram_update`).
+        It is independent of ``weights_input_gram``, whose scale and memory
+        follow the accumulated precision, and is the input side of a
+        natural-gradient step a caller can take from the recorded fields. It is
+        recorded only and does not enter the weight update.
+    weights_step_mass :
+        Scalar normaliser of ``weights_step_gram``, advanced as :math:`m
+        \leftarrow (1 - \alpha) m + \alpha` from zero, so that :math:`G / m` is
+        the average of the batches seen rather than a sum shrunk toward its zero
+        start.
+    weights_step_rate :
+        Scalar mixing rate :math:`\alpha` of ``weights_step_gram`` for this
+        weight matrix, in :math:`(0, 1]`, or ``None`` (default) for
+        :math:`1/M` with :math:`M` the ``natural_memory``. The learning step
+        reads it and never writes it, so a caller can set it between steps.
+    weights_step_surprise :
+        Scalar written by every learning step that advances
+        ``weights_step_gram``, or ``None`` (default) to skip it: the largest
+        eigenvalue of :math:`(\bar G + \delta I)^{-1} G_b`, with :math:`G_b`
+        the batch's Gram matrix and :math:`\bar G` the running average before
+        the batch is mixed in (see
+        :func:`pyhgf.updates.vectorised.learning.step_gram_surprise`).
+    weights_step_rows :
+        Running row evidence, shape ``(n_children,)``, or ``None`` (default)
+        when none is installed. Every learning step that advances
+        ``weights_step_gram`` mixes in, at the same rate, the row sums of the
+        batch's importance increment :math:`p \otimes h^2` over the edges (see
+        :func:`pyhgf.updates.vectorised.learning.vectorised_step_rows_update`).
+        Divided by its mean over rows it is the row scale of the
+        Kronecker-factored curvature whose input side is ``weights_step_gram``.
+        It is recorded only and does not enter the weight update.
+    weights_batch_gram :
+        The current step's batch Gram matrix, the same matrix that step mixed
+        into ``weights_step_gram`` and added to ``weights_input_gram`` (evidence
+        weighted under ``gram_evidence``), or ``None`` (default) when none is
+        installed. Same shape as ``weights_input_gram``. Each learning step
+        overwrites it, as it overwrites ``weights_gradient``; it is recorded only
+        and does not enter the weight update.
     """
 
     state: LayerState
@@ -289,6 +355,14 @@ class Layer(eqx.Module):
     value_child_idx: Optional[int] = field(static=True, default=None)
     volatility_child_idx: Optional[int] = field(static=True, default=None)
     volatility_weights: Optional[Array] = None
+    weights_input_gram: Optional[Array] = None
+    weights_gradient: Optional[Array] = None
+    weights_step_gram: Optional[Array] = None
+    weights_step_mass: Optional[Array] = None
+    weights_step_rate: Optional[Array] = None
+    weights_step_surprise: Optional[Array] = None
+    weights_step_rows: Optional[Array] = None
+    weights_batch_gram: Optional[Array] = None
 
 
 class LayerStack(eqx.Module):
