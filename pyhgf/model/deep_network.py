@@ -1536,7 +1536,17 @@ class DeepNetwork:
             Gradient computation mode passed to
             :func:`~pyhgf.updates.vectorised.learning.learning_weights_vectorised`:
             ``"standard"`` or ``"precision_weighted"`` (default), both reading
-            the settled beliefs, strictly local per edge.
+            the settled beliefs, strictly local per edge. ``"variational"``
+            descends the expected log-likelihood of each weight matrix under the
+            posterior of the beliefs, posterior variances included
+            (:func:`~pyhgf.updates.vectorised.learning.vectorised_variational_gradient`);
+            it is available with layers added one by one, and not in
+            :meth:`batch_update`. ``"synaptic_uncertainty"`` runs the weight-belief
+            rule (:func:`~pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`),
+            which takes its own steps, so ``optimiser`` is then unused.
+        learning_kwargs :
+            Settings of ``"synaptic_uncertainty"``, as the function above resolves
+            them.
         record :
             Tuple of ``LayerState`` field names to record at every time step,
             e.g. ``("expected_mean", "precision")``. ``None`` (default) skips
@@ -1551,7 +1561,9 @@ class DeepNetwork:
         check_gradient_health :
             If True (default), probe the per-matrix gradient magnitudes on the
             last sample after training and raise :class:`DeadGradientWarning`
-            when part of the network receives no learning signal.
+            when part of the network receives no learning signal. The probe reads
+            the rank-one gradient factors, so it is skipped for
+            ``learning_kind="variational"``.
         update_precisions :
             If True (default), the carried confidence fields evolve from sample to
             sample: the value-level precision each volatile layer carries (its
@@ -1617,7 +1629,7 @@ class DeepNetwork:
             self.trajectories = None
             self.predictions = step_output
 
-        if check_gradient_health and weight_update:
+        if check_gradient_health and weight_update and gradient_kind != "variational":
             self._warn_if_gradients_dead(x[-1], y[-1], gradient_kind)
 
         return self
@@ -1816,9 +1828,10 @@ class DeepNetwork:
             phase and update ``self.opt_state``. If ``None``, only beliefs are updated.
         learning_kind :
             Weight-gradient mode used when ``optimiser`` is supplied. One of
-            ``"standard"`` or ``"precision_weighted"`` (default). Both are
-            strictly local. Each weight update reads only its own
-            connection's prediction error, activation, and precision.
+            ``"standard"``, ``"precision_weighted"`` (default) or
+            ``"variational"`` (see :meth:`fit`). All are strictly local. Each
+            weight update reads only its own connection's beliefs, activation, and
+            precision.
 
         Returns
         -------

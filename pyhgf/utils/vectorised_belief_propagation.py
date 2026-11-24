@@ -38,6 +38,8 @@ from pyhgf.updates.vectorised.continuous import (
     vectorised_continuous_prediction_error,
 )
 from pyhgf.updates.vectorised.learning import (
+    BACKPROP_KIND,
+    VARIATIONAL_KIND,
     SynapticUncertaintySettings,
     clamped_layer_evidence,
     evidence_pullback,
@@ -47,6 +49,7 @@ from pyhgf.updates.vectorised.learning import (
     vectorised_step_gram_update,
     vectorised_step_rows_update,
     vectorised_synaptic_uncertainty_update,
+    vectorised_variational_gradient,
 )
 from pyhgf.updates.vectorised.volatile import (
     vectorised_layer_posterior_update,
@@ -1525,6 +1528,14 @@ def _learn_sweep(
     precisions advance. The optimiser state is returned unchanged, since the
     rule carries none.
     """
+    if learning_kind in (VARIATIONAL_KIND, BACKPROP_KIND):
+        if synaptic_uncertainty_settings is not None:
+            raise ValueError(
+                f"learning_kind={learning_kind!r} is a gradient for an optimiser; it "
+                "does not run the weight-belief rule."
+            )
+        grads = _weight_gradients(network, learning_kind)
+        return _apply_weight_updates(network, grads, opt_state, optimiser)
     factors = _weight_quantities(network, learning_kind)
     grads = tuple(_gradient_matrix(f) for f in factors)
     if synaptic_uncertainty_settings is not None:
@@ -1729,8 +1740,113 @@ def sample_step(
     )
     return (
         _input_prediction_error(updated),
-        tuple(_gradient_matrix(f) for f in _weight_quantities(updated, learning_kind)),
+        _weight_gradients(updated, learning_kind),
         _precision_increments(network, carry_precisions(updated)),
+    )
+
+
+def _variational_gradients(network: VectorisedNetwork) -> tuple:
+    """Per-element descent gradients of the ``"variational"`` learning kind.
+
+    One entry per element, ``None`` for the bottom element; see
+    :func:`pyhgf.updates.vectorised.learning.vectorised_variational_gradient`. Must
+    run after :func:`_update_sweep`, which leaves every layer at its posterior.
+    """
+    elements = network.layers
+    grads: list = [None]
+    for i in range(1, len(elements)):
+        parent = elements[i]
+        if isinstance(parent, LayerStack):
+            raise NotImplementedError(
+                "learning_kind='variational' does not support layer stacks; add "
+                "the layers one by one with add_layer."
+            )
+        child_state, _, child_is_input_layer = _child_view(elements[i - 1])
+        grads.append(
+            vectorised_variational_gradient(
+                parent_state=parent.state,
+                child_state=child_state,
+                weights=parent.weights_mean,
+                coupling_fn=parent.coupling_fn,
+                parent_has_constant=parent.add_constant_input,
+                child_is_input_layer=child_is_input_layer,
+                mean_field_updates=network.mean_field_updates,
+            )
+        )
+    return tuple(grads)
+
+
+def _backprop_gradients(network: VectorisedNetwork) -> tuple:
+    r"""Per-element descent gradients of the ``"backprop"`` learning kind.
+
+    The gradient, by automatic differentiation, of
+
+    .. math::
+
+        \tfrac12 \sum_k \bar{\pi}_{0,k} \big( y_k - \hat{y}_k \big)^2,
+
+    with :math:`y` the posterior mean of the observed (bottom) layer, the observation
+    it is clamped to, :math:`\bar{\pi}_0` its conditional expected precision, and
+    :math:`\hat{y}` the forward pass of the network: from the mean of the top layer
+    down, each layer set to the value its parents predict through their coupling
+    functions. The hidden beliefs the update sweep inferred are not read, so this is
+    the gradient backpropagation computes for the same weights. Under the relaxed
+    updates (not ``mean_field_updates``), as the conditional expected precisions of
+    the hidden layers grow with the top layer's variance negligible against theirs,
+    the precision-weighted and the variational gradients tend to it (see
+    :func:`~pyhgf.updates.vectorised.learning.vectorised_variational_gradient`). Must
+    run after :func:`_update_sweep`.
+
+    Returns
+    -------
+    tuple
+        One gradient per element, shape of its ``weights_mean``, ``None`` for the
+        bottom element.
+
+    Raises
+    ------
+    NotImplementedError
+        If an element is a ``LayerStack``, or the observed layer is binary or
+        categorical.
+    """
+    elements = network.layers
+    if any(isinstance(element, LayerStack) for element in elements):
+        raise NotImplementedError(
+            "learning_kind='backprop' does not support layer stacks; add the layers "
+            "one by one with add_layer."
+        )
+    if elements[0].kind not in ("volatile", "continuous"):
+        raise NotImplementedError(
+            "learning_kind='backprop' needs a continuous observed layer, got "
+            f"{elements[0].kind!r}."
+        )
+    top = len(elements) - 1
+    target = elements[0].state.mean
+    precision = elements[0].state.conditional_expected_precision
+
+    def loss(weights):
+        value = elements[top].state.mean
+        for i in range(top, 0, -1):
+            parent = elements[i]
+            matrix = weights[i - 1]
+            n_parents = parent.state.mean.shape[-1]
+            value = matrix[:, :n_parents] @ parent.coupling_fn(value)
+            if parent.add_constant_input:
+                value = value + matrix[:, -1]
+        return 0.5 * jnp.sum(precision * (target - value) ** 2)
+
+    weights = tuple(element.weights_mean for element in elements[1:])
+    return (None,) + tuple(jax.grad(loss)(weights))
+
+
+def _weight_gradients(network: VectorisedNetwork, learning_kind: str) -> tuple:
+    """Per-element descent gradients of ``learning_kind``, after the update sweep."""
+    if learning_kind == VARIATIONAL_KIND:
+        return _variational_gradients(network)
+    if learning_kind == BACKPROP_KIND:
+        return _backprop_gradients(network)
+    return tuple(
+        _gradient_matrix(f) for f in _weight_quantities(network, learning_kind)
     )
 
 
@@ -1854,6 +1970,12 @@ def _batch_step(
         ``(batch, n_input_features)`` — the messages a caller passes to
         whatever sits behind this network.
     """
+    if learning_kind in (VARIATIONAL_KIND, BACKPROP_KIND):
+        raise NotImplementedError(
+            f"learning_kind={learning_kind!r} is available for online learning (fit, "
+            "update) only: its gradient is not a product of two per-sample vectors, "
+            "which is what the batch average contracts."
+        )
 
     # Each sample contributes only its two gradient factors (small vectors);
     # the batch-mean gradient is then one contraction per weight matrix. This

@@ -2189,3 +2189,190 @@ def test_batch_update_zero_total_weight_contributes_no_data():
     updated = _weighted_batch_update(x, y, jnp.zeros(2))
     for actual, expected in zip(updated, initial, strict=True):
         np.testing.assert_array_equal(actual, expected)
+
+
+# ----------------------------------------------------------------- variational learning
+
+
+def _scalar_chain(feedforward_uncertainty=True):
+    """Build a linear chain of single units, input -> h3 -> h2 -> h1 -> y.
+
+    Returns the network state and the exact moments used by the tests below: the
+    weights, the conditional precisions and the observation precision.
+    """
+    weights = {1: 1.3, 2: -0.8, 3: 1.6, 4: 0.9}
+    own = {1: 2.0, 2: 0.5, 3: 4.0}
+    observation = 3.0
+    net = DeepNetwork(
+        coupling_fn=lambda v: v,
+        tonic_volatility=True,
+        feedforward_uncertainty=feedforward_uncertainty,
+    )
+    layer = {
+        "volatility_parent": False,
+        "tonic_volatility": -40.0,
+        "add_constant_input": False,
+    }
+    net.add_layer(size=1, precision=observation, **layer)
+    for k in (1, 2, 3):
+        net.add_layer(size=1, precision=own[k], **layer)
+    net.add_layer(
+        size=1,
+        precision=1e12,
+        expected_precision=1e12,
+        conditional_expected_precision=1e12,
+        **layer,
+    )
+    layers = list(net.state.layers)
+    for k in (1, 2, 3, 4):
+        layers[k] = dataclasses.replace(
+            layers[k], weights_mean=jnp.array([[weights[k]]])
+        )
+    return (
+        dataclasses.replace(net.state, layers=tuple(layers)),
+        weights,
+        own,
+        observation,
+    )
+
+
+def _scalar_chain_posterior(x, y, weights, own, observation):
+    """Exact Gaussian posterior of (h3, h2, h1) given x and y, and the prior of y."""
+    a = np.array([
+        [1, 0, 0, 0],
+        [weights[3], 1, 0, 0],
+        [weights[2] * weights[3], weights[2], 1, 0],
+        [weights[1] * weights[2] * weights[3], weights[1] * weights[2], weights[1], 1],
+    ])
+    cov = a @ np.diag([1 / own[3], 1 / own[2], 1 / own[1], 1 / observation]) @ a.T
+    m3 = weights[4] * x
+    mean = np.array([m3, weights[3] * m3, weights[2] * weights[3] * m3])
+    mean = np.append(mean, weights[1] * mean[2])
+    gain = cov[:3, 3] / cov[3, 3]
+    post_mean = mean[:3] + gain * (y - mean[3])
+    post_cov = cov[:3, :3] - np.outer(gain, cov[:3, 3])
+    return post_mean, post_cov, cov[3, 3]
+
+
+def test_variational_gradient_matches_the_exact_expectation():
+    """On a linear chain, the variational gradient is the exact M-step gradient.
+
+    For the edge from parent b to child a, the derivative of the expected
+    log-likelihood is pi_a (E[x_a x_b] - w E[x_b^2]), with the moments taken under the
+    exact Gaussian posterior (the observed y is known exactly).
+    """
+    from pyhgf.utils.vectorised_belief_propagation import _variational_gradients
+
+    x, y = 0.7, 2.5
+    state, weights, own, observation = _scalar_chain()
+    swept = update_sweep(prediction_sweep(state, jnp.array([x])), jnp.array([y]))
+    grads = _variational_gradients(swept)
+    post_mean, post_cov, _ = _scalar_chain_posterior(x, y, weights, own, observation)
+    mean = {3: post_mean[0], 2: post_mean[1], 1: post_mean[2]}
+    cov = {(3, 3): post_cov[0, 0], (2, 2): post_cov[1, 1], (1, 1): post_cov[2, 2]}
+    cov[(1, 2)] = post_cov[2, 1]
+    cov[(2, 3)] = post_cov[1, 0]
+    # matrix 1: y from h1
+    expected = observation * (y * mean[1] - weights[1] * (mean[1] ** 2 + cov[(1, 1)]))
+    np.testing.assert_allclose(-grads[1][0, 0], expected, rtol=1e-5)
+    # matrix 2: h1 from h2; matrix 3: h2 from h3
+    for k, (child, parent) in ((2, (1, 2)), (3, (2, 3))):
+        moment = mean[child] * mean[parent] + cov[(child, parent)]
+        second = mean[parent] ** 2 + cov[(parent, parent)]
+        expected = own[child] * (moment - weights[k] * second)
+        np.testing.assert_allclose(-grads[k][0, 0], expected, rtol=1e-5)
+
+
+def test_variational_learning_is_online_only():
+    """``batch_update`` rejects the variational kind; ``fit`` trains with it."""
+    net = (
+        DeepNetwork(coupling_fn=jax.nn.leaky_relu)
+        .add_layer(size=2)
+        .add_layer(size=3)
+        .add_layer(size=2)
+    )
+    x = jnp.array([[0.2, -0.5], [1.3, 0.8]])
+    y = jnp.array([[0.6, 0.1], [-0.3, 0.4]])
+    net.fit(x, y, optimiser=optax.sgd(1e-2), learning_kind="variational")
+    assert all(
+        np.isfinite(np.asarray(layer.weights_mean)).all()
+        for layer in net.state.layers[1:]
+    )
+    with pytest.raises(NotImplementedError, match="online learning"):
+        net.batch_update(x, y, optimiser=optax.sgd(1e-2), learning_kind="variational")
+
+
+def _leaky(x):
+    """Return the leaky rectified linear activation with slope 0.3 below zero."""
+    return jax.nn.leaky_relu(x, negative_slope=0.3)
+
+
+def _backprop_network(hidden_precision):
+    """Return a network of two leaky hidden layers with fixed precisions and biases."""
+    net = DeepNetwork(coupling_fn=_leaky, feedforward_uncertainty=True)
+    pinned = {"volatility_parent": False}
+    net.add_layer(size=2, precision=1.0, expected_precision=1.0, **pinned)
+    for _ in range(2):
+        net.add_layer(
+            size=3,
+            precision=hidden_precision,
+            expected_precision=hidden_precision,
+            **pinned,
+        )
+    net.add_layer(
+        size=2,
+        coupling_fn=lambda x: x,
+        precision=1e10,
+        expected_precision=1e10,
+        **pinned,
+    )
+    return net.weight_initialisation("he", key=jax.random.key(4))
+
+
+def test_backprop_gradient_is_the_forward_pass_gradient():
+    """The ``"backprop"`` gradient differentiates the forward pass's squared error.
+
+    It equals the gradient, written out here layer by layer, of half the
+    precision-weighted squared error of the network run forward from the clamped input,
+    whatever the hidden layers' precisions. As those precisions grow, the variational
+    gradient, which reads the inferred hidden beliefs, tends to it.
+    """
+    from pyhgf.utils.vectorised_belief_propagation import (
+        _backprop_gradients,
+        _variational_gradients,
+    )
+
+    jax.config.update("jax_enable_x64", True)
+    try:
+        x, y = jnp.array([0.7, -1.3]), jnp.array([1.0, -0.5])
+        gaps = []
+        for hidden_precision in (1.0, 1e2, 1e6):
+            net = _backprop_network(hidden_precision)
+            swept = update_sweep(prediction_sweep(net.state, x), y)
+            grads = _backprop_gradients(swept)
+            layers = swept.layers
+            precision = layers[0].state.conditional_expected_precision
+
+            def loss(weights, layers=layers, precision=precision):
+                value = x
+                for i, coupling in ((3, lambda v: v), (2, _leaky)):
+                    value = (
+                        weights[i - 1][:, :-1] @ coupling(value) + weights[i - 1][:, -1]
+                    )
+                value = weights[0][:, :-1] @ _leaky(value) + weights[0][:, -1]
+                return 0.5 * jnp.sum(precision * (y - value) ** 2)
+
+            expected = jax.grad(loss)(tuple(layer.weights_mean for layer in layers[1:]))
+            for got, want in zip(grads[1:], expected):
+                np.testing.assert_allclose(got, want, rtol=1e-10, atol=1e-12)
+            variational = _variational_gradients(swept)
+            gaps.append([
+                float(jnp.linalg.norm(v - b) / jnp.linalg.norm(b))
+                for v, b in zip(variational[1:], grads[1:])
+            ])
+        gaps = np.array(gaps)
+        assert np.all(np.diff(gaps, axis=0) < 0)
+        assert np.all(gaps[0] > 0.1)
+        assert np.all(gaps[-1] < 1e-3)
+    finally:
+        jax.config.update("jax_enable_x64", False)
