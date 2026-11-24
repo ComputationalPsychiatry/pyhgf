@@ -59,11 +59,13 @@ class _Core(NamedTuple):
     """A part tree's training step as pure functions with explicit state.
 
     ``forward(state, x)`` returns the tree's output and a cache of whatever the backward
-    walk needs; ``backward(state, cache, error)`` returns the error at the tree's input,
-    the advanced state, and a tuple of per-part report entries (see
-    :func:`step_report`). All are pure — the recursion over the tree happens while
-    tracing, staging one graph. ``write_back(state)`` copies a state pytree onto the
-    part objects the core was built from.
+    walk needs; ``backward(state, cache, error, trust_region_scale=1.0)`` returns the
+    error at the tree's input, the advanced state, and a tuple of per-part report entries
+    (see :func:`step_report`), multiplying the trust region of every part stepped by the
+    Kronecker-factored weight belief by ``trust_region_scale``. All are pure: the
+    recursion over the tree happens while tracing, staging one graph.
+    ``write_back(state)`` copies a state pytree onto the part objects the core was built
+    from.
     """
 
     init_state: Any
@@ -103,7 +105,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
         out = states[0].expected_mean
         return out.reshape(*x.shape[:-1], -1), (flat, states)
 
-    def backward(state, cache, error):
+    def backward(state, cache, error, trust_region_scale=1.0):
         network, opt_state = state
         flat_x, states = cache
         out = states[0].expected_mean
@@ -123,6 +125,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
             predicted=states,
             weight_reuse=weight_reuse,
             kronecker_settings=kronecker_settings,
+            trust_region_scale=trust_region_scale,
         )
         update_norm = jnp.sqrt(
             sum(
@@ -163,7 +166,7 @@ def _frozen_core(part: EquinoxAdapter, path: str) -> _Core:
     def forward(state, x):
         return part.forward_fn(x)
 
-    def backward(state, cache, error):
+    def backward(state, cache, error, trust_region_scale=1.0):
         return part.backward_fn(cache, error), state, ()
 
     return _Core(init_state_pytree, forward, backward, lambda state: None)
@@ -185,11 +188,13 @@ def _sequential_core(part: PCSequential, path: str) -> _Core:
             caches.append(cache)
         return x, tuple(caches)
 
-    def backward(state, caches, error):
+    def backward(state, caches, error, trust_region_scale=1.0):
         new_state = list(state)
         reports: list = []
         for i in reversed(range(len(cores))):
-            error, new_state[i], report = cores[i].backward(state[i], caches[i], error)
+            error, new_state[i], report = cores[i].backward(
+                state[i], caches[i], error, trust_region_scale
+            )
             reports[:0] = report  # keep pipeline order, not visit order
         return error, tuple(new_state), tuple(reports)
 
@@ -213,8 +218,10 @@ def _residual_core(part: Residual, path: str) -> _Core:
         y, cache = inner.forward(state, x)
         return x + y, cache
 
-    def backward(state, cache, error):
-        error_in, new_state, report = inner.backward(state, cache, error)
+    def backward(state, cache, error, trust_region_scale=1.0):
+        error_in, new_state, report = inner.backward(
+            state, cache, error, trust_region_scale
+        )
         return error + error_in, new_state, report
 
     return _Core(inner.init_state, forward, backward, inner.write_back)
@@ -241,13 +248,17 @@ def _fused_qkv_attention_core(part: MultiHeadAttention, path: str) -> _Core:
         y, cache_o = o_core.forward(state_o, ctx)
         return y, (cache_qkv, cache_mix, cache_o)
 
-    def backward(state, cache, error):
+    def backward(state, cache, error, trust_region_scale=1.0):
         state_qkv, state_o = state
         cache_qkv, cache_mix, cache_o = cache
-        d_ctx, new_o, report_o = o_core.backward(state_o, cache_o, error)
+        d_ctx, new_o, report_o = o_core.backward(
+            state_o, cache_o, error, trust_region_scale
+        )
         d_q, d_k, d_v = _mixing_backward(cache_mix, d_ctx)
         d_qkv = jnp.concatenate([d_q, d_k, d_v], axis=-1)
-        error_qkv, new_qkv, report_qkv = qkv_core.backward(state_qkv, cache_qkv, d_qkv)
+        error_qkv, new_qkv, report_qkv = qkv_core.backward(
+            state_qkv, cache_qkv, d_qkv, trust_region_scale
+        )
         return error_qkv, (new_qkv, new_o), report_qkv + report_o
 
     def write_back(state):
@@ -295,15 +306,17 @@ def _attention_core(part: MultiHeadAttention, path: str) -> _Core:
         y, cache_o = o_core.forward(state_o, ctx)
         return y, (cache_q, cache_k, cache_v, cache_mix, cache_o)
 
-    def backward(state, cache, error):
+    def backward(state, cache, error, trust_region_scale=1.0):
         state_q, state_k, state_v, state_o = state
         cache_q, cache_k, cache_v, cache_mix, cache_o = cache
-        d_ctx, new_o, report_o = o_core.backward(state_o, cache_o, error)
+        d_ctx, new_o, report_o = o_core.backward(
+            state_o, cache_o, error, trust_region_scale
+        )
         d_q, d_k, d_v = _mixing_backward(cache_mix, d_ctx)
         # Process the three input cores; errors and reports accumulate since they
         # share the same input.
         qkv_results = [
-            core.backward(s, c, d)
+            core.backward(s, c, d, trust_region_scale)
             for core, s, c, d in [
                 (q_core, state_q, cache_q, d_q),
                 (k_core, state_k, cache_k, d_k),
@@ -374,23 +387,26 @@ def _gpt_core(part: HybridGPT, path: str) -> _Core:
         out, cache_pipe = pipeline_core.forward(state_pipe, tok + pos[None])
         return out, (cache_pipe, cache_tok, cache_pos)
 
-    def backward(state, cache, error):
+    def backward(state, cache, error, trust_region_scale=1.0):
         state_pipe, state_tok, state_pos = state
         cache_pipe, cache_tok, cache_pos = cache
         embedding_error, new_pipe, reports = pipeline_core.backward(
-            state_pipe, cache_pipe, error
+            state_pipe, cache_pipe, error, trust_region_scale
         )
         new_tok, new_pos = state_tok, state_pos
         if token_core is not None:
             _, new_tok, report = token_core.backward(
-                state_tok, cache_tok, embedding_error
+                state_tok, cache_tok, embedding_error, trust_region_scale
             )
             reports = reports + report
         if position_core is not None:
             # The position part sees one row per position, so it receives the
             # batch mean of the message.
             _, new_pos, report = position_core.backward(
-                state_pos, cache_pos, embedding_error.mean(axis=0)
+                state_pos,
+                cache_pos,
+                embedding_error.mean(axis=0),
+                trust_region_scale,
             )
             reports = reports + report
         return embedding_error, (new_pipe, new_tok, new_pos), reports
@@ -471,6 +487,16 @@ class FusedPipeline:
         Every learning part averages its update over the rows it is handed.
         ``"active"`` (default) divides by the number of rows carrying a non-zero error;
         ``"rows"`` divides by the row count.
+    trust_region_scale_fn :
+        How the trust region of every part stepped by the Kronecker-factored weight
+        belief is scaled at each step, ``(output, target) -> scalar``, from the tree's
+        output before the step and the training target. The bound :math:`\kappa` of each
+        such part (see
+        :func:`~pyhgf.updates.vectorised.learning.resolve_kronecker_settings`) is
+        multiplied by the returned value for this step only, so a value of zero moves no
+        weight and a non-finite value is treated as zero. Must be a pure function of
+        arrays. ``None`` (default) leaves every trust region at its setting. Parts
+        stepped by an optimiser are unaffected.
     """
 
     def __init__(
@@ -478,6 +504,9 @@ class FusedPipeline:
         part,
         error_fn: Optional[Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray]] = None,
         error_normalisation: str = "active",
+        trust_region_scale_fn: Optional[
+            Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray]
+        ] = None,
     ):
         if error_fn is None:
             error_fn = lambda out, target: out - target  # noqa: E731
@@ -504,7 +533,14 @@ class FusedPipeline:
                 rows = error.reshape(-1, error.shape[-1])
                 active = jnp.count_nonzero(jnp.any(rows != 0, axis=-1))
                 error = error * (rows.shape[0] / jnp.maximum(active, 1))
-            input_error, state, reports = self._core_fns.backward(state, cache, error)
+            scale = (
+                1.0
+                if trust_region_scale_fn is None
+                else trust_region_scale_fn(output, target)
+            )
+            input_error, state, reports = self._core_fns.backward(
+                state, cache, error, scale
+            )
             return state, output, input_error, reports
 
         # The carried state is consumed and rebuilt every step, so its

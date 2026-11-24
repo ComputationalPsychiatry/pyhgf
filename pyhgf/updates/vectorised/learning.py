@@ -827,18 +827,24 @@ def kronecker_direction(
     return direction, quadratic
 
 
-def kronecker_step_scale(quadratic: jnp.ndarray, settings: KroneckerSettings):
+def kronecker_step_scale(
+    quadratic: jnp.ndarray, settings: KroneckerSettings, trust_region_scale=1.0
+):
     r"""Scale :math:`c` of the trust region shared by every weight matrix.
 
-    :math:`c = \min(1, \sqrt{\kappa / (\eta^2 q)})`, with :math:`q` the sum over the
+    :math:`c = \min(1, \sqrt{s \kappa / (\eta^2 q)})`, with :math:`q` the sum over the
     weight matrices of the quadratics of :func:`kronecker_direction` (see
-    :func:`resolve_kronecker_settings`). A non-finite :math:`q` gives :math:`c = 0`, so
-    no weight moves.
+    :func:`resolve_kronecker_settings`) and :math:`s` the ``trust_region_scale``, which
+    multiplies the bound :math:`\kappa` for one step (default 1). A non-finite
+    :math:`q`, or an :math:`s` that is non-finite or not positive, gives :math:`c = 0`,
+    so no weight moves.
     """
     eta = settings.learning_rate
-    bounded = jnp.sqrt(settings.trust_region / jnp.maximum(eta**2 * quadratic, _EPS))
+    budget = settings.trust_region * jnp.maximum(trust_region_scale, 0.0)
+    bounded = jnp.sqrt(budget / jnp.maximum(eta**2 * quadratic, _EPS))
     scale = jnp.minimum(1.0, bounded)
-    return jnp.where(jnp.isfinite(quadratic), scale, 0.0)
+    finite = jnp.isfinite(quadratic) & jnp.isfinite(budget)
+    return jnp.where(finite, scale, 0.0)
 
 
 def kronecker_slow_mean_update(

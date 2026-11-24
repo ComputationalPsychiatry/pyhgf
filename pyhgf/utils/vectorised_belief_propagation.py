@@ -1669,6 +1669,7 @@ def _apply_kronecker_updates(
     settings: KroneckerSettings,
     increments: Optional[tuple] = None,
     mix=1.0,
+    trust_region_scale=1.0,
 ) -> VectorisedNetwork:
     r"""Advance every Kronecker-factored weight belief one step.
 
@@ -1695,6 +1696,10 @@ def _apply_kronecker_updates(
         Weight of the increments, between zero and one (see
         :func:`~pyhgf.updates.vectorised.learning.kronecker_factor_update`): zero for
         a batch that carries no data leaves the factors and their mass unchanged.
+    trust_region_scale :
+        Multiplies the trust region :math:`\kappa` for this step (see
+        :func:`~pyhgf.updates.vectorised.learning.kronecker_step_scale`). Default
+        ``1.0``.
 
     With bias-corrected factors (an element carrying ``weights_factor_mass``) the
     stored factors are the unnormalised running sums, and the step divides them by
@@ -1794,7 +1799,10 @@ def _apply_kronecker_updates(
         advanced[i] = (output_factor, input_factor, mass, direction, slow)
         quadratic = quadratic + matrix_quadratic
 
-    step = kronecker_step_scale(quadratic, settings) * settings.learning_rate
+    step = (
+        kronecker_step_scale(quadratic, settings, trust_region_scale)
+        * settings.learning_rate
+    )
     for i, (output_factor, input_factor, mass, direction, slow) in advanced.items():
         direction = jnp.where(jnp.isfinite(direction), direction, 0.0)
         fields = {} if mass is None else {"weights_factor_mass": mass}
@@ -2179,6 +2187,7 @@ def _batch_step(
     synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
     weight_reuse: float = 1.0,
     kronecker_settings: Optional[KroneckerSettings] = None,
+    trust_region_scale=1.0,
 ) -> tuple[VectorisedNetwork, Optional[optax.OptState], jnp.ndarray]:
     r"""One batch-synchronous learning step over many samples at once.
 
@@ -2285,6 +2294,11 @@ def _batch_step(
         no active sample leaves both factors unchanged. With ``weight_reuse``
         :math:`k`, the output increment is multiplied by :math:`k`, as the gradient is.
         The gradient of ``learning_kind="variational"`` is not available here.
+    trust_region_scale :
+        Multiplies the trust region :math:`\kappa` of the Kronecker-factored weight
+        belief for this step (see
+        :func:`~pyhgf.updates.vectorised.learning.kronecker_step_scale`). Default
+        ``1.0``; ignored without ``kronecker_settings``.
 
     Returns
     -------
@@ -2409,6 +2423,7 @@ def _batch_step(
                 kronecker_settings,
                 (outputs, inputs),
                 mix=(total > 0).astype(factor_weights.dtype),
+                trust_region_scale=trust_region_scale,
             )
         elif synaptic_uncertainty_settings is not None:
             importance = tuple(

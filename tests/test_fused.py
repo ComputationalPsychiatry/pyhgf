@@ -90,6 +90,49 @@ def test_fused_adapter_tracks_backprop_twin():
         assert _norm_rel(input_error, per_sample_dx) < 1e-2, f"step {step}"
 
 
+def test_fused_trust_region_scale_multiplies_the_kronecker_bound():
+    """A trust-region scale s at every step is the trust region s times kappa.
+
+    Two pipelines over the same Kronecker-stepped network, one at trust region kappa
+    with a scale function returning s and one at s * kappa without, follow the same
+    weights; the bound binds at both, so the unscaled run at kappa moves further. A
+    scale of zero moves no weight.
+    """
+    rng = np.random.default_rng(4)
+    k1, k2 = random.split(random.key(5))
+    fc1 = eqx.nn.Linear(6, 12, key=k1)
+    fc2 = eqx.nn.Linear(12, 6, key=k2)
+    xs = [jnp.asarray(rng.normal(size=(5, 6))) for _ in range(3)]
+    ys = [jnp.asarray(rng.normal(size=(5, 6))) for _ in range(3)]
+
+    def run(trust_region, scale=None):
+        part = DeepNetworkAdapter(
+            from_feedforward(fc1, fc2, leaf_kwargs=_PARITY_LEAF, layer_kwargs=_PARITY),
+            learning_kind="kronecker",
+            learning_kwargs={
+                "learning_rate": 1.0,
+                "trust_region": trust_region,
+                "gradient": "precision_weighted",
+            },
+        )
+        fused = FusedPipeline(
+            part,
+            trust_region_scale_fn=None if scale is None else lambda out, y: scale,
+        )
+        for x, y in zip(xs, ys):
+            fused.step(x, y)
+        return np.asarray(fused.state[0].layers[1].weights_mean)
+
+    start = np.asarray(fc2.weight)
+    scaled = run(1e-4, scale=0.25)
+    np.testing.assert_allclose(scaled, run(2.5e-5), rtol=1e-5, atol=1e-7)
+    unscaled = run(1e-4)
+    assert np.linalg.norm(unscaled[:, :-1] - start) > 1.5 * np.linalg.norm(
+        scaled[:, :-1] - start
+    )
+    np.testing.assert_array_equal(run(1e-4, scale=0.0)[:, :-1], start)
+
+
 def test_fused_precisions_carry_across_steps():
     """Released precisions adapt across steps; pinned ones stay put."""
     rng = np.random.default_rng(2)
