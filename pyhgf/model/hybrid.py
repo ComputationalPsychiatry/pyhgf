@@ -40,7 +40,11 @@ import optax
 
 from pyhgf.model.deep_network import DeepNetwork
 from pyhgf.model.error_types import DescentError, ObservedMinusPredicted
-from pyhgf.updates.vectorised.learning import resolve_synaptic_uncertainty_settings
+from pyhgf.updates.vectorised.learning import (
+    KRONECKER_KIND,
+    resolve_kronecker_settings,
+    resolve_synaptic_uncertainty_settings,
+)
 
 __all__ = [
     "PCModule",
@@ -302,10 +306,16 @@ class DeepNetworkAdapter(PCModule):
         ``"synaptic_uncertainty"`` selects the weight-belief rule, whose
         settings come from ``learning_kwargs`` and whose step size is each
         weight's own belief variance, so ``optimiser`` is then unused.
+        ``"kronecker"`` selects the Kronecker-factored weight belief, which also
+        takes its own step; in batch learning its ``gradient`` setting has to be
+        ``"precision_weighted"`` or ``"standard"`` (see
+        :func:`pyhgf.utils.vectorised_belief_propagation._batch_step`).
     learning_kwargs :
         Settings of the learning rule, used by
         ``learning_kind="synaptic_uncertainty"`` (see
-        :func:`pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`).
+        :func:`pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`)
+        and ``learning_kind="kronecker"`` (see
+        :func:`pyhgf.updates.vectorised.learning.resolve_kronecker_settings`).
     update_precisions :
         Whether the precision state adapts across batches (see
         :meth:`~pyhgf.model.DeepNetwork.batch_update`). Defaults to False —
@@ -344,11 +354,21 @@ class DeepNetworkAdapter(PCModule):
         self.weight_reuse = float(weight_reuse)
         # The rule is resolved once here rather than per step: the settings are
         # static, and the executor stages one compiled program per part.
-        if learning_kind != "synaptic_uncertainty":
+        self.kronecker_settings = None
+        if learning_kind == KRONECKER_KIND:
+            self.kronecker_settings = resolve_kronecker_settings(learning_kwargs)
+            net.install_kronecker_belief(
+                self.kronecker_settings.bias_correction,
+                self.kronecker_settings.anchor > 0,
+            )
+            self.gradient_kind = self.kronecker_settings.gradient
+            self.synaptic_uncertainty_settings = None
+        elif learning_kind != "synaptic_uncertainty":
             if learning_kwargs:
                 raise ValueError(
                     "learning_kwargs is only used by "
-                    f"learning_kind='synaptic_uncertainty', not by {learning_kind!r}."
+                    "learning_kind='synaptic_uncertainty' and "
+                    f"learning_kind='kronecker', not by {learning_kind!r}."
                 )
             self.gradient_kind, self.synaptic_uncertainty_settings = learning_kind, None
         else:

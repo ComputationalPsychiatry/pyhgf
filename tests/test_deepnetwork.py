@@ -2376,3 +2376,569 @@ def test_backprop_gradient_is_the_forward_pass_gradient():
         assert np.all(gaps[-1] < 1e-3)
     finally:
         jax.config.update("jax_enable_x64", False)
+
+
+# ------------------------------------------------------- kronecker-factored weight belief
+
+
+def _linear_network(width, seed=0, input_precision=1e12):
+    """Build a random linear network 3 <- width <- width <- width <- 2 without biases.
+
+    The top layer, clamped to the predictors, has the precision ``input_precision``.
+    Returns the network state with the weights installed, and the weights, the
+    conditional precisions of the hidden layers and a point ``(x, y)``.
+    """
+    rng = np.random.default_rng(seed)
+    sizes = (3, width, width, width, 2)
+    weights = [
+        rng.normal(size=(sizes[k - 1], sizes[k])) / np.sqrt(sizes[k])
+        for k in range(1, 5)
+    ]
+    own = [rng.uniform(5.0, 50.0, size=width) for _ in range(3)]
+    x, y = rng.normal(size=2), 2.0 * rng.normal(size=3)
+    net = DeepNetwork(
+        coupling_fn=lambda v: v,
+        tonic_volatility=True,
+        feedforward_uncertainty=True,
+    )
+    layer = {
+        "volatility_parent": False,
+        "tonic_volatility": -40.0,
+        "add_constant_input": False,
+    }
+    net.add_layer(size=3, precision=1.0, **layer)
+    for precision in own:
+        net.add_layer(size=width, precision=precision, **layer)
+    net.add_layer(
+        size=2,
+        precision=input_precision,
+        expected_precision=input_precision,
+        conditional_expected_precision=input_precision,
+        **layer,
+    )
+    layers = list(net.state.layers)
+    for k in range(1, 5):
+        layers[k] = dataclasses.replace(
+            layers[k], weights_mean=jnp.asarray(weights[k - 1])
+        )
+    state = dataclasses.replace(net.state, layers=tuple(layers))
+    return state, weights, own, x, y
+
+
+def _linear_network_moments(weights, own, x):
+    """Prior mean and covariance of (h1, h2, h3, y) given x, h1 at the bottom."""
+    w1, w2, w3, w4 = weights
+    width = w2.shape[0]
+    blocks = [np.diag(1 / own[2]), np.diag(1 / own[1]), np.diag(1 / own[0]), np.eye(3)]
+    maps = [w4 @ x]
+    # Each layer as a linear function of the independent noises of the layers above.
+    a3 = [np.eye(width), 0, 0, 0]
+    a2 = [w3, np.eye(width), 0, 0]
+    a1 = [w2 @ w3, w2, np.eye(width), 0]
+    ay = [w1 @ w2 @ w3, w1 @ w2, w1, np.eye(3)]
+    rows = []
+    for row in (a1, a2, a3, ay):
+        rows.append(
+            np.hstack([
+                block if not np.isscalar(block) else np.zeros((row[0].shape[0], n))
+                for block, n in zip(row, (width, width, width, 3))
+            ])
+        )
+    a = np.vstack(rows)
+    noise = np.zeros((3 * width + 3, 3 * width + 3))
+    for i, block in enumerate(blocks):
+        n = block.shape[0]
+        start = i * width
+        noise[start : start + n, start : start + n] = block
+    cov = a @ noise @ a.T
+    m3 = maps[0]
+    mean = np.concatenate([w2 @ w3 @ m3, w3 @ m3, m3, w1 @ w2 @ w3 @ m3])
+    return mean, cov
+
+
+def _with_identity_factors(state):
+    """Install identity Kronecker factors on every element holding weights."""
+    layers = list(state.layers)
+    for k, layer in enumerate(layers):
+        if layer.weights_mean is not None:
+            n_child, n_in = layer.weights_mean.shape
+            layers[k] = dataclasses.replace(
+                layer,
+                weights_output_factor=jnp.eye(n_child),
+                weights_input_factor=jnp.eye(n_in),
+            )
+    return dataclasses.replace(state, layers=tuple(layers))
+
+
+def _kronecker_step(state, x, y, **settings):
+    """One Kronecker step on one sample; returns the swept and the learned state."""
+    from pyhgf.updates.vectorised.learning import resolve_kronecker_settings
+    from pyhgf.utils.vectorised_belief_propagation import _learn_sweep
+
+    swept = update_sweep(prediction_sweep(state, jnp.asarray(x)), jnp.asarray(y))
+    learned, _ = _learn_sweep(
+        swept,
+        None,
+        None,
+        "variational",
+        kronecker_settings=resolve_kronecker_settings(settings),
+    )
+    return swept, learned
+
+
+def test_kronecker_factors_are_the_fisher_and_the_posterior_moments():
+    """With a memory of one step, the factors are exact on a linear chain of units.
+
+    With one unit per hidden layer the diagonal updates are exact Gaussian inference.
+    The output factor of the weights predicting hidden layer a is then the information
+    the observations carry about that prediction, A_a^T C_a^{-1} A_a, with A_a the map
+    from layer a to the observations and C_a the covariance of the observations given
+    the layer above a. The input factor is the posterior second moment of the layer
+    above. Both are computed here by conditioning the joint Gaussian. The diagonal
+    output factor reads the evidence as the difference of two precisions, which loses
+    digits in single precision, so the comparison runs in double.
+    """
+    jax.config.update("jax_enable_x64", True)
+    try:
+        width = 1
+        state, weights, own, x, y = _linear_network(width)
+        state = _with_identity_factors(state)
+        _, learned = _kronecker_step(state, x, y, memory=1.0)
+
+        w1, w2, w3, _ = weights
+        maps = [np.eye(3), w1, w1 @ w2, w1 @ w2 @ w3]
+        given_above = np.eye(3)
+        for k in range(1, 4):
+            given_above = given_above + maps[k] @ np.diag(1 / own[k - 1]) @ maps[k].T
+            fisher = maps[k].T @ np.linalg.solve(given_above, maps[k])
+            np.testing.assert_allclose(
+                learned.layers[k + 1].weights_output_factor, fisher, rtol=1e-6
+            )
+        np.testing.assert_allclose(learned.layers[1].weights_output_factor, np.eye(3))
+
+        mean, cov = _linear_network_moments(weights, own, x)
+        n = 3 * width
+        gain = cov[:n, n:] @ np.linalg.inv(cov[n:, n:])
+        post_mean = mean[:n] + gain @ (y - mean[n:])
+        post_cov = cov[:n, :n] - gain @ cov[n:, :n]
+        for k in (1, 2, 3):
+            block = slice((k - 1) * width, k * width)
+            moment = (
+                np.outer(post_mean[block], post_mean[block]) + post_cov[block, block]
+            )
+            np.testing.assert_allclose(
+                learned.layers[k].weights_input_factor, moment, rtol=1e-6, atol=1e-9
+            )
+        np.testing.assert_allclose(
+            learned.layers[4].weights_input_factor, np.outer(x, x), atol=1e-9
+        )
+    finally:
+        jax.config.update("jax_enable_x64", False)
+
+
+def test_kronecker_step_is_the_preconditioned_gradient_in_its_trust_region():
+    """The step is -c eta Omega~^{-1} grad Gamma~^{-1}, with c set by the trust region.
+
+    With a trust region that does not bind, c = 1. With one that binds, the squared
+    length of the step under the damped factors, summed over the weight matrices,
+    equals the bound.
+    """
+    jax.config.update("jax_enable_x64", True)
+    try:
+        state, *_, x, y = _linear_network(3)
+        state = _with_identity_factors(state)
+        rate, damping = 0.05, 0.1
+
+        def damped(factor):
+            n = factor.shape[0]
+            return factor + damping * np.trace(factor) / n * np.eye(n)
+
+        swept, free = _kronecker_step(
+            state, x, y, learning_rate=rate, damping=damping, trust_region=1e9
+        )
+        from pyhgf.utils.vectorised_belief_propagation import _variational_gradients
+
+        grads = _variational_gradients(swept)
+        for k in range(1, 5):
+            output = damped(np.asarray(free.layers[k].weights_output_factor))
+            inputs = damped(np.asarray(free.layers[k].weights_input_factor))
+            direction = np.linalg.solve(output, np.asarray(grads[k])) @ np.linalg.inv(
+                inputs
+            )
+            np.testing.assert_allclose(
+                free.layers[k].weights_mean,
+                swept.layers[k].weights_mean - rate * direction,
+                rtol=1e-8,
+                atol=1e-12,
+            )
+
+        bound = 1e-6
+        _, bounded = _kronecker_step(
+            state, x, y, learning_rate=rate, damping=damping, trust_region=bound
+        )
+        length = 0.0
+        for k in range(1, 5):
+            step = np.asarray(
+                bounded.layers[k].weights_mean - swept.layers[k].weights_mean
+            )
+            output = damped(np.asarray(bounded.layers[k].weights_output_factor))
+            inputs = damped(np.asarray(bounded.layers[k].weights_input_factor))
+            length += np.sum(step * (output @ step @ inputs))
+        np.testing.assert_allclose(length, bound, rtol=1e-8)
+    finally:
+        jax.config.update("jax_enable_x64", False)
+
+
+def test_kronecker_absolute_damping_is_a_factored_tikhonov_shift():
+    """The absolute damping adds sqrt(gamma) / rho and rho sqrt(gamma) to the factors.
+
+    rho is the square root of the ratio of the factors' mean eigenvalues, so the two
+    shifts multiply to gamma. With gamma = 0 the direction is the relatively damped
+    one. With factors that vanish, the step tends to the gradient divided by gamma.
+    """
+    from pyhgf.updates.vectorised.learning import kronecker_direction
+
+    jax.config.update("jax_enable_x64", True)
+    try:
+        rng = np.random.default_rng(0)
+        a, b = rng.normal(size=(3, 3)), rng.normal(size=(4, 4))
+        output, inputs = a @ a.T + 0.1 * np.eye(3), b @ b.T + 0.1 * np.eye(4)
+        grad = rng.normal(size=(3, 4))
+        damping, gamma = 0.1, 0.3
+        omega, g = np.trace(output) / 3, np.trace(inputs) / 4
+        rho = np.sqrt(g / omega)
+        output_damped = output + (damping * omega + np.sqrt(gamma) / rho) * np.eye(3)
+        inputs_damped = inputs + (damping * g + np.sqrt(gamma) * rho) * np.eye(4)
+        expected = np.linalg.solve(output_damped, grad) @ np.linalg.inv(inputs_damped)
+        direction, quadratic = kronecker_direction(output, inputs, grad, damping, gamma)
+        np.testing.assert_allclose(direction, expected, rtol=1e-10)
+        np.testing.assert_allclose(
+            quadratic,
+            np.sum(expected * (output_damped @ expected @ inputs_damped)),
+            rtol=1e-10,
+        )
+
+        plain = np.linalg.solve(output + damping * omega * np.eye(3), grad)
+        plain = plain @ np.linalg.inv(inputs + damping * g * np.eye(4))
+        direction, _ = kronecker_direction(output, inputs, grad, damping)
+        np.testing.assert_allclose(direction, plain, rtol=1e-10)
+
+        scale = 1e-8
+        direction, _ = kronecker_direction(
+            scale * output, scale * inputs, grad, damping, gamma
+        )
+        np.testing.assert_allclose(direction, grad / gamma, rtol=1e-3)
+    finally:
+        jax.config.update("jax_enable_x64", False)
+
+
+def test_kronecker_learning():
+    """``fit`` trains with the Kronecker rule and keeps its factors across calls."""
+    net = (
+        DeepNetwork(coupling_fn=jax.nn.leaky_relu, feedforward_uncertainty=True)
+        .add_layer(size=2)
+        .add_layer(size=3)
+        .add_layer(size=2)
+    )
+    x = jnp.array([[0.2, -0.5], [1.3, 0.8]])
+    y = jnp.array([[0.6, 0.1], [-0.3, 0.4]])
+    net.fit(x, y, learning_kind="kronecker", learning_kwargs={"memory": 2.0})
+    factors = [np.asarray(layer.weights_input_factor) for layer in net.state.layers[1:]]
+    assert all(
+        np.isfinite(np.asarray(layer.weights_mean)).all()
+        for layer in net.state.layers[1:]
+    )
+    assert not np.allclose(factors[0], np.eye(factors[0].shape[0]))
+    net.install_kronecker_belief()
+    for layer, factor in zip(net.state.layers[1:], factors):
+        np.testing.assert_array_equal(layer.weights_input_factor, factor)
+    net.fit(
+        x,
+        y,
+        learning_kind="kronecker",
+        learning_kwargs={"gradient": "precision_weighted"},
+        check_gradient_health=False,
+    )
+    assert all(
+        np.isfinite(np.asarray(layer.weights_mean)).all()
+        for layer in net.state.layers[1:]
+    )
+    with pytest.raises(NotImplementedError, match="online learning"):
+        net.batch_update(x, y, learning_kind="kronecker")
+
+
+def test_kronecker_requirements():
+    """Invalid settings and unsupported networks are rejected."""
+    net = DeepNetwork().add_layer(size=2).add_layer(size=2)
+    x, y = jnp.zeros((1, 2)), jnp.zeros((1, 2))
+    with pytest.raises(ValueError, match="Unknown learning_kwargs"):
+        net.fit(x, y, learning_kind="kronecker", learning_kwargs={"window": 10})
+    with pytest.raises(ValueError, match="gradient must be one of"):
+        net.fit(x, y, learning_kind="kronecker", learning_kwargs={"gradient": "x"})
+    with pytest.raises(ValueError, match="memory must be at least 1"):
+        net.fit(x, y, learning_kind="kronecker", learning_kwargs={"memory": 0.5})
+    with pytest.raises(ValueError, match="infinite memory requires bias_correction"):
+        net.fit(
+            x,
+            y,
+            learning_kind="kronecker",
+            learning_kwargs={"memory": float("inf")},
+        )
+    with pytest.raises(NotImplementedError, match="fully connected"):
+        _one_to_one_network().install_kronecker_belief()
+
+
+def _kronecker_pair():
+    """Two copies of one small network with the Kronecker factors installed."""
+
+    def build():
+        net = (
+            DeepNetwork(coupling_fn=jax.nn.leaky_relu, feedforward_uncertainty=True)
+            .add_layer(size=2, volatility_parent=False)
+            .add_layer(size=3, volatility_parent=False)
+            .add_layer(size=2, volatility_parent=False)
+        )
+        return net.weight_initialisation("he", key=jax.random.key(3))
+
+    return build(), build()
+
+
+def test_kronecker_batch_of_one_is_the_online_step():
+    """A batch of one sample advances weights and factors as the online step does."""
+    settings = {"gradient": "precision_weighted", "memory": 4.0, "trust_region": 1e9}
+    online, batch = _kronecker_pair()
+    x = jnp.array([[0.4, -1.2]])
+    y = jnp.array([[0.7, -0.3]])
+    online.fit(
+        x,
+        y,
+        learning_kind="kronecker",
+        learning_kwargs=settings,
+        check_gradient_health=False,
+    )
+    batch.batch_update(x, y, learning_kind="kronecker", learning_kwargs=settings)
+    for a, b in zip(online.state.layers[1:], batch.state.layers[1:]):
+        np.testing.assert_allclose(a.weights_mean, b.weights_mean, rtol=1e-5)
+        np.testing.assert_allclose(
+            a.weights_output_factor, b.weights_output_factor, rtol=1e-5
+        )
+        np.testing.assert_allclose(
+            a.weights_input_factor, b.weights_input_factor, rtol=1e-5, atol=1e-7
+        )
+
+
+def test_kronecker_batch_factors_average_the_active_samples():
+    """The batch increments are the means over the samples that carry an error.
+
+    A sample whose observation equals the network's prediction moves no weight, so it
+    is left out of both factors. With a memory of one step the factors are the
+    increments themselves: at the categorical observed layer the mean of
+    diag(p) - p p^T over the active samples, and at the clamped input layer the mean of
+    h h^T, with no posterior variance.
+    """
+    net = (
+        DeepNetwork(coupling_fn=jax.nn.leaky_relu)
+        .add_layer(size=3, kind="categorical", volatility_parent=False)
+        .add_layer(size=2, volatility_parent=False)
+    )
+    net = net.weight_initialisation("he", key=jax.random.key(5))
+    x = jnp.array([[0.3, -0.8], [1.1, 0.2], [-0.5, 0.9], [0.0, 1.4]])
+    predicted = np.asarray(net.predict(x))
+    y = np.eye(3)[[0, 2, 1, 0]]
+    y[1] = predicted[1]  # an inactive sample: no error
+    active = np.array([0, 2, 3])
+    net.batch_update(
+        x,
+        jnp.asarray(y),
+        learning_kind="kronecker",
+        learning_kwargs={"gradient": "precision_weighted", "memory": 1.0},
+    )
+    p = predicted[active]
+    fisher = np.mean([np.diag(q) - np.outer(q, q) for q in p], axis=0)
+    np.testing.assert_allclose(
+        net.state.layers[1].weights_output_factor, fisher, rtol=1e-5, atol=1e-7
+    )
+    activation = np.asarray(jax.nn.leaky_relu(x))[active]
+    h = np.concatenate([activation, np.ones((3, 1))], axis=1)
+    np.testing.assert_allclose(
+        net.state.layers[1].weights_input_factor, h.T @ h / 3, rtol=1e-5, atol=1e-7
+    )
+    with pytest.raises(NotImplementedError, match="online learning"):
+        net.batch_update(x, jnp.asarray(y), learning_kind="kronecker")
+
+
+def test_kronecker_bias_correction_averages_the_increments():
+    """Bias-corrected factors are the means of the increments mixed in so far.
+
+    With an infinite memory, the input factor divided by its mass is the plain mean
+    over the batches of each batch's mean of h h^T, from the first batch on; a batch
+    with no active sample leaves the factors and the mass unchanged. A finite memory
+    gives the mean weighted by (1 - 1/N) per later batch.
+    """
+    net = (
+        DeepNetwork(coupling_fn=jax.nn.leaky_relu)
+        .add_layer(size=2, volatility_parent=False)
+        .add_layer(size=2, volatility_parent=False)
+    )
+    net = net.weight_initialisation("he", key=jax.random.key(2))
+    settings = {
+        "gradient": "precision_weighted",
+        "memory": float("inf"),
+        "bias_correction": True,
+        "learning_rate": 1e-12,
+    }
+    batches = [
+        jnp.array([[0.3, -0.8], [1.1, 0.2]]),
+        jnp.array([[-0.5, 0.9], [0.0, 1.4], [0.7, 0.7]]),
+    ]
+    targets = [jnp.ones((2, 2)), -jnp.ones((3, 2))]
+    for x, y in zip(batches, targets):
+        net.batch_update(x, y, learning_kind="kronecker", learning_kwargs=settings)
+    layer = net.state.layers[1]
+    means = []
+    for x in batches:
+        h = np.concatenate([np.asarray(jax.nn.leaky_relu(x)), np.ones((len(x), 1))], 1)
+        means.append(h.T @ h / len(x))
+    np.testing.assert_allclose(
+        layer.weights_input_factor / layer.weights_factor_mass,
+        np.mean(means, axis=0),
+        rtol=1e-4,
+        atol=1e-6,
+    )
+    before = (layer.weights_input_factor, layer.weights_factor_mass)
+    silent = jnp.asarray(net.predict(batches[0]))
+    net.batch_update(
+        batches[0], silent, learning_kind="kronecker", learning_kwargs=settings
+    )
+    np.testing.assert_array_equal(net.state.layers[1].weights_input_factor, before[0])
+    np.testing.assert_array_equal(net.state.layers[1].weights_factor_mass, before[1])
+
+    memory = 3.0
+    net = (
+        DeepNetwork(coupling_fn=jax.nn.leaky_relu)
+        .add_layer(size=2, volatility_parent=False)
+        .add_layer(size=2, volatility_parent=False)
+    )
+    net = net.weight_initialisation("he", key=jax.random.key(2))
+    for x, y in zip(batches, targets):
+        net.batch_update(
+            x,
+            y,
+            learning_kind="kronecker",
+            learning_kwargs={**settings, "memory": memory},
+        )
+    layer = net.state.layers[1]
+    weights = np.array([1.0 - 1.0 / memory, 1.0])
+    np.testing.assert_allclose(
+        layer.weights_input_factor / layer.weights_factor_mass,
+        np.tensordot(weights, means, 1) / weights.sum(),
+        rtol=1e-4,
+        atol=1e-6,
+    )
+
+
+def test_kronecker_anchor_slow_mean_is_least_squares():
+    r"""The slow mean of one linear layer is the least-squares fit of every batch.
+
+    With a continuous observed layer, the bracket of the slow-mean update does not
+    depend on the weights the gradient was read at, so after any number of batches the
+    slow mean is :math:`(\sum_t B_t)(\sum_t Q_t)^{-1}`, with :math:`Q_t` the batch
+    mean of :math:`h h^\top` and :math:`B_t` that of :math:`y h^\top`, whichever step
+    size and anchor moved the weights, provided the slow mean counts no evidence for
+    the initial weights (``anchor_prior`` 0). With an anchor of 1 the weights equal the
+    slow mean after every step.
+    """
+    jax.config.update("jax_enable_x64", True)
+    try:
+        rng = np.random.default_rng(4)
+        batches = [jnp.asarray(rng.normal(size=(5, 2))) for _ in range(3)]
+        targets = [jnp.asarray(rng.normal(size=(5, 2))) for _ in range(3)]
+        settings = {
+            "gradient": "precision_weighted",
+            "memory": float("inf"),
+            "bias_correction": True,
+            "damping": 1e-10,
+            "trust_region": 1e9,
+            "learning_rate": 0.3,
+        }
+
+        def build():
+            net = (
+                DeepNetwork(coupling_fn=jax.nn.leaky_relu)
+                .add_layer(size=2, volatility_parent=False)
+                .add_layer(size=2, volatility_parent=False)
+            )
+            return net.weight_initialisation("he", key=jax.random.key(6))
+
+        moments, products = [], []
+        for x, y in zip(batches, targets):
+            h = np.concatenate(
+                [np.asarray(jax.nn.leaky_relu(x)), np.ones((len(x), 1))], axis=1
+            )
+            moments.append(h.T @ h / len(x))
+            products.append(np.asarray(y).T @ h / len(x))
+        expected = sum(products) @ np.linalg.inv(sum(moments))
+
+        for anchor in (0.5, 1.0):
+            net = build()
+            for x, y in zip(batches, targets):
+                net.batch_update(
+                    x,
+                    y,
+                    learning_kind="kronecker",
+                    learning_kwargs={**settings, "anchor": anchor},
+                )
+                layer = net.state.layers[1]
+                if anchor == 1.0:
+                    np.testing.assert_allclose(
+                        layer.weights_mean, layer.weights_anchor_mean, atol=1e-12
+                    )
+            np.testing.assert_allclose(
+                net.state.layers[1].weights_anchor_mean, expected, rtol=1e-6
+            )
+
+        net = build()
+        net.batch_update(
+            batches[0], targets[0], learning_kind="kronecker", learning_kwargs=settings
+        )
+        assert net.state.layers[1].weights_anchor_mean is None
+    finally:
+        jax.config.update("jax_enable_x64", False)
+
+
+def test_backprop_gradient_runs_online_only():
+    """``fit`` steps the Kronecker rule on the backprop gradient; a batch refuses it."""
+    net = _backprop_network(10.0)
+    x = jnp.array([[0.2, -0.5], [1.3, 0.8]])
+    y = jnp.array([[0.6, 0.1], [-0.3, 0.4]])
+    before = [np.asarray(layer.weights_mean) for layer in net.state.layers[1:]]
+    net.fit(
+        x,
+        y,
+        learning_kind="kronecker",
+        learning_kwargs={"gradient": "backprop"},
+        check_gradient_health=False,
+    )
+    after = [np.asarray(layer.weights_mean) for layer in net.state.layers[1:]]
+    assert all(np.isfinite(a).all() for a in after)
+    assert any(not np.allclose(a, b) for a, b in zip(after, before))
+    with pytest.raises(NotImplementedError, match="online learning"):
+        net.batch_update(
+            x,
+            y,
+            learning_kind="kronecker",
+            learning_kwargs={"gradient": "backprop"},
+        )
+
+
+def test_kronecker_anchor_requirements():
+    """An anchor outside 0 to 1, or without bias correction, is rejected."""
+    from pyhgf.updates.vectorised.learning import resolve_kronecker_settings
+
+    with pytest.raises(ValueError, match="anchor must be between 0 and 1"):
+        resolve_kronecker_settings({"anchor": 1.5, "bias_correction": True})
+    with pytest.raises(ValueError, match="anchor requires bias_correction"):
+        resolve_kronecker_settings({"anchor": 0.5})
+    with pytest.raises(ValueError, match="anchor_prior must be zero or positive"):
+        resolve_kronecker_settings({"anchor_prior": -1.0})
+    assert resolve_kronecker_settings({}).anchor == 0.0

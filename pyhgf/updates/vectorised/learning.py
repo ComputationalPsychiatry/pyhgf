@@ -3,6 +3,7 @@
 
 """Vectorised weight learning for deep predictive coding networks."""
 
+import math
 from typing import Callable, NamedTuple, Optional, Union
 
 import jax
@@ -429,6 +430,495 @@ def vectorised_variational_gradient(
     if parent_has_constant:
         ascent = jnp.concatenate([ascent, weighted_residual[:, None]], axis=1)
     return -jnp.where(jnp.isfinite(ascent), ascent, 0.0)
+
+
+# ------------------------------------------------------------------ kronecker
+
+#: The learning kind of the Kronecker-factored weight belief
+#: (see :func:`resolve_kronecker_settings`).
+KRONECKER_KIND: str = "kronecker"
+
+#: The gradients the Kronecker-factored weight belief can descend.
+KRONECKER_GRADIENTS: tuple = (
+    VARIATIONAL_KIND,
+    "precision_weighted",
+    "standard",
+    BACKPROP_KIND,
+)
+
+#: Settings of the Kronecker-factored weight belief and their defaults, as
+#: ``learning_kwargs`` accepts them (see :func:`resolve_kronecker_settings`).
+KRONECKER_DEFAULTS: dict = {
+    "learning_rate": 0.03,
+    "memory": 100.0,
+    "damping": 0.1,
+    "absolute_damping": 0.0,
+    "trust_region": 1e-3,
+    "gradient": VARIATIONAL_KIND,
+    "bias_correction": False,
+    "anchor": 0.0,
+    "anchor_prior": 0.0,
+}
+
+
+class KroneckerSettings(NamedTuple):
+    r"""Validated settings of the Kronecker-factored weight belief.
+
+    Built from a ``learning_kwargs`` dictionary by :func:`resolve_kronecker_settings`;
+    every field is documented there.
+    """
+
+    learning_rate: float
+    memory: float
+    damping: float
+    trust_region: float
+    gradient: str = VARIATIONAL_KIND
+    bias_correction: bool = False
+    absolute_damping: float = 0.0
+    anchor: float = 0.0
+    anchor_prior: float = 0.0
+
+
+def resolve_kronecker_settings(
+    learning_kwargs: Optional[dict] = None,
+) -> KroneckerSettings:
+    r"""Validate the Kronecker-factored weight belief's settings and fill in defaults.
+
+    Each weight matrix :math:`W`, predicting child layer :math:`a` from parent layer
+    :math:`b`, carries a belief whose precision is the Kronecker product
+    :math:`\Omega \otimes \Gamma` of two factors: the output factor :math:`\Omega`,
+    shape ``(n_child, n_child)``, and the input factor :math:`\Gamma`, shape
+    ``(n_parent[+1], n_parent[+1])``, the bias included. Both are running means, with
+    memory :math:`N`, of what the update sweep leaves on each sample:
+
+    .. math::
+
+        \Omega &\leftarrow \Big(1 - \frac{1}{N}\Big) \Omega
+            + \frac{1}{N} M_a, \\
+        \Gamma &\leftarrow \Big(1 - \frac{1}{N}\Big) \Gamma
+            + \frac{1}{N} \Big( \bar{g}\, \bar{g}^\top
+            + \begin{pmatrix} G \Sigma_b G & 0 \\ 0 & 0 \end{pmatrix} \Big),
+
+    with :math:`\bar{g} = (g(\mu_b), 1)` the coupled parent activation and the
+    constant input, :math:`G = \operatorname{diag}(g'(\mu_b))`, and :math:`\Sigma_b =
+    \operatorname{diag}(1 / \pi_b)` the posterior covariance of the parent layer.
+    :math:`M_a = \operatorname{diag}(s_a)` is the precision the observations give the
+    prediction of layer :math:`a`, with :math:`s_a` the relaxed effective precision
+    (:func:`relaxed_effective_precision`). For the observed layer :math:`M_a` is the
+    observation precision. The factors start at the identity, so the first steps are
+    gradient steps at rate :math:`\eta / (1 + \lambda)^2`. With ``bias_correction``
+    they start at zero instead and are kept as decayed sums, :math:`\Omega \leftarrow (1
+    - 1/N)\, \Omega + M_a` and likewise for :math:`\Gamma`, beside a mass :math:`m
+    \leftarrow (1 - 1/N)\, m + 1`, also started at zero. Each factor is divided by the
+    mass before the step, so the step uses the weighted mean of the increments mixed in
+    so far from the first one on. With :math:`N = \infty` the sums do not decay, and
+    that mean is the plain mean of every increment since the first.
+
+    The mean takes one step against the descent gradient :math:`\nabla` of the
+    chosen ``gradient``, preconditioned by the damped factors:
+
+    .. math::
+
+        \tilde{\Omega} &= \Omega + \Big(\lambda\, \omega
+            + \frac{\sqrt{\gamma}}{\rho}\Big) I,
+        \qquad
+        \tilde{\Gamma} = \Gamma + \big(\lambda\, g + \rho \sqrt{\gamma}\big) I,
+        \qquad
+        \omega = \frac{\operatorname{tr} \Omega}{n_a}, \quad
+        g = \frac{\operatorname{tr} \Gamma}{n_b}, \quad
+        \rho = \sqrt{g / \omega}, \\
+        D &= \tilde{\Omega}^{-1} \nabla \tilde{\Gamma}^{-1}, \\
+        W &\leftarrow W - c\, \eta\, D, \qquad
+        c = \min\Big(1, \sqrt{\kappa / (\eta^2 q)}\Big), \quad
+        q = \sum \langle D, \tilde{\Omega} D \tilde{\Gamma} \rangle,
+
+    the sum running over every weight matrix of the network, so a single scale
+    :math:`c` bounds the step :math:`\Delta w` of all of them together to
+    :math:`\Delta w^\top (\tilde{\Omega} \otimes \tilde{\Gamma}) \Delta w \leq
+    \kappa`.
+
+    The relative damping :math:`\lambda` scales with the factors, so it vanishes when
+    they do. The absolute damping :math:`\gamma` does not: the product of its two shifts
+    is :math:`\gamma I`, so :math:`\tilde{\Omega} \otimes \tilde{\Gamma}` approximates
+    the curvature plus a fixed precision :math:`\gamma`, with :math:`\rho` splitting it
+    between the factors in proportion to their scales (factored Tikhonov damping, Section
+    6.3 of [1]_). The output factor of a categorical observed layer vanishes as its
+    predictions become confident, because :math:`\operatorname{diag}(p) - p p^\top \to
+    0` as :math:`p` approaches a one-hot vector. The descent gradient vanishes at the
+    same rate, so with :math:`\gamma = 0` the step on the logits keeps a constant size
+    however well the observations are already predicted. With :math:`\gamma > 0` it
+    shrinks to a gradient step of rate :math:`\eta / \gamma` once :math:`\omega g \ll
+    \gamma`.
+
+    With an ``anchor`` :math:`\alpha > 0`, the belief also keeps a slow mean
+    :math:`\bar{W}`, the mean of a Gaussian belief about the weights whose precision
+    is the decayed sum of every increment rather than their mean: the damped factors
+    times their mass, :math:`m\, (\tilde{\Omega} \otimes \tilde{\Gamma})`. Each step
+    combines that belief with the batch by the Gaussian update, the batch's gradient
+    carried from the weights :math:`W` it was read at to :math:`\bar{W}` through the
+    batch's own curvature :math:`M_a \otimes Q`, with :math:`Q` the input increment
+    above:
+
+    .. math::
+
+        \bar{W} \leftarrow \bar{W} + \frac{1}{m + m_0}\, \tilde{\Omega}^{-1}
+            \big( M_a (W - \bar{W}) Q - \nabla \big) \tilde{\Gamma}^{-1}.
+
+    :math:`m_0` (``anchor_prior``) counts the initial weights, where the slow mean
+    starts, as that many batches of evidence: with :math:`m_0 = 0` the first batch
+    sets the slow mean to a full Newton step from its own curvature alone. The
+    weights then take their step and are pulled toward the slow mean,
+    :math:`W \leftarrow W' - \alpha\, (W' - \bar{W})` with :math:`W'` the stepped
+    weights. The pull is the preconditioned step of a Gaussian prior on the weights
+    with mean :math:`\bar{W}` and precision :math:`\beta\, (\Omega \otimes \Gamma)`:
+    under the metric :math:`(1 + \beta)(\Omega \otimes \Gamma)` its Newton step is
+    :math:`\alpha\, (W - \bar{W})` with :math:`\alpha = \beta / (1 + \beta)`, the
+    Kronecker-factored Laplace prior of [4]_ held at the slow mean instead of at a
+    snapshot. For a network of one linear layer, with :math:`\lambda \to 0` and
+    :math:`m_0 = 0`, the slow mean is the least-squares solution of every batch since the first
+    (recursive least squares), whichever path the weights took, since the weights
+    cancel from the bracket. :math:`\alpha = 0` (default) keeps no slow mean and
+    :math:`\alpha = 1` sets the weights to it after every step.
+
+    The product :math:`\Omega \otimes \Gamma` is the Kronecker-factored approximation
+    of the expected curvature of the log-likelihood with respect to :math:`W`, which
+    replaces the mean of :math:`M_a \otimes \bar{g} \bar{g}^\top` by the product of the
+    two means [1]_. With :math:`\eta = 1/N`, :math:`\lambda = 0` and no trust region,
+    the step is the mean update of a Kalman filter on the weights under that
+    approximation, the online natural gradient [2]_. The natural-gradient step of
+    predictive coding in [3]_ preconditions by the running mean of
+    :math:`\bar{g} \bar{g}^\top` alone, the case :math:`\Omega \propto I` and
+    :math:`\Sigma_b = 0`.
+
+    Parameters
+    ----------
+    learning_kwargs :
+        The settings, as ``DeepNetwork.fit(learning_kwargs=...)`` takes them.
+        Recognised keys, with the defaults of :data:`KRONECKER_DEFAULTS`:
+
+        ``learning_rate``
+            Step size :math:`\eta`. Positive.
+        ``memory``
+            Memory :math:`N` of both factors, in learning steps. At least 1, or
+            ``float("inf")`` for factors that never forget, which requires
+            ``bias_correction`` (factors started at the identity would never move).
+        ``damping``
+            Relative damping :math:`\lambda`, the fraction of the mean eigenvalue of
+            each factor added to its diagonal before the solve. Positive.
+        ``absolute_damping``
+            Absolute damping :math:`\gamma`, the fixed precision added to the
+            Kronecker product, split between the factors by :math:`\rho`. Zero (default)
+            or positive.
+        ``trust_region``
+            Bound :math:`\kappa` on the step's squared length under the damped
+            factors. Positive.
+        ``gradient``
+            The descent gradient the step preconditions, one of
+            :data:`KRONECKER_GRADIENTS`: ``"variational"`` (default; see
+            :func:`vectorised_variational_gradient`), ``"precision_weighted"`` or
+            ``"standard"`` (see :func:`learning_weights_vectorised`), or
+            ``"backprop"``, the gradient of the forward pass's squared error that
+            ignores the inference (online learning only; see
+            :func:`pyhgf.utils.vectorised_belief_propagation._backprop_gradients`).
+        ``bias_correction``
+            Whether the factors start at zero and are divided by their mass, rather
+            than starting at the identity (default ``False``).
+        ``anchor``
+            Pull :math:`\alpha` of the weights toward the slow mean after each step,
+            between 0 (default, no slow mean) and 1. Requires ``bias_correction``,
+            because the slow mean's precision is the factors times their mass.
+        ``anchor_prior``
+            :math:`m_0`, the evidence the initial weights count for in the slow
+            mean, in batches. Zero (default) or positive.
+
+    Returns
+    -------
+    KroneckerSettings
+        The validated settings.
+
+    Raises
+    ------
+    ValueError
+        If a key is unrecognised, ``memory`` is below 1 or infinite without
+        ``bias_correction``, a positive quantity is not positive, ``gradient`` is
+        not one of :data:`KRONECKER_GRADIENTS`, or ``anchor`` is outside 0 to 1 or
+        positive without ``bias_correction``.
+
+    References
+    ----------
+    .. [1] Martens, J., & Grosse, R. (2015). Optimizing neural networks with
+       Kronecker-factored approximate curvature. Proceedings of the 32nd International
+       Conference on Machine Learning, 2408 to 2417.
+    .. [2] Ollivier, Y. (2018). Online natural gradient as a Kalman filter. Electronic
+       Journal of Statistics, 12(2), 2930 to 2961. doi:10.1214/18-EJS1468
+    .. [3] Beumer, L., de Haan, S., Pokel, N., Aceituno, P. V., & Grewe, B. F. (2026).
+       Natural gradient learning in predictive coding through lateral circuits.
+       arXiv:2611.16666
+    .. [4] Ritter, H., Botev, A., & Barber, D. (2018). Online structured Laplace
+       approximations for overcoming catastrophic forgetting. Advances in Neural
+       Information Processing Systems 31, 3738 to 3748.
+    """
+    settings = dict(KRONECKER_DEFAULTS)
+    given = dict(learning_kwargs or {})
+    unknown = sorted(set(given) - set(KRONECKER_DEFAULTS))
+    if unknown:
+        raise ValueError(
+            f"Unknown learning_kwargs for learning_kind='kronecker': {unknown}. "
+            f"Expected a subset of {sorted(KRONECKER_DEFAULTS)}."
+        )
+    settings.update(given)
+    learning_rate = float(settings["learning_rate"])
+    if learning_rate <= 0:
+        raise ValueError(f"learning_rate must be positive, got {learning_rate}.")
+    memory = float(settings["memory"])
+    if not memory >= 1:
+        raise ValueError(f"memory must be at least 1, got {memory}.")
+    bias_correction = bool(settings["bias_correction"])
+    if math.isinf(memory) and not bias_correction:
+        raise ValueError(
+            "An infinite memory requires bias_correction=True: factors that start at "
+            "the identity would never move."
+        )
+    damping = float(settings["damping"])
+    if damping <= 0:
+        raise ValueError(f"damping must be positive, got {damping}.")
+    absolute_damping = float(settings["absolute_damping"])
+    if absolute_damping < 0:
+        raise ValueError(
+            f"absolute_damping must be zero or positive, got {absolute_damping}."
+        )
+    trust_region = float(settings["trust_region"])
+    if trust_region <= 0:
+        raise ValueError(f"trust_region must be positive, got {trust_region}.")
+    gradient = str(settings["gradient"])
+    if gradient not in KRONECKER_GRADIENTS:
+        raise ValueError(
+            f"gradient must be one of {KRONECKER_GRADIENTS}, got {gradient!r}."
+        )
+    anchor = float(settings["anchor"])
+    if not 0.0 <= anchor <= 1.0:
+        raise ValueError(f"anchor must be between 0 and 1, got {anchor}.")
+    if anchor > 0 and not bias_correction:
+        raise ValueError(
+            "anchor requires bias_correction=True: the slow mean's precision is the "
+            "factors times their mass."
+        )
+    anchor_prior = float(settings["anchor_prior"])
+    if anchor_prior < 0:
+        raise ValueError(f"anchor_prior must be zero or positive, got {anchor_prior}.")
+    return KroneckerSettings(
+        learning_rate=learning_rate,
+        memory=memory,
+        damping=damping,
+        trust_region=trust_region,
+        gradient=gradient,
+        bias_correction=bias_correction,
+        absolute_damping=absolute_damping,
+        anchor=anchor,
+        anchor_prior=anchor_prior,
+    )
+
+
+def kronecker_factor_update(
+    factor: jnp.ndarray,
+    increment: jnp.ndarray,
+    memory: float,
+    weight=1.0,
+    summed: bool = False,
+) -> jnp.ndarray:
+    r"""Mix one sample's increment into a Kronecker factor.
+
+    :math:`F \leftarrow (1 - w/N) F + (w/N) \tfrac{1}{2}(H + H^\top)`, with :math:`N`
+    the ``memory`` (see :func:`resolve_kronecker_settings`) and :math:`w` the
+    ``weight``. With ``summed`` (the bias-corrected factors) the increment enters with
+    weight :math:`w` instead of :math:`w/N`, which keeps :math:`F` a decayed sum that
+    is finite and moving for :math:`N = \infty`. An increment with a non-finite entry
+    leaves the factor unchanged.
+
+    Parameters
+    ----------
+    factor :
+        The running factor, a square matrix.
+    increment :
+        This sample's increment, same shape.
+    memory :
+        The memory :math:`N`, in learning steps.
+    weight :
+        :math:`w`, between zero and one: zero leaves the factor unchanged (a batch
+        that carries no data), one mixes the increment in at the full rate.
+    summed :
+        Whether the factor is a decayed sum rather than a running mean.
+
+    Returns
+    -------
+    jnp.ndarray
+        The advanced factor.
+    """
+    rate = weight / memory
+    gain = weight if summed else rate
+    mixed = (1.0 - rate) * factor + gain * 0.5 * (increment + increment.T)
+    return jnp.where(jnp.all(jnp.isfinite(increment)), mixed, factor)
+
+
+def kronecker_mass_update(mass, memory: float, weight=1.0):
+    r"""Advance the mass of bias-corrected Kronecker factors.
+
+    :math:`m \leftarrow (1 - w/N)\, m + w`, the total weight the factors have summed,
+    so that a factor divided by it is the weighted mean of its increments (see
+    :func:`resolve_kronecker_settings`).
+    """
+    return (1.0 - weight / memory) * mass + weight
+
+
+def kronecker_direction(
+    output_factor: jnp.ndarray,
+    input_factor: jnp.ndarray,
+    gradient: jnp.ndarray,
+    damping: float,
+    absolute_damping: float = 0.0,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
+    r"""Precondition one weight matrix's gradient by its damped Kronecker factors.
+
+    Returns :math:`D = \tilde{\Omega}^{-1} \nabla \tilde{\Gamma}^{-1}` and
+    :math:`\langle D, \tilde{\Omega} D \tilde{\Gamma} \rangle`, with each factor damped
+    by :math:`\lambda` times its mean eigenvalue plus its share of the absolute
+    damping :math:`\gamma` (see :func:`resolve_kronecker_settings`). Both damped
+    factors are symmetric positive definite, so the two solves use their Cholesky
+    factorisations.
+
+    Parameters
+    ----------
+    output_factor :
+        :math:`\Omega`, shape ``(n_child, n_child)``.
+    input_factor :
+        :math:`\Gamma`, shape ``(n_in, n_in)``.
+    gradient :
+        :math:`\nabla`, shape ``(n_child, n_in)``.
+    damping :
+        :math:`\lambda`.
+    absolute_damping :
+        :math:`\gamma`. Zero (default) leaves the relative damping alone.
+
+    Returns
+    -------
+    tuple
+        ``(direction, quadratic)``: :math:`D`, shape of ``gradient``, and the scalar
+        :math:`\langle D, \tilde{\Omega} D \tilde{\Gamma} \rangle`.
+    """
+    output_scale = jnp.maximum(jnp.trace(output_factor) / output_factor.shape[-1], _EPS)
+    input_scale = jnp.maximum(jnp.trace(input_factor) / input_factor.shape[-1], _EPS)
+    # Factored Tikhonov damping: the two shifts multiply to gamma, and their split
+    # follows the ratio of the factors' scales.
+    ratio = jnp.sqrt(input_scale / output_scale)
+    root = jnp.sqrt(absolute_damping)
+
+    def damped(factor, shift):
+        return factor + shift * jnp.eye(factor.shape[-1], dtype=factor.dtype)
+
+    output_damped = damped(output_factor, damping * output_scale + root / ratio)
+    input_damped = damped(input_factor, damping * input_scale + root * ratio)
+    left = jax.scipy.linalg.cho_solve(
+        jax.scipy.linalg.cho_factor(output_damped), gradient
+    )
+    direction = jax.scipy.linalg.cho_solve(
+        jax.scipy.linalg.cho_factor(input_damped), left.T
+    ).T
+    quadratic = jnp.sum(direction * (output_damped @ direction @ input_damped))
+    return direction, quadratic
+
+
+def kronecker_step_scale(quadratic: jnp.ndarray, settings: KroneckerSettings):
+    r"""Scale :math:`c` of the trust region shared by every weight matrix.
+
+    :math:`c = \min(1, \sqrt{\kappa / (\eta^2 q)})`, with :math:`q` the sum over the
+    weight matrices of the quadratics of :func:`kronecker_direction` (see
+    :func:`resolve_kronecker_settings`). A non-finite :math:`q` gives :math:`c = 0`, so
+    no weight moves.
+    """
+    eta = settings.learning_rate
+    bounded = jnp.sqrt(settings.trust_region / jnp.maximum(eta**2 * quadratic, _EPS))
+    scale = jnp.minimum(1.0, bounded)
+    return jnp.where(jnp.isfinite(quadratic), scale, 0.0)
+
+
+def kronecker_slow_mean_update(
+    slow_mean: jnp.ndarray,
+    weights: jnp.ndarray,
+    gradient: jnp.ndarray,
+    output_increment: jnp.ndarray,
+    input_increment: jnp.ndarray,
+    output_factor: jnp.ndarray,
+    input_factor: jnp.ndarray,
+    mass,
+    damping: float,
+    absolute_damping: float = 0.0,
+    weight=1.0,
+    prior_mass: float = 0.0,
+) -> jnp.ndarray:
+    r"""Combine the slow mean of a Kronecker-factored weight belief with one batch.
+
+    .. math::
+
+        \bar{W} \leftarrow \bar{W} + \frac{w}{m + m_0}\, \tilde{\Omega}^{-1}
+            \big( M_a (W - \bar{W}) Q - \nabla \big) \tilde{\Gamma}^{-1},
+
+    with :math:`M_a` and :math:`Q` the batch's output and input increments
+    (symmetrised as :func:`kronecker_factor_update` mixes them), :math:`\nabla` the
+    descent gradient read at the weights :math:`W`, :math:`\tilde{\Omega}` and
+    :math:`\tilde{\Gamma}` the damped factors of :func:`kronecker_direction`, and
+    :math:`m` the mass of the factors after this batch was mixed in and :math:`m_0`
+    the evidence the initial weights count for, in batches. The bracket is minus the
+    batch's gradient at :math:`\bar{W}`, carried there from :math:`W` through the
+    batch curvature :math:`M_a \otimes Q`, and
+    :math:`(m + m_0)\, (\tilde{\Omega} \otimes \tilde{\Gamma})` is the precision of
+    the slow belief, this batch included, so the update is the Gaussian combination
+    of that belief with the batch (see
+    :func:`resolve_kronecker_settings`). An increment or a step with a non-finite
+    entry leaves the slow mean unchanged.
+
+    Parameters
+    ----------
+    slow_mean :
+        :math:`\bar{W}`, shape ``(n_child, n_in)``.
+    weights :
+        :math:`W`, the weights the gradient was read at, same shape.
+    gradient :
+        :math:`\nabla`, same shape.
+    output_increment, input_increment :
+        :math:`M_a`, shape ``(n_child, n_child)``, and :math:`Q`, shape
+        ``(n_in, n_in)``.
+    output_factor, input_factor :
+        The factors after this batch, divided by their mass, undamped.
+    mass :
+        :math:`m`, the mass of the factors after this batch.
+    damping, absolute_damping :
+        :math:`\lambda` and :math:`\gamma` of :func:`kronecker_direction`.
+    weight :
+        :math:`w`, between zero and one, the weight the batch was mixed into the
+        factors with: zero (a batch that carries no data) leaves the slow mean
+        unchanged.
+    prior_mass :
+        :math:`m_0`, zero (default) or positive.
+
+    Returns
+    -------
+    jnp.ndarray
+        The advanced slow mean, shape of ``slow_mean``.
+    """
+    output_increment = 0.5 * (output_increment + output_increment.T)
+    input_increment = 0.5 * (input_increment + input_increment.T)
+    bracket = output_increment @ (weights - slow_mean) @ input_increment - gradient
+    direction, _ = kronecker_direction(
+        output_factor, input_factor, bracket, damping, absolute_damping
+    )
+    advanced = slow_mean + (weight / jnp.maximum(mass + prior_mass, _EPS)) * direction
+    finite = (
+        jnp.all(jnp.isfinite(output_increment))
+        & jnp.all(jnp.isfinite(input_increment))
+        & jnp.all(jnp.isfinite(direction))
+        & (mass > 0)
+    )
+    return jnp.where(finite, advanced, slow_mean)
 
 
 # ------------------------------------------------------ synaptic uncertainty

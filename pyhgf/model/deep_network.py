@@ -32,7 +32,10 @@ from pyhgf.typing.vectorised import (
     stack_layers,
 )
 from pyhgf.updates.vectorised.learning import (
+    KRONECKER_KIND,
+    KroneckerSettings,
     SynapticUncertaintySettings,
+    resolve_kronecker_settings,
     resolve_synaptic_uncertainty_settings,
 )
 from pyhgf.utils.vectorised_belief_propagation import (
@@ -1225,6 +1228,90 @@ class DeepNetwork:
         self.state = dataclasses.replace(self.state, layers=tuple(elements))
         return self
 
+    def install_kronecker_belief(
+        self, bias_correction: bool = False, anchor: bool = False
+    ) -> "DeepNetwork":
+        """Give every weight matrix Kronecker factors, keeping any already installed.
+
+        Sets :attr:`~pyhgf.typing.vectorised.Layer.weights_output_factor` and
+        :attr:`~pyhgf.typing.vectorised.Layer.weights_input_factor` to identity
+        matrices of the two sides of ``weights_mean`` on every element holding one,
+        or, with ``bias_correction``, to zeros with a zero
+        :attr:`~pyhgf.typing.vectorised.Layer.weights_factor_mass`. With ``anchor``,
+        also sets :attr:`~pyhgf.typing.vectorised.Layer.weights_anchor_mean` to a
+        copy of ``weights_mean`` where none is installed.
+        ``learning_kind="kronecker"`` calls this itself, and factors already installed
+        keep the running means of earlier calls to :meth:`fit` (see
+        :func:`~pyhgf.updates.vectorised.learning.resolve_kronecker_settings`).
+
+        Parameters
+        ----------
+        bias_correction :
+            Whether the factors start at zero and are divided by their mass.
+        anchor :
+            Whether to install the slow mean of an ``anchor`` above zero.
+
+        Returns
+        -------
+        DeepNetwork
+            ``self``, with the factors installed.
+
+        Raises
+        ------
+        ValueError
+            If the network has no layers yet.
+        NotImplementedError
+            If an element holding weights is a layer stack or is not fully connected.
+        """
+        if self.state is None:
+            raise ValueError(
+                "Network has no layers yet. Call add_layer(...) before "
+                "install_kronecker_belief()."
+            )
+        elements = []
+        for elem in self.state.layers:
+            if elem.weights_mean is None:
+                elements.append(elem)
+                continue
+            if not isinstance(elem, Layer):
+                raise NotImplementedError(
+                    "learning_kind='kronecker' does not support layer stacks; add "
+                    "the layers one by one with add_layer."
+                )
+            if not elem.fully_connected:
+                raise NotImplementedError(
+                    "learning_kind='kronecker' requires fully connected weights."
+                )
+            if anchor and elem.weights_anchor_mean is None:
+                elem = dataclasses.replace(
+                    elem, weights_anchor_mean=jnp.array(elem.weights_mean)
+                )
+            if elem.weights_output_factor is not None:
+                elements.append(elem)
+                continue
+            n_child, n_in = elem.weights_mean.shape
+            dtype = elem.weights_mean.dtype
+            if bias_correction:
+                output = jnp.zeros((n_child, n_child), dtype)
+                input_ = jnp.zeros((n_in, n_in), dtype)
+                mass = jnp.zeros((), dtype)
+            else:
+                output, input_ = (
+                    jnp.eye(n_child, dtype=dtype),
+                    jnp.eye(n_in, dtype=dtype),
+                )
+                mass = None
+            elements.append(
+                dataclasses.replace(
+                    elem,
+                    weights_factor_mass=mass,
+                    weights_output_factor=output,
+                    weights_input_factor=input_,
+                )
+            )
+        self.state = dataclasses.replace(self.state, layers=tuple(elements))
+        return self
+
     def _ensure_optimiser_state(
         self, optimiser: Optional[optax.GradientTransformation]
     ) -> None:
@@ -1366,15 +1453,17 @@ class DeepNetwork:
 
     def _resolve_learning(
         self, learning_kind: str, learning_kwargs: Optional[dict]
-    ) -> tuple[str, Optional[SynapticUncertaintySettings]]:
+    ) -> tuple[str, Optional[Union[SynapticUncertaintySettings, KroneckerSettings]]]:
         """Resolve a learning kind into the gradient it descends and its settings.
 
         ``'synaptic_uncertainty'`` names both the weight-belief rule and the
         gradient it descends, so the kind comes back unchanged either way. What
         selecting it adds is its settings, a step size taken from the belief
         rather than an optimiser, and the belief installed on the
-        weight-carrying elements, which this does. Every other kind is a plain
-        gradient and carries no settings.
+        weight-carrying elements, which this does. ``'kronecker'`` names the
+        Kronecker-factored weight belief; it comes back as the gradient named by
+        its ``gradient`` setting, with its settings, and its factors are installed.
+        Every other kind is a plain gradient and carries no settings.
 
         Parameters
         ----------
@@ -1382,20 +1471,31 @@ class DeepNetwork:
             The kind requested by :meth:`fit` or :meth:`batch_update`.
         learning_kwargs :
             Settings for the belief rule, resolved by
-            :func:`~pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`.
-            Only meaningful for ``'synaptic_uncertainty'``.
+            :func:`~pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`
+            or :func:`~pyhgf.updates.vectorised.learning.resolve_kronecker_settings`.
+            Only meaningful for ``'synaptic_uncertainty'`` and ``'kronecker'``.
 
         Returns
         -------
         tuple
             ``(gradient_kind, settings)``, the second being ``None`` for every
-            kind but ``'synaptic_uncertainty'``.
+            kind but ``'synaptic_uncertainty'`` and ``'kronecker'``.
         """
+        if learning_kind == KRONECKER_KIND:
+            # Resolved before the factors are installed, so invalid settings raise
+            # without leaving the network half-configured.
+            kronecker_settings = resolve_kronecker_settings(learning_kwargs)
+            self.install_kronecker_belief(
+                kronecker_settings.bias_correction, kronecker_settings.anchor > 0
+            )
+            return kronecker_settings.gradient, kronecker_settings
+
         if learning_kind != "synaptic_uncertainty":
             if learning_kwargs:
                 raise ValueError(
                     "learning_kwargs is only used by "
-                    f"learning_kind='synaptic_uncertainty', not by {learning_kind!r}."
+                    "learning_kind='synaptic_uncertainty' and "
+                    f"learning_kind='kronecker', not by {learning_kind!r}."
                 )
             return learning_kind, None
 
@@ -1542,11 +1642,15 @@ class DeepNetwork:
             (:func:`~pyhgf.updates.vectorised.learning.vectorised_variational_gradient`);
             it is available with layers added one by one, and not in
             :meth:`batch_update`. ``"synaptic_uncertainty"`` runs the weight-belief
-            rule (:func:`~pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`),
-            which takes its own steps, so ``optimiser`` is then unused.
+            rule (:func:`~pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`)
+            and ``"kronecker"`` the Kronecker-factored weight belief
+            (:func:`~pyhgf.updates.vectorised.learning.resolve_kronecker_settings`;
+            layers added one by one, fully connected; in :meth:`batch_update` with a
+            ``gradient`` other than ``"variational"``); both take their own steps,
+            so ``optimiser`` is then unused.
         learning_kwargs :
-            Settings of ``"synaptic_uncertainty"``, as the function above resolves
-            them.
+            Settings of ``"synaptic_uncertainty"`` or ``"kronecker"``, as the two
+            functions above resolve them.
         record :
             Tuple of ``LayerState`` field names to record at every time step,
             e.g. ``("expected_mean", "precision")``. ``None`` (default) skips
@@ -1595,15 +1699,19 @@ class DeepNetwork:
                     f"Unknown record field(s) {invalid}. Valid: {sorted(valid_fields)}."
                 )
 
-        gradient_kind, synaptic_uncertainty_settings = self._resolve_learning(
-            learning_kind, learning_kwargs
+        gradient_kind, settings = self._resolve_learning(learning_kind, learning_kwargs)
+        kronecker_settings = (
+            settings if isinstance(settings, KroneckerSettings) else None
+        )
+        synaptic_uncertainty_settings = (
+            None if kronecker_settings is not None else settings
         )
 
-        if synaptic_uncertainty_settings is None and optimiser is None:
+        if settings is None and optimiser is None:
             raise ValueError(
                 f"learning_kind={learning_kind!r} needs an optimiser. Pass one, "
-                "or use learning_kind='synaptic_uncertainty', whose step size "
-                "is the belief's own variance."
+                "or use learning_kind='synaptic_uncertainty' or "
+                "learning_kind='kronecker', which take their own steps."
             )
         self._ensure_optimiser_state(optimiser)
 
@@ -1621,6 +1729,7 @@ class DeepNetwork:
             float(time_step),
             update_precisions,
             synaptic_uncertainty_settings,
+            kronecker_settings,
         )
 
         if record_tuple:
@@ -1989,8 +2098,12 @@ class DeepNetwork:
                 "(batch, n_features)."
             )
 
-        gradient_kind, synaptic_uncertainty_settings = self._resolve_learning(
-            learning_kind, learning_kwargs
+        gradient_kind, settings = self._resolve_learning(learning_kind, learning_kwargs)
+        kronecker_settings = (
+            settings if isinstance(settings, KroneckerSettings) else None
+        )
+        synaptic_uncertainty_settings = (
+            None if kronecker_settings is not None else settings
         )
 
         self._ensure_optimiser_state(optimiser)
@@ -2008,6 +2121,7 @@ class DeepNetwork:
             predicted=predicted,
             sample_weight=None if sample_weight is None else jnp.asarray(sample_weight),
             synaptic_uncertainty_settings=synaptic_uncertainty_settings,
+            kronecker_settings=kronecker_settings,
         )
         return self
 

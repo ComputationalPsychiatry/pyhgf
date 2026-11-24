@@ -82,6 +82,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
     optimiser = part.optimiser
     learning_kind = part.gradient_kind
     synaptic_uncertainty_settings = part.synaptic_uncertainty_settings
+    kronecker_settings = part.kronecker_settings
     update_precisions = part.update_precisions
     time_step = part.time_step
     weight_reuse = part.weight_reuse
@@ -121,6 +122,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
             time_step=time_step,
             predicted=states,
             weight_reuse=weight_reuse,
+            kronecker_settings=kronecker_settings,
         )
         update_norm = jnp.sqrt(
             sum(

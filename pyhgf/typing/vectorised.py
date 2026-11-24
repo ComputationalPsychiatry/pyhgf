@@ -338,6 +338,31 @@ class Layer(eqx.Module):
         installed. Same shape as ``weights_input_gram``. Each learning step
         overwrites it, as it overwrites ``weights_gradient``; it is recorded only
         and does not enter the weight update.
+    weights_output_factor :
+        Output factor :math:`\Omega` of the Kronecker-factored precision of the
+        incoming weights, shape ``(n_child, n_child)``, or ``None`` (default) when
+        none is installed. Under ``learning_kind="kronecker"`` each learning step
+        mixes in the precision the observations give the child's prediction, and the
+        weight step is preconditioned by it (see
+        :func:`pyhgf.updates.vectorised.learning.resolve_kronecker_settings`).
+    weights_input_factor :
+        Input factor :math:`\Gamma` of the same precision, shape
+        ``(n_self[+1], n_self[+1])``, the last axis of ``weights_mean`` on both sides,
+        or ``None`` (default). Under ``learning_kind="kronecker"`` each learning step
+        mixes in the posterior second moment of the coupled activations of this
+        layer, the constant input included.
+    weights_factor_mass :
+        Scalar mass of the two Kronecker factors when they are bias-corrected, or
+        ``None`` (default) when they start at the identity. Bias-corrected factors are
+        decayed sums of their increments, and divided by the mass they are the
+        weighted means of those increments (see
+        :func:`pyhgf.updates.vectorised.learning.kronecker_mass_update`).
+    weights_anchor_mean :
+        Slow mean of the Kronecker-factored weight belief, shape of
+        ``weights_mean``, or ``None`` (default) when none is installed. Under
+        ``learning_kind="kronecker"`` with an ``anchor`` above zero, each learning
+        step combines it with the batch and pulls the weights toward it (see
+        :func:`pyhgf.updates.vectorised.learning.kronecker_slow_mean_update`).
     """
 
     state: LayerState
@@ -363,6 +388,10 @@ class Layer(eqx.Module):
     weights_step_surprise: Optional[Array] = None
     weights_step_rows: Optional[Array] = None
     weights_batch_gram: Optional[Array] = None
+    weights_output_factor: Optional[Array] = None
+    weights_input_factor: Optional[Array] = None
+    weights_factor_mass: Optional[Array] = None
+    weights_anchor_mean: Optional[Array] = None
 
 
 class LayerStack(eqx.Module):
