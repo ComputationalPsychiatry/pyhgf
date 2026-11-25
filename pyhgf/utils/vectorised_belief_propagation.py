@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Optional
+from typing import Optional, Union
 
 import equinox as eqx
 import jax
@@ -37,26 +37,36 @@ from pyhgf.updates.vectorised.continuous import (
     vectorised_continuous_prediction,
     vectorised_continuous_prediction_error,
 )
-from pyhgf.updates.vectorised.learning import (
+from pyhgf.updates.vectorised.elements import (
+    _child_view,
+    _stack_slice,
+    _sweeps_reach_top,
+)
+
+# The weight-learning steps the sweeps below dispatch to.
+from pyhgf.updates.vectorised.learning.backprop import (
     BACKPROP_KIND,
-    KRONECKER_KIND,
-    VARIATIONAL_KIND,
+    vectorised_backprop_gradient,
+)
+from pyhgf.updates.vectorised.learning.factors import (
+    _contract_factors,
+    _gradient_matrix,
+    _importance_pair,
+    _weight_quantities,
+)
+from pyhgf.updates.vectorised.learning.kronecker import (
     KroneckerSettings,
+    kronecker_increment_vectors,
+    vectorised_kronecker_update,
+)
+from pyhgf.updates.vectorised.learning.optimiser import _apply_weight_updates
+from pyhgf.updates.vectorised.learning.synaptic_uncertainty import (
+    _GRAM_FIELDS,
     SynapticUncertaintySettings,
-    clamped_layer_evidence,
-    evidence_pullback,
-    kronecker_direction,
-    kronecker_factor_update,
-    kronecker_mass_update,
-    kronecker_slow_mean_update,
-    kronecker_step_scale,
-    learning_weights_vectorised,
-    relaxed_effective_precision,
-    step_gram_surprise,
-    vectorised_input_gram_update,
-    vectorised_step_gram_update,
-    vectorised_step_rows_update,
-    vectorised_synaptic_uncertainty_update,
+    _apply_synaptic_uncertainty_updates,
+)
+from pyhgf.updates.vectorised.learning.variational import (
+    VARIATIONAL_KIND,
     vectorised_variational_gradient,
 )
 from pyhgf.updates.vectorised.volatile import (
@@ -67,55 +77,10 @@ from pyhgf.updates.vectorised.volatile import (
     vectorised_root_prediction,
 )
 
-#: Floor applied to precisions before any division.
-_EPS = 1e-30
-
-
-# ---------------------------------------------------------------------------
-# Element-shape helpers
-# ---------------------------------------------------------------------------
-
-
-def _stack_slice(stack: LayerStack, index: int):
-    """Return ``(state, params, weights_mean)`` of the stack slice at ``index``.
-
-    Index ``0`` is the bottommost slice, ``-1`` the topmost.
-    """
-    state = jax.tree_util.tree_map(lambda x: x[index], stack.state)
-    params = jax.tree_util.tree_map(lambda x: x[index], stack.params)
-    return state, params, stack.weights_mean[index]
-
-
-def _parent_view(elem):
-    """Treat a ``Layer`` or ``LayerStack`` uniformly when acting as a parent.
-
-    Returns ``(state, weights_mean, coupling_fn, add_constant_input)``. The four pieces
-    ``propagation_step`` needs to predict a child below.
-
-    For a ``LayerStack``, the parent is the *bottommost* slice (the slice closest to the
-    child below the stack).
-    """
-    if isinstance(elem, LayerStack):
-        state, _, weights = _stack_slice(elem, 0)
-        return state, weights, elem.coupling_fn, elem.add_constant_input
-    return elem.state, elem.weights_mean, elem.coupling_fn, elem.add_constant_input
-
-
-def _child_view(elem):
-    """Treat a ``Layer`` or ``LayerStack`` uniformly when acting as a child.
-
-    Returns ``(state, kind, is_input_layer)``. What's needed when something above is
-    doing a posterior update or computing prediction-error-driven weight gradients using
-    this element's state as the child.
-
-    For a ``LayerStack``, the child role is filled by the *topmost* slice (the slice
-    closest to the parent above the stack).
-    """
-    if isinstance(elem, LayerStack):
-        state, _, _ = _stack_slice(elem, -1)
-        return state, elem.kind, False  # interior; never the clamped leaf
-    return elem.state, elem.kind, elem.is_input_layer
-
+#: The settings of a weight belief that takes the weight step in place of an optimiser:
+#: the weight-belief rule of ``"synaptic_uncertainty"`` or the Kronecker-factored
+#: weight belief of ``"kronecker"``.
+BeliefSettings = Union[SynapticUncertaintySettings, KroneckerSettings]
 
 # ---------------------------------------------------------------------------
 # Top-down prediction
@@ -268,9 +233,13 @@ def _topdown_predict(
 
     Either element can be a ``Layer`` or a ``LayerStack``.
     """
-    parent_state, parent_weights, parent_coupling_fn, parent_has_const = _parent_view(
-        parent_elem
-    )
+    # A LayerStack predicts the child below through its bottommost slice.
+    if isinstance(parent_elem, LayerStack):
+        parent_state, _, parent_weights = _stack_slice(parent_elem, 0)
+    else:
+        parent_state, parent_weights = parent_elem.state, parent_elem.weights_mean
+    parent_coupling_fn = parent_elem.coupling_fn
+    parent_has_const = parent_elem.add_constant_input
     if isinstance(child_elem, LayerStack):
         # LayerStacks are continuous/volatile only — the binary clip never applies.
         return _predict_stack_from_parent(
@@ -389,7 +358,7 @@ def _top_precision_only(
     r"""Update the top layer's precision from the layer below, leaving its mean clamped.
 
     The top layer holds the predictors, and its mean is read back by the weight update
-    (:func:`~pyhgf.updates.vectorised.learning.learning_weights_vectorised`
+    (:func:`~pyhgf.updates.vectorised.learning.factors.learning_weights_vectorised`
     forms the parent-side factor from ``coupling_fn(parent.mean)``). Those weights must
     be learned against the predictors that were actually supplied, so the mean stays
     pinned to ``x`` and only its precision moves.
@@ -599,134 +568,6 @@ def _bottomup_posterior_pe(
 
 
 # ---------------------------------------------------------------------------
-# Weight gradients
-# ---------------------------------------------------------------------------
-
-
-def _layer_weight_op(
-    parent: Layer, child_elem, learning_kind: str, child_evidence=None
-):
-    """Learning factors for a ``Layer`` parent and its child.
-
-    *child_evidence* is passed only by the evidence walk; ``None`` leaves
-    ``learning_weights_vectorised`` to recover the evidence from the cache.
-    """
-    child_state, child_kind, _ = _child_view(child_elem)
-    return learning_weights_vectorised(
-        parent_state=parent.state,
-        child_state=child_state,
-        coupling_fn=parent.coupling_fn,
-        kind=learning_kind,
-        parent_has_constant=parent.add_constant_input,
-        child_kind=child_kind,
-        child_evidence=child_evidence,
-    )
-
-
-def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str, evidence=None):
-    """Learning factors for every slice of a ``LayerStack``, and the evidence above it.
-
-    The child of slice 0 is the layer below the stack (``child_elem``); the child of
-    slice k>0 is slice k-1 within the stack. Slice 0 is the boundary and is computed
-    on its own: its child keeps its actual kind, since it may be the clamped binary
-    or categorical observation layer, whose gradient and importance factors differ
-    from a continuous child's. The interior slices ``1 .. N-1`` all have a stack
-    slice as their child and are ``vmap``-ed together.
-
-    The evidence walk cannot be vectorised the same way, because slice k's evidence is
-    a function of slice k-1's: it is a recursion, not a map. It is carried by a
-    ``scan`` that emits, per slice, the evidence *arriving* at that slice from below,
-    which is exactly what the slice's own increment needs; the scan's final carry is
-    the evidence leaving the top of the stack, for the element above it.
-
-    *evidence* is ``None`` for the learning kinds that never read the importance
-    factor; the walk is then skipped and the evidence above the stack is ``None`` too.
-
-    Returns
-    -------
-    tuple
-        The stacked factor triple, and the evidence at the top of the stack.
-    """
-    child_state, child_kind, _ = _child_view(child_elem)
-
-    def carry(below, slice_data):
-        evidence_below, noise_below = below
-        slice_state, slice_weights = slice_data
-        above = evidence_pullback(
-            parent_state=slice_state,
-            child_evidence=evidence_below,
-            child_process_noise=noise_below,
-            weights=slice_weights,
-            coupling_fn=stack.coupling_fn,
-            parent_has_constant=stack.add_constant_input,
-        )
-        noise_here = slice_state.effective_precision / jnp.maximum(
-            slice_state.expected_precision, _EPS
-        )
-        return (above, noise_here), evidence_below
-
-    if evidence is None:
-        evidence_out = None
-        per_slice_evidence = jnp.zeros(stack.state.mean.shape)
-    else:
-        # The carry holds the evidence arriving at a slice and the process noise of
-        # the layer it left, since the softening is charged at the level it crosses.
-        # The sweep caches the effective precision gamma = Omega * pi_hat, so the
-        # process noise is gamma / pi_hat. It is carried as an array rather than as
-        # the layer's state, whose pytree structure differs between the external
-        # child and a stack slice when one of them has no volatility parent.
-        (evidence_out, _), per_slice_evidence = jax.lax.scan(
-            carry,
-            (
-                evidence,
-                child_state.effective_precision
-                / jnp.maximum(child_state.expected_precision, _EPS),
-            ),
-            (stack.state, stack.weights_mean),
-        )
-
-    walking = evidence is not None
-
-    def slice_factors(parent_state, child_state_for_slice, child_evidence, kind):
-        return learning_weights_vectorised(
-            parent_state=parent_state,
-            child_state=child_state_for_slice,
-            coupling_fn=stack.coupling_fn,
-            kind=learning_kind,
-            parent_has_constant=stack.add_constant_input,
-            child_kind=kind,
-            child_evidence=child_evidence if walking else None,
-        )
-
-    # Boundary: slice 0 from the external child, with the child's own kind.
-    first = slice_factors(
-        jax.tree_util.tree_map(lambda x: x[0], stack.state),
-        child_state,
-        per_slice_evidence[0],
-        child_kind,
-    )
-    # Interior slices 1 .. N-1, whose children are the stack's own slices. A
-    # single-slice stack maps over a zero-length axis and the concatenation
-    # below just wraps the boundary factors.
-    rest = jax.vmap(lambda p, c, e: slice_factors(p, c, e, "continuous"))(
-        jax.tree_util.tree_map(lambda x: x[1:], stack.state),
-        jax.tree_util.tree_map(lambda x: x[:-1], stack.state),
-        per_slice_evidence[1:],
-    )
-    factors = jax.tree_util.tree_map(
-        lambda f, r: jnp.concatenate([f[None, ...], r], axis=0), first, rest
-    )
-    return (factors, evidence_out) if walking else factors
-
-
-def _weight_op(parent_elem, child_elem, learning_kind: str):
-    """Dispatch the learning factors on ``Layer`` vs ``LayerStack``."""
-    if isinstance(parent_elem, LayerStack):
-        return _stack_weight_op(parent_elem, child_elem, learning_kind)
-    return _layer_weight_op(parent_elem, child_elem, learning_kind)
-
-
-# ---------------------------------------------------------------------------
 # Element-level state writeback (for clamping x/y at the boundaries)
 # ---------------------------------------------------------------------------
 
@@ -740,26 +581,6 @@ def _set_top_predictors(elem, x):
         raise NotImplementedError("Top of network must be a Layer, not a LayerStack.")
     new_state = dataclasses.replace(elem.state, expected_mean=x, mean=x)
     return dataclasses.replace(elem, state=new_state)
-
-
-def _sweeps_reach_top(network: VectorisedNetwork) -> bool:
-    """Whether both sweeps should treat the top element as a member of the hierarchy.
-
-    Gating the two sweeps on one predicate keeps them in step: a top element that
-    receives a posterior update must also receive the precision prediction that
-    carries it into the next step, or its precision would accumulate with nothing
-    advancing it.
-
-    Requires ``update_input_layer``, something below the top to send it a message,
-    and a volatile top element — a binary layer's predicted precision is a function
-    of its predicted mean, which is clamped to the predictors here, so there is no
-    precision of its own for the sweeps to move.
-    """
-    return (
-        network.update_input_layer
-        and len(network.layers) > 1
-        and network.layers[-1].kind == "volatile"
-    )
 
 
 def _predict_top_precisions(
@@ -817,8 +638,7 @@ def propagation_step(
     time_step: float = 1.0,
     learning_kind: str = "precision_weighted",
     weight_update: bool = True,
-    synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
-    kronecker_settings: Optional[KroneckerSettings] = None,
+    belief_settings: Optional[BeliefSettings] = None,
 ) -> tuple[tuple[VectorisedNetwork, optax.OptState], jnp.ndarray]:
     """Single propagation step through the network.
 
@@ -848,14 +668,11 @@ def propagation_step(
         The time elapsed since the previous step.
     learning_kind :
         The weight-gradient mode passed to
-        :py:func:`pyhgf.updates.vectorised.learning.learning_weights_vectorised`.
+        :py:func:`pyhgf.updates.vectorised.learning.factors.learning_weights_vectorised`.
     weight_update :
         Whether to apply the weight-learning phase after belief propagation.
-    synaptic_uncertainty_settings :
-        When given, the weight-belief rule runs in place of ``optimiser`` (see
-        :func:`_learn_sweep`).
-    kronecker_settings :
-        When given, the Kronecker-factored weight belief runs in place of
+    belief_settings :
+        When given, the weight belief these settings describe runs in place of
         ``optimiser`` (see :func:`_learn_sweep`).
 
     Returns
@@ -880,8 +697,7 @@ def propagation_step(
             opt_state,
             optimiser,
             learning_kind,
-            synaptic_uncertainty_settings,
-            kronecker_settings,
+            belief_settings,
         )
     else:
         new_network, new_opt_state = swept, opt_state
@@ -905,8 +721,7 @@ def run_scan(
     record: tuple,
     time_step: float = 1.0,
     update_precisions: bool = True,
-    synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
-    kronecker_settings: Optional[KroneckerSettings] = None,
+    belief_settings: Optional[BeliefSettings] = None,
 ) -> tuple:
     r"""Run ``jax.lax.scan`` over the belief-propagation step.
 
@@ -925,7 +740,7 @@ def run_scan(
         The optax optimiser used for the weight-learning phase.
     learning_kind :
         The weight-gradient mode passed to
-        :py:func:`pyhgf.updates.vectorised.learning.learning_weights_vectorised`.
+        :py:func:`pyhgf.updates.vectorised.learning.factors.learning_weights_vectorised`.
     weight_update :
         Whether to apply the weight-learning phase at every step.
     record :
@@ -939,9 +754,9 @@ def run_scan(
     time_step :
         Uniform inference time step :math:`\\Delta t` passed to every
         ``propagation_step`` call. Defaults to ``1.0``.
-    synaptic_uncertainty_settings, kronecker_settings :
-        The settings of a weight-belief rule that runs in place of ``optimiser``
-        (see :func:`_learn_sweep`), or ``None``.
+    belief_settings :
+        The settings of a weight belief that runs in place of ``optimiser`` (see
+        :func:`_learn_sweep`), or ``None``.
 
     Returns
     -------
@@ -961,8 +776,7 @@ def run_scan(
             time_step=time_step,
             learning_kind=learning_kind,
             weight_update=weight_update,
-            synaptic_uncertainty_settings=synaptic_uncertainty_settings,
-            kronecker_settings=kronecker_settings,
+            belief_settings=belief_settings,
         )
         if not update_precisions:
             # Static-cascade mode: precisions are parameters, not filter state. Note
@@ -1189,687 +1003,83 @@ def input_prediction_error(network: VectorisedNetwork) -> jnp.ndarray:
     return _input_prediction_error(network)
 
 
-def _weight_quantities(network: VectorisedNetwork, learning_kind: str) -> tuple:
-    r"""Per-element weight-learning factors, without applying them.
-
-    Must run *after* :func:`_update_sweep`, so the per-layer states already carry their
-    prediction errors / posteriors. Returns one entry per element, matched 1:1 to
-    ``network.layers`` (``None`` for the bottom element, which has no incoming
-    weights); each entry is the factor tuple of
-    :func:`pyhgf.updates.vectorised.learning.learning_weights_vectorised`.
-    Assemble them with :func:`_gradient_matrix` and :func:`_importance_pair`.
-
-    Under ``learning_kind="synaptic_uncertainty"`` the importance increment's
-    child-side factor is the evidence precision, and this walks it up the stack in its
-    own quantity: seeded at the clamped layer by
-    :func:`~pyhgf.updates.vectorised.learning.clamped_layer_evidence` and raised one
-    element at a time by
-    :func:`~pyhgf.updates.vectorised.learning.evidence_pullback`. This loop runs bottom
-    to top already, which is the order the recursion needs, so the walk costs one
-    matrix product per element and no extra sweep.
-
-    The evidence is *carried* rather than recovered from the filter's cache as
-    :math:`\pi_a - \hat\pi_a`. The two agree in exact arithmetic only where the
-    filter's own chain is seeded with the clamped layer's likelihood curvature, which
-    it is not: a clamped categorical layer enters that chain at unit precision, because
-    that convention is what makes the message it routes exact cross-entropy
-    backpropagation. One variable cannot serve both roles, so the curvature gets its
-    own. Carrying it also removes a subtraction of two large nearly-equal precisions,
-    which loses every significant digit once a layer's precision has accumulated.
-
-    The other learning kinds never read the importance factor, so they skip the walk.
-    """
-    elements = network.layers
-    if learning_kind != "synaptic_uncertainty":
-        return (None,) + tuple(
-            _weight_op(elements[i], elements[i - 1], learning_kind)
-            for i in range(1, len(elements))
-        )
-
-    child_state, child_kind, _ = _child_view(elements[0])
-    evidence = clamped_layer_evidence(child_state, child_kind)
-
-    factors: list = [None]
-    for i in range(1, len(elements)):
-        parent = elements[i]
-        if isinstance(parent, LayerStack):
-            stack_factors, evidence = _stack_weight_op(
-                parent, elements[i - 1], learning_kind, evidence
-            )
-            factors.append(stack_factors)
-            continue
-        factors.append(
-            _layer_weight_op(parent, elements[i - 1], learning_kind, evidence)
-        )
-        if i + 1 < len(elements):
-            # The evidence is softened by the process noise of the layer it leaves,
-            # which the sweep caches as the effective precision gamma = Omega *
-            # pi_hat, so the noise itself is gamma / pi_hat.
-            below, _, _ = _child_view(elements[i - 1])
-            evidence = evidence_pullback(
-                parent_state=parent.state,
-                child_evidence=evidence,
-                child_process_noise=below.effective_precision
-                / jnp.maximum(below.expected_precision, _EPS),
-                weights=parent.weights_mean,
-                coupling_fn=parent.coupling_fn,
-                parent_has_constant=parent.add_constant_input,
-            )
-    return tuple(factors)
-
-
-def _gradient_matrix(factors) -> Optional[jnp.ndarray]:
-    """Assemble the descent gradient from one element's factors."""
-    if factors is None:
-        return None
-    u, h = factors[0], factors[1]
-    return u[..., :, None] * h[..., None, :]
-
-
-def _importance_pair(factors) -> Optional[tuple]:
-    """Build the importance factor pair ``(p, h**2)`` from one element's factors.
-
-    The parent side is squared here rather than at the source, since both quantities
-    read the same activation. Squaring can overflow a finite activation, so the non-
-    finite guard is applied after it, matching the child side.
-    """
-    if factors is None:
-        return None
-    squared = factors[1] ** 2
-    return factors[2], jnp.where(jnp.isfinite(squared), squared, 0.0)
-
-
-def _batch_gram(
-    factors, weights: jnp.ndarray, evidence: bool = False
-) -> Optional[jnp.ndarray]:
-    r"""Return the weighted batch mean of :math:`h h^\top`, shaped by the evidence.
-
-    Without ``evidence`` this is :math:`\sum_t \omega_t h_t h_t^\top`, whose diagonal
-    is the parent side of :func:`_importance_pair`'s increment. With it, sample
-    :math:`t` is weighted by :math:`r_t`, the mean over the child's units of the
-    evidence factor (``factors[2]``), and the result is rescaled to the trace of the
-    unweighted matrix:
-
-    .. math::
-
-        \tilde G = \frac{\sum_t \omega_t \lVert h_t \rVert^2}
-                        {\sum_t \omega_t r_t \lVert h_t \rVert^2}
-                   \sum_t \omega_t r_t h_t h_t^\top .
-
-    A batch that received no evidence at all keeps the unweighted matrix. The leading
-    slice axis of a ``LayerStack`` is carried through, one matrix per slice. The
-    factors come from
-    :func:`~pyhgf.updates.vectorised.learning.learning_weights_vectorised`, which
-    already sets their non-finite entries to zero.
-    """
-    if factors is None:
-        return None
-    h = factors[1]
-    plain = jnp.einsum("b,b...i,b...j->...ij", weights, h, h)
-    if not evidence:
-        return plain
-    r = jnp.mean(factors[2], axis=-1)
-    norms = jnp.sum(h**2, axis=-1)
-    plain_trace = jnp.einsum("b,b...->...", weights, norms)
-    weighted_trace = jnp.einsum("b,b...,b...->...", weights, r, norms)
-    weighted = jnp.einsum("b,b...,b...i,b...j->...ij", weights, r, h, h)
-    received = weighted_trace > 0
-    scale = plain_trace / jnp.where(received, weighted_trace, 1.0)
-    return jnp.where(
-        received[..., None, None], weighted * scale[..., None, None], plain
-    )
-
-
-def _records_gram(elem) -> bool:
-    """Whether an element carries an input, step or batch Gram matrix to advance."""
-    return (
-        getattr(elem, "weights_input_gram", None) is not None
-        or getattr(elem, "weights_step_gram", None) is not None
-        or getattr(elem, "weights_batch_gram", None) is not None
-    )
-
-
-def _row_evidence(importance, mask: Optional[jnp.ndarray]) -> jnp.ndarray:
-    r"""Return the row sums of one element's importance increment, over its edges.
-
-    ``importance`` is the factor pair ``(p, h**2)`` of one sample or the contracted
-    increment matrix of a batch, as :func:`_apply_synaptic_uncertainty_updates` takes
-    it. Row :math:`a` sums to :math:`\sum_t \omega_t p_{a,t} \lVert h_t \rVert^2` in a
-    fully connected element. A one-to-one element connects row :math:`a` to input
-    :math:`a` only, so there the sum is :math:`\sum_t \omega_t p_{a,t} h_{a,t}^2`.
-    """
-    if isinstance(importance, tuple):
-        p, q = importance
-        increment = p[..., :, None] * q[..., None, :]
-    else:
-        increment = importance
-    if mask is not None:
-        increment = jnp.where(mask, increment, 0.0)
-    return increment.sum(axis=-1)
-
-
-def _edge_mask(elem) -> Optional[jnp.ndarray]:
-    """Boolean mask of the weights that are edges, or ``None`` when all of them are.
-
-    A one-to-one element (``fully_connected=False``) connects node :math:`i` of the
-    child layer to node :math:`i` of this layer only, so only the diagonal of its
-    ``weights_mean`` is an edge. A ``LayerStack`` mask broadcasts over the slice axis.
-    """
-    if elem.fully_connected or elem.weights_mean is None:
-        return None
-    n_children, n_parents = elem.weights_mean.shape[-2:]
-    return jnp.eye(n_children, n_parents, dtype=bool)
-
-
-def _apply_weight_updates(
-    network: VectorisedNetwork,
-    grads: tuple,
-    opt_state: optax.OptState,
-    optimiser: optax.GradientTransformation,
-) -> tuple[VectorisedNetwork, optax.OptState]:
-    """One optimiser step on every ``weights_mean``, from precomputed gradients.
-
-    In a one-to-one element, only the diagonal weights move. The gradient is masked
-    before the optimiser, so its state and any transform that reads the whole gradient
-    (such as ``optax.clip_by_global_norm``) see only the edges. The update is masked
-    too, since a transform that does not scale with the gradient (such as
-    ``optax.add_noise``) would still move the other weights.
-    """
-    elements = list(network.layers)
-    weights = tuple(elem.weights_mean for elem in elements)
-    masks = tuple(_edge_mask(elem) for elem in elements)
-    grads = tuple(
-        g if m is None else jnp.where(m, g, 0.0) for g, m in zip(grads, masks)
-    )
-
-    updates, new_opt_state = optimiser.update(grads, opt_state, weights)
-    new_weights = optax.apply_updates(weights, updates)
-    for i, new_w in enumerate(new_weights):
-        if new_w is not None:
-            if masks[i] is not None:
-                new_w = jnp.where(masks[i], new_w, weights[i])
-            elements[i] = dataclasses.replace(elements[i], weights_mean=new_w)
-
-    return dataclasses.replace(network, layers=tuple(elements)), new_opt_state
-
-
-def _apply_synaptic_uncertainty_updates(
-    network: VectorisedNetwork,
-    grads: tuple,
-    importance: tuple,
-    settings: SynapticUncertaintySettings,
-    grams: Optional[tuple] = None,
-) -> VectorisedNetwork:
-    r"""Advance every weight belief one step, mean and precision together.
-
-    The rule needs no optimiser: the step size is the belief's own variance
-    (see
-    :func:`pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`),
-    so the update is applied here and both the mean (``weights_mean``) and the
-    accumulated precision (``weights_precision_delta``) are written back to
-    the element that carries them. In a one-to-one element, only the diagonal
-    beliefs move.
-
-    The recorded fields an element carries (see
-    :class:`~pyhgf.typing.vectorised.Layer`) are written here and never read by the
-    update:
-
-    - ``weights_gradient`` is overwritten with this step's gradient.
-    - ``weights_input_gram`` is advanced by
-      :func:`pyhgf.updates.vectorised.learning.vectorised_input_gram_update`.
-    - ``weights_step_gram`` and ``weights_step_mass`` are advanced by
-      :func:`pyhgf.updates.vectorised.learning.vectorised_step_gram_update`, at the
-      element's ``weights_step_rate`` where it carries one. A ``weights_step_surprise``
-      is first overwritten with
-      :func:`pyhgf.updates.vectorised.learning.step_gram_surprise` of this batch
-      against the running Gram matrix before the batch is mixed in, and a
-      ``weights_step_rows`` is advanced at the same rate by
-      :func:`pyhgf.updates.vectorised.learning.vectorised_step_rows_update`.
-    - ``weights_batch_gram`` is overwritten with this step's batch Gram matrix.
-
-    In a one-to-one element every recorded quantity is restricted to the edges. The
-    gradient is masked to the diagonal. Each Gram matrix keeps only its diagonal: row
-    :math:`a` has the single input :math:`h_a`, so a product :math:`h_i h_j` with
-    :math:`i \neq j` is the curvature of no weight, and a step solved against it would
-    mix the gradients of weights that are not edges. The row evidence sums over the
-    edges only (see :func:`_row_evidence`).
-
-    Parameters
-    ----------
-    network :
-        The network whose beliefs are advanced.
-    grads :
-        One descent gradient per element, ``None`` for the bottom element.
-    importance :
-        One importance entry per element, aligned with ``grads``.
-    settings :
-        The resolved settings of the rule.
-    grams :
-        One batch mean :math:`h h^\top` per element, aligned with ``grads``,
-        ``None`` for an element that records no Gram matrix. ``None`` (default)
-        when no element records one.
-
-    Returns
-    -------
-    VectorisedNetwork
-        The network with updated weights, precisions and recorded fields.
-
-    Raises
-    ------
-    ValueError
-        If an element holding weights carries no belief, which means the
-        install step was skipped.
-    """
-    elements = list(network.layers)
-    for i, elem in enumerate(elements):
-        if elem.weights_mean is None or grads[i] is None:
-            continue
-        if elem.weights_precision_delta is None:
-            raise ValueError(
-                f"layers[{i}] holds weights but no weight belief. Install one "
-                "with add_layer(weight_belief=True), or let "
-                "learning_kind='synaptic_uncertainty' install it."
-            )
-        mask = _edge_mask(elem)
-        fields = {}
-        if getattr(elem, "weights_gradient", None) is not None:
-            fields["weights_gradient"] = (
-                grads[i] if mask is None else jnp.where(mask, grads[i], 0.0)
-            )
-        batch_gram = None if grams is None else grams[i]
-        if batch_gram is not None:
-            if mask is not None:
-                batch_gram = batch_gram * jnp.eye(
-                    batch_gram.shape[-1], dtype=batch_gram.dtype
-                )
-            if getattr(elem, "weights_input_gram", None) is not None:
-                fields["weights_input_gram"] = vectorised_input_gram_update(
-                    elem.weights_input_gram, batch_gram, settings
-                )
-            if getattr(elem, "weights_batch_gram", None) is not None:
-                fields["weights_batch_gram"] = batch_gram
-            if getattr(elem, "weights_step_gram", None) is not None:
-                rate = getattr(elem, "weights_step_rate", None)
-                if getattr(elem, "weights_step_surprise", None) is not None:
-                    fields["weights_step_surprise"] = step_gram_surprise(
-                        elem.weights_step_gram,
-                        elem.weights_step_mass,
-                        batch_gram,
-                        settings.natural_ridge,
-                    )
-                gram, mass = vectorised_step_gram_update(
-                    elem.weights_step_gram,
-                    elem.weights_step_mass,
-                    batch_gram,
-                    settings,
-                    rate=rate,
-                )
-                fields["weights_step_gram"] = gram
-                fields["weights_step_mass"] = mass
-                if getattr(elem, "weights_step_rows", None) is not None:
-                    fields["weights_step_rows"] = vectorised_step_rows_update(
-                        elem.weights_step_rows,
-                        _row_evidence(importance[i], mask),
-                        settings,
-                        rate=rate,
-                    )
-        new_weights, new_delta = vectorised_synaptic_uncertainty_update(
-            elem.weights_mean,
-            elem.weights_precision_delta,
-            grads[i],
-            importance[i],
-            settings,
-        )
-        if mask is not None:
-            # The reversion towards the prior mean moves every weight whatever its
-            # gradient, so the masked weights and precisions keep their values.
-            new_weights = jnp.where(mask, new_weights, elem.weights_mean)
-            new_delta = jnp.where(mask, new_delta, elem.weights_precision_delta)
-        elements[i] = dataclasses.replace(
-            elem,
-            weights_mean=new_weights,
-            weights_precision_delta=new_delta,
-            **fields,
-        )
-    return dataclasses.replace(network, layers=tuple(elements))
-
-
-def _kronecker_vectors(network: VectorisedNetwork) -> tuple:
-    r"""Per-element vectors of one sample's Kronecker increments, after the update sweep.
-
-    For the weights of element :math:`i`, predicting child :math:`a` (element
-    :math:`i - 1`) from parent :math:`b` (element :math:`i`), returns ``(d, p, h, v)``
-    such that the output increment is :math:`\operatorname{diag}(d) - p p^\top` and the
-    input increment :math:`h h^\top + \operatorname{diag}(v)`:
-
-    - a volatile child contributes its relaxed effective precision
-      (:func:`~pyhgf.updates.vectorised.learning.relaxed_effective_precision`), which is
-      the observation precision at the clamped observed layer, and ``p`` is ``None``;
-    - a clamped categorical child contributes the Fisher information of its
-      likelihood with respect to the logits, :math:`\operatorname{diag}(\mathbf{p}) -
-      \mathbf{p}\mathbf{p}^\top`, with :math:`\mathbf{p}` its predicted probabilities;
-    - a clamped binary child contributes :math:`\hat{p}(1 - \hat{p})` and ``p`` is
-      ``None``.
-
-    :math:`h` is the coupled parent activation at the posterior means and :math:`v =
-    g'(\mu_b)^2 / \pi_b` the posterior variance it carries, both padded with the
-    constant input (variance zero) when the weights carry a bias. The top element is
-    known exactly when the sweeps do not update it (see :func:`_sweeps_reach_top`), so
-    its variance is zero.
-
-    Returns
-    -------
-    tuple
-        One ``(d, p, h, v)`` per element, ``None`` for the bottom element.
-
-    Raises
-    ------
-    NotImplementedError
-        If an element is a ``LayerStack``.
-    """
-    elements = network.layers
-    if any(isinstance(element, LayerStack) for element in elements):
-        raise NotImplementedError(
-            "learning_kind='kronecker' does not support layer stacks; add the layers "
-            "one by one with add_layer."
-        )
-    top = len(elements) - 1
-    top_known = not _sweeps_reach_top(network)
-    vectors: list = [None]
-    for i in range(1, len(elements)):
-        parent = elements[i]
-        child_state, child_kind, child_is_input_layer = _child_view(elements[i - 1])
-        if child_kind == "categorical":
-            d = p = child_state.expected_mean
-        elif child_kind == "binary":
-            prob = child_state.expected_mean
-            d, p = prob * (1.0 - prob), None
-        else:
-            d = relaxed_effective_precision(
-                child_state, child_is_input_layer, network.mean_field_updates
-            )
-            p = None
-        mean = parent.state.mean
-        h = parent.coupling_fn(mean)
-        if i == top and top_known:
-            v = jnp.zeros_like(h)
-        else:
-            slope = jax.vmap(jax.grad(parent.coupling_fn))(mean)
-            v = slope**2 / jnp.maximum(parent.state.precision, _EPS)
-        if parent.add_constant_input:
-            h = jnp.append(h, 1.0)
-            v = jnp.append(v, 0.0)
-        finite = lambda a: None if a is None else jnp.where(jnp.isfinite(a), a, 0.0)
-        vectors.append((finite(d), finite(p), finite(h), finite(v)))
-    return tuple(vectors)
-
-
-def _contract_kronecker(vectors, output_weights, input_weights) -> Optional[tuple]:
-    r"""Weighted sums over a batch of one element's Kronecker increments.
-
-    ``vectors`` is one element's ``(d, p, h, v)`` of :func:`_kronecker_vectors` with a
-    leading batch axis. Returns :math:`(\sum_t \omega_t (\operatorname{diag}(d_t) -
-    p_t p_t^\top),\ \sum_t \omega'_t (h_t h_t^\top + \operatorname{diag}(v_t)))`, with
-    :math:`\omega` the ``output_weights`` and :math:`\omega'` the ``input_weights``,
-    without forming any per-sample matrix.
-    """
-    if vectors is None:
-        return None
-    d, p, h, v = vectors
-    output = jnp.diag(output_weights @ d)
-    if p is not None:
-        output = output - jnp.einsum("b,bi,bj->ij", output_weights, p, p)
-    inputs = jnp.einsum("b,bi,bj->ij", input_weights, h, h) + jnp.diag(
-        input_weights @ v
-    )
-    return output, inputs
-
-
-def _kronecker_increments(network: VectorisedNetwork) -> tuple[tuple, tuple]:
-    r"""Per-element increments of the Kronecker factors of one sample.
-
-    Must run after the update sweep. For the weights of element :math:`i`, predicting
-    child :math:`a` (element :math:`i - 1`) from parent :math:`b` (element :math:`i`),
-    the output increment is the precision the observations give the child's prediction
-    and the input increment the posterior second moment of the coupled parent
-    activations, :math:`h h^\top + D_b \Sigma_b D_b` with :math:`D_b =
-    \operatorname{diag}(g'(\mu_b))`, padded with the constant input when the weights
-    carry a bias (see
-    :func:`~pyhgf.updates.vectorised.learning.resolve_kronecker_settings`), in the
-    diagonal forms of :func:`_kronecker_vectors`. The activations and slopes are read
-    at the posterior means, and a top element the sweeps do not update carries no
-    variance.
-
-    Returns
-    -------
-    tuple
-        ``(outputs, inputs)``, one entry each per element, ``None`` for the bottom
-        element.
-
-    Raises
-    ------
-    NotImplementedError
-        If an element is a ``LayerStack``.
-    """
-    outputs: list = [None]
-    inputs: list = [None]
-    for vectors in _kronecker_vectors(network)[1:]:
-        weight = jnp.ones((1,))
-        output, input_ = _contract_kronecker(
-            jax.tree_util.tree_map(lambda a: a[None], vectors), weight, weight
-        )
-        outputs.append(output)
-        inputs.append(input_)
-    return tuple(outputs), tuple(inputs)
-
-
-def _apply_kronecker_updates(
-    network: VectorisedNetwork,
-    grads: tuple,
-    settings: KroneckerSettings,
-    increments: Optional[tuple] = None,
-    mix=1.0,
-    trust_region_scale=1.0,
-) -> VectorisedNetwork:
-    r"""Advance every Kronecker-factored weight belief one step.
-
-    Mixes the increments into each element's ``weights_output_factor`` and
-    ``weights_input_factor``, preconditions its gradient by the damped factors, and
-    moves every ``weights_mean`` by the preconditioned gradient under one trust region
-    shared by all elements (see
-    :func:`~pyhgf.updates.vectorised.learning.resolve_kronecker_settings`). The rule
-    needs no optimiser.
-
-    Parameters
-    ----------
-    network :
-        The network after the update sweep.
-    grads :
-        One descent gradient per element, ``None`` for the bottom element.
-    settings :
-        The resolved settings of the rule.
-    increments :
-        ``(outputs, inputs)``, one increment of each factor per element, as
-        :func:`_kronecker_increments` returns them. ``None`` (default) computes them
-        from ``network``, the single sample it was swept on.
-    mix :
-        Weight of the increments, between zero and one (see
-        :func:`~pyhgf.updates.vectorised.learning.kronecker_factor_update`): zero for
-        a batch that carries no data leaves the factors and their mass unchanged.
-    trust_region_scale :
-        Multiplies the trust region :math:`\kappa` for this step (see
-        :func:`~pyhgf.updates.vectorised.learning.kronecker_step_scale`). Default
-        ``1.0``.
-
-    With bias-corrected factors (an element carrying ``weights_factor_mass``) the
-    stored factors are the unnormalised running sums, and the step divides them by
-    the advanced mass first. With an ``anchor`` above zero, each element's
-    ``weights_anchor_mean`` is combined with the batch
-    (:func:`~pyhgf.updates.vectorised.learning.kronecker_slow_mean_update`) and the
-    stepped weights are pulled toward it by the fraction ``anchor``.
-
-    Returns
-    -------
-    VectorisedNetwork
-        The network with updated weights and factors.
-
-    Raises
-    ------
-    ValueError
-        If an element holding weights carries no factors, which means the install
-        step was skipped.
-    NotImplementedError
-        If an element holding weights is one-to-one (``fully_connected=False``).
-    """
-    if increments is None:
-        increments = _kronecker_increments(network)
-    outputs, inputs = increments
-    elements = list(network.layers)
-    advanced = {}
-    quadratic = jnp.zeros(())
-    for i, elem in enumerate(elements):
-        if elem.weights_mean is None or grads[i] is None:
-            continue
-        if elem.weights_output_factor is None or elem.weights_input_factor is None:
-            raise ValueError(
-                f"layers[{i}] holds weights but no Kronecker factors. Install them "
-                "with install_kronecker_belief(), or let learning_kind='kronecker' "
-                "install them."
-            )
-        if not elem.fully_connected:
-            raise NotImplementedError(
-                "learning_kind='kronecker' requires fully connected weights."
-            )
-        mass = elem.weights_factor_mass
-        # Bias-corrected factors are decayed sums, divided by their mass below.
-        output_factor = kronecker_factor_update(
-            elem.weights_output_factor,
-            outputs[i],
-            settings.memory,
-            mix,
-            summed=mass is not None,
-        )
-        input_factor = kronecker_factor_update(
-            elem.weights_input_factor,
-            inputs[i],
-            settings.memory,
-            mix,
-            summed=mass is not None,
-        )
-        if mass is None:
-            output_mean, input_mean = output_factor, input_factor
-        else:
-            mass = kronecker_mass_update(mass, settings.memory, mix)
-            scale = jnp.where(mass > 0, 1.0 / jnp.maximum(mass, _EPS), 0.0)
-            output_mean = jnp.where(
-                mass > 0, output_factor * scale, jnp.eye(output_factor.shape[0])
-            )
-            input_mean = jnp.where(
-                mass > 0, input_factor * scale, jnp.eye(input_factor.shape[0])
-            )
-        direction, matrix_quadratic = kronecker_direction(
-            output_mean,
-            input_mean,
-            grads[i],
-            settings.damping,
-            settings.absolute_damping,
-        )
-        slow = None
-        if settings.anchor > 0:
-            if elem.weights_anchor_mean is None or mass is None:
-                raise ValueError(
-                    f"layers[{i}] has no slow mean for anchor={settings.anchor}. "
-                    "Install it with install_kronecker_belief(bias_correction=True, "
-                    "anchor=True), or let learning_kind='kronecker' install it."
-                )
-            slow = kronecker_slow_mean_update(
-                elem.weights_anchor_mean,
-                elem.weights_mean,
-                grads[i],
-                outputs[i],
-                inputs[i],
-                output_mean,
-                input_mean,
-                mass,
-                settings.damping,
-                settings.absolute_damping,
-                mix,
-                settings.anchor_prior,
-            )
-        advanced[i] = (output_factor, input_factor, mass, direction, slow)
-        quadratic = quadratic + matrix_quadratic
-
-    step = (
-        kronecker_step_scale(quadratic, settings, trust_region_scale)
-        * settings.learning_rate
-    )
-    for i, (output_factor, input_factor, mass, direction, slow) in advanced.items():
-        direction = jnp.where(jnp.isfinite(direction), direction, 0.0)
-        fields = {} if mass is None else {"weights_factor_mass": mass}
-        weights = elements[i].weights_mean - step * direction
-        if slow is not None:
-            weights = weights - settings.anchor * (weights - slow)
-            fields["weights_anchor_mean"] = slow
-        elements[i] = dataclasses.replace(
-            elements[i],
-            weights_mean=weights,
-            weights_output_factor=output_factor,
-            weights_input_factor=input_factor,
-            **fields,
-        )
-    return dataclasses.replace(network, layers=tuple(elements))
-
-
 def _learn_sweep(
     network: VectorisedNetwork,
     opt_state: optax.OptState,
     optimiser: Optional[optax.GradientTransformation],
     learning_kind: str = "precision_weighted",
-    synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
-    kronecker_settings: Optional[KroneckerSettings] = None,
+    belief_settings: Optional[BeliefSettings] = None,
 ) -> tuple[VectorisedNetwork, optax.OptState]:
-    """Weight-learning phase: prediction-error-driven gradients, then one step.
+    """Weight-learning phase: the gradients of ``learning_kind``, then one step.
 
-    Mirrors the weight-update block of :func:`propagation_step`. Must run *after*
-    :func:`_update_sweep`, so the per-layer states already carry their prediction errors
-    / posteriors. Updates ``weights_mean`` on every element that has them.
-
-    With ``synaptic_uncertainty_settings`` the weight-belief rule runs instead
-    of the optimiser: the gradients are formed from ``learning_kind`` as usual,
-    the importance increments alongside them, and both the means and the
-    precisions advance. With ``kronecker_settings`` the Kronecker-factored weight
-    belief runs instead (:func:`_apply_kronecker_updates`), on the gradient of
-    ``learning_kind``. In both cases the optimiser state is returned unchanged,
-    since the rule carries none.
+    Runs after :func:`_update_sweep`, as in :func:`propagation_step`, so the per-layer
+    states already carry their prediction errors and posteriors. Updates
+    ``weights_mean`` on every element that has them, by one optimiser step unless
+    ``belief_settings`` names a weight belief. With
+    :class:`~pyhgf.updates.vectorised.learning.synaptic_uncertainty.SynapticUncertaintySettings`
+    the weight-belief rule runs: the gradients are formed from ``learning_kind``, the
+    importance increments alongside them, and both the means and the precisions
+    advance. With :class:`~pyhgf.updates.vectorised.learning.kronecker.KroneckerSettings`
+    the Kronecker-factored weight belief runs
+    (:func:`~pyhgf.updates.vectorised.learning.kronecker.vectorised_kronecker_update`)
+    on the gradient of ``learning_kind``, with the sample as a batch of one. Its
+    ``learning_kind`` is the belief's ``gradient`` setting, which can also be
+    ``"variational"``
+    (:func:`~pyhgf.updates.vectorised.learning.variational.vectorised_variational_gradient`
+    at the posterior the update sweep left) or ``"backprop"`` (the gradient of the
+    precision-weighted squared error of the forward pass, see
+    :mod:`~pyhgf.updates.vectorised.learning.backprop`). Either belief returns the
+    optimiser state unchanged, since it carries none.
     """
-    if kronecker_settings is not None:
-        grads = _weight_gradients(network, learning_kind)
-        return _apply_kronecker_updates(network, grads, kronecker_settings), opt_state
-    if learning_kind in (VARIATIONAL_KIND, BACKPROP_KIND):
-        if synaptic_uncertainty_settings is not None:
-            raise ValueError(
-                f"learning_kind={learning_kind!r} is a gradient for an optimiser; it "
-                "does not run the weight-belief rule."
+    if isinstance(belief_settings, KroneckerSettings):
+        elements = network.layers
+        if learning_kind == VARIATIONAL_KIND:
+            variational: list = [None]
+            for parent, child in zip(elements[1:], elements[:-1]):
+                child_state, _, child_is_input_layer = _child_view(child)
+                variational.append(
+                    vectorised_variational_gradient(
+                        parent_state=parent.state,
+                        child_state=child_state,
+                        weights=parent.weights_mean,
+                        coupling_fn=parent.coupling_fn,
+                        parent_has_constant=parent.add_constant_input,
+                        child_is_input_layer=child_is_input_layer,
+                        mean_field_updates=network.mean_field_updates,
+                    )
+                )
+            grads: tuple = tuple(variational)
+        elif learning_kind == BACKPROP_KIND:
+            grads = vectorised_backprop_gradient(network)
+        else:
+            grads = tuple(
+                _gradient_matrix(f) for f in _weight_quantities(network, learning_kind)
             )
-        grads = _weight_gradients(network, learning_kind)
-        return _apply_weight_updates(network, grads, opt_state, optimiser)
+        vectors = jax.tree_util.tree_map(
+            lambda a: a[None], kronecker_increment_vectors(network)
+        )
+        new_network = vectorised_kronecker_update(
+            network, grads, belief_settings, vectors, jnp.ones((1,))
+        )
+        return new_network, opt_state
     factors = _weight_quantities(network, learning_kind)
     grads = tuple(_gradient_matrix(f) for f in factors)
-    if synaptic_uncertainty_settings is not None:
-        importance = tuple(_importance_pair(f) for f in factors)
-        # One sample: the batch mean of h h^T is that sample's outer product. The
-        # evidence weighting of gram_evidence is rescaled to the unweighted trace,
-        # which for a lone sample cancels it exactly, so it is not applied here.
-        grams = tuple(
-            f[1][..., :, None] * f[1][..., None, :]
-            if f is not None and _records_gram(elem)
-            else None
-            for f, elem in zip(factors, network.layers)
-        )
-        return _apply_synaptic_uncertainty_updates(
-            network, grads, importance, synaptic_uncertainty_settings, grams
-        ), opt_state
-    return _apply_weight_updates(network, grads, opt_state, optimiser)
+    if belief_settings is None:
+        return _apply_weight_updates(network, grads, opt_state, optimiser)
+    importance = tuple(_importance_pair(f) for f in factors)
+    # One sample: the batch mean of h h^T is that sample's outer product. The evidence
+    # weighting of gram_evidence is rescaled to the unweighted trace, which for a lone
+    # sample cancels it exactly, so it is not applied here.
+    grams = tuple(
+        f[1][..., :, None] * f[1][..., None, :]
+        if f is not None
+        and any(getattr(elem, name, None) is not None for name in _GRAM_FIELDS)
+        else None
+        for f, elem in zip(factors, network.layers)
+    )
+    return _apply_synaptic_uncertainty_updates(
+        network, grads, importance, belief_settings, grams
+    ), opt_state
 
 
 @eqx.filter_jit
@@ -1878,8 +1088,7 @@ def learn_sweep(
     opt_state: optax.OptState,
     optimiser: Optional[optax.GradientTransformation],
     learning_kind: str,
-    synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
-    kronecker_settings: Optional[KroneckerSettings] = None,
+    belief_settings: Optional[BeliefSettings] = None,
 ) -> tuple[VectorisedNetwork, optax.OptState]:
     """JIT-compiled weight-learning phase.
 
@@ -1890,8 +1099,7 @@ def learn_sweep(
         opt_state,
         optimiser,
         learning_kind,
-        synaptic_uncertainty_settings,
-        kronecker_settings,
+        belief_settings,
     )
 
 
@@ -2040,15 +1248,15 @@ def sample_step(
         ``(n_output_features,)``.
     learning_kind :
         Weight-gradient mode, as in
-        :func:`pyhgf.updates.vectorised.learning.learning_weights_vectorised`.
+        :func:`pyhgf.updates.vectorised.learning.factors.learning_weights_vectorised`.
     time_step :
         Inference time step for the prediction sweep.
 
     Returns
     -------
     input_error :
-        The prediction error at the input (top) layer — see
-        :func:`input_prediction_error`.
+        The prediction error at the input (top) layer (see
+        :func:`input_prediction_error`).
     grads :
         Per-element weight gradients (descent form, ``None`` for the bottom
         element). Average these across a batch and apply once.
@@ -2063,113 +1271,8 @@ def sample_step(
     )
     return (
         _input_prediction_error(updated),
-        _weight_gradients(updated, learning_kind),
+        tuple(_gradient_matrix(f) for f in _weight_quantities(updated, learning_kind)),
         _precision_increments(network, carry_precisions(updated)),
-    )
-
-
-def _variational_gradients(network: VectorisedNetwork) -> tuple:
-    """Per-element descent gradients of the ``"variational"`` learning kind.
-
-    One entry per element, ``None`` for the bottom element; see
-    :func:`pyhgf.updates.vectorised.learning.vectorised_variational_gradient`. Must
-    run after :func:`_update_sweep`, which leaves every layer at its posterior.
-    """
-    elements = network.layers
-    grads: list = [None]
-    for i in range(1, len(elements)):
-        parent = elements[i]
-        if isinstance(parent, LayerStack):
-            raise NotImplementedError(
-                "learning_kind='variational' does not support layer stacks; add "
-                "the layers one by one with add_layer."
-            )
-        child_state, _, child_is_input_layer = _child_view(elements[i - 1])
-        grads.append(
-            vectorised_variational_gradient(
-                parent_state=parent.state,
-                child_state=child_state,
-                weights=parent.weights_mean,
-                coupling_fn=parent.coupling_fn,
-                parent_has_constant=parent.add_constant_input,
-                child_is_input_layer=child_is_input_layer,
-                mean_field_updates=network.mean_field_updates,
-            )
-        )
-    return tuple(grads)
-
-
-def _backprop_gradients(network: VectorisedNetwork) -> tuple:
-    r"""Per-element descent gradients of the ``"backprop"`` learning kind.
-
-    The gradient, by automatic differentiation, of
-
-    .. math::
-
-        \tfrac12 \sum_k \bar{\pi}_{0,k} \big( y_k - \hat{y}_k \big)^2,
-
-    with :math:`y` the posterior mean of the observed (bottom) layer, the observation
-    it is clamped to, :math:`\bar{\pi}_0` its conditional expected precision, and
-    :math:`\hat{y}` the forward pass of the network: from the mean of the top layer
-    down, each layer set to the value its parents predict through their coupling
-    functions. The hidden beliefs the update sweep inferred are not read, so this is
-    the gradient backpropagation computes for the same weights. Under the relaxed
-    updates (not ``mean_field_updates``), as the conditional expected precisions of
-    the hidden layers grow with the top layer's variance negligible against theirs,
-    the precision-weighted and the variational gradients tend to it (see
-    :func:`~pyhgf.updates.vectorised.learning.vectorised_variational_gradient`). Must
-    run after :func:`_update_sweep`.
-
-    Returns
-    -------
-    tuple
-        One gradient per element, shape of its ``weights_mean``, ``None`` for the
-        bottom element.
-
-    Raises
-    ------
-    NotImplementedError
-        If an element is a ``LayerStack``, or the observed layer is binary or
-        categorical.
-    """
-    elements = network.layers
-    if any(isinstance(element, LayerStack) for element in elements):
-        raise NotImplementedError(
-            "learning_kind='backprop' does not support layer stacks; add the layers "
-            "one by one with add_layer."
-        )
-    if elements[0].kind not in ("volatile", "continuous"):
-        raise NotImplementedError(
-            "learning_kind='backprop' needs a continuous observed layer, got "
-            f"{elements[0].kind!r}."
-        )
-    top = len(elements) - 1
-    target = elements[0].state.mean
-    precision = elements[0].state.conditional_expected_precision
-
-    def loss(weights):
-        value = elements[top].state.mean
-        for i in range(top, 0, -1):
-            parent = elements[i]
-            matrix = weights[i - 1]
-            n_parents = parent.state.mean.shape[-1]
-            value = matrix[:, :n_parents] @ parent.coupling_fn(value)
-            if parent.add_constant_input:
-                value = value + matrix[:, -1]
-        return 0.5 * jnp.sum(precision * (target - value) ** 2)
-
-    weights = tuple(element.weights_mean for element in elements[1:])
-    return (None,) + tuple(jax.grad(loss)(weights))
-
-
-def _weight_gradients(network: VectorisedNetwork, learning_kind: str) -> tuple:
-    """Per-element descent gradients of ``learning_kind``, after the update sweep."""
-    if learning_kind == VARIATIONAL_KIND:
-        return _variational_gradients(network)
-    if learning_kind == BACKPROP_KIND:
-        return _backprop_gradients(network)
-    return tuple(
-        _gradient_matrix(f) for f in _weight_quantities(network, learning_kind)
     )
 
 
@@ -2184,15 +1287,14 @@ def _batch_step(
     time_step: float = 1.0,
     predicted: Optional[tuple] = None,
     sample_weight: Optional[jnp.ndarray] = None,
-    synaptic_uncertainty_settings: Optional[SynapticUncertaintySettings] = None,
+    belief_settings: Optional[BeliefSettings] = None,
     weight_reuse: float = 1.0,
-    kronecker_settings: Optional[KroneckerSettings] = None,
     trust_region_scale=1.0,
 ) -> tuple[VectorisedNetwork, Optional[optax.OptState], jnp.ndarray]:
     r"""One batch-synchronous learning step over many samples at once.
 
-    Every sample in the batch is processed from the *same* state template —
-    same weights, same precisions — through the same sweeps as
+    Every sample in the batch is processed from the *same* state template
+    (same weights, same precisions) through the same sweeps as
     :func:`sample_step`, under ``jax.vmap``, so samples are exchangeable and
     nothing depends on their order. The per-sample results are then averaged
     and applied once, so the batch counts as a single observation:
@@ -2233,28 +1335,37 @@ def _batch_step(
         This exists because "average over the batch" is ambiguous once a caller pads.
         A padded row contributes a zero gradient either way, but with a plain mean it
         still counts in the denominator, so the effective step shrinks by the padding
-        fraction. Anything that hands this function a variable-length batch — a token
-        sequence, a masked objective, a ragged observation — is affected, and the
+        fraction. Anything that hands this function a variable-length batch (a token
+        sequence, a masked objective, a ragged observation) is affected, and the
         symptom is a *systematic* gradient scale error rather than noise. Pass the mask
         as weights to make the reduction mean-over-contributing-rows instead.
 
         An all-zero mask contributes zero data gradient and precision increments;
         optimiser state transitions and weight-prior dynamics still run.
 
-        ``None`` (default) keeps the plain mean, so existing behaviour is unchanged.
+        ``None`` (default) keeps the plain mean.
     predicted :
         Optional per-sample predicted states from
         :func:`batched_prediction_states` (one batched ``LayerState`` per
         element). When given, the internal prediction sweep is skipped and
-        the update starts from these states — the forward pass a caller has
+        the update starts from these states, so the forward pass a caller has
         already run is not repeated. ``x`` is ignored in that case.
-    synaptic_uncertainty_settings :
-        When given, the weight-belief rule runs in place of ``optimiser``:
-        each element's mean and accumulated precision advance together and
-        the optimiser state is left untouched (see
-        :func:`pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`
-        ).
-        ``learning_kind`` still selects the gradient the rule descends.
+    belief_settings :
+        When given, the weight belief these settings describe runs in place of
+        ``optimiser``, on the batch-mean gradient of ``learning_kind``, and the
+        optimiser state is left untouched. Under the weight-belief rule (see
+        :func:`pyhgf.updates.vectorised.learning.synaptic_uncertainty.resolve_synaptic_uncertainty_settings`)
+        each element's mean and accumulated precision advance together. Under the
+        Kronecker-factored weight belief (see
+        :func:`pyhgf.updates.vectorised.learning.kronecker.resolve_kronecker_settings`)
+        the two factors mix in, as one increment per batch, the mean over the batch of
+        each sample's increments
+        (:func:`~pyhgf.updates.vectorised.learning.kronecker.kronecker_increment_vectors`).
+        That mean runs over the **active** samples, those whose observed layer carries
+        a non-zero prediction error, weighted by ``sample_weight`` where it is given: a
+        sample with no error moves no weight, so its activations are no part of the
+        curvature the step divides by. A batch with no active sample leaves both
+        factors unchanged.
     weight_reuse :
         How many times each weight matrix is applied per sample, default ``1.0``
         (once, the ordinary case).
@@ -2280,25 +1391,14 @@ def _batch_step(
         not. Summing the gradient over uses is the chain rule; summing curvature
         over them treats the ``k`` uses as independent observations, which
         overlapping convolution patches are not. Where that matters, the same
-        correction can be had with a smaller ``k``.
-    kronecker_settings :
-        When given, the Kronecker-factored weight belief runs in place of
-        ``optimiser`` (see
-        :func:`pyhgf.updates.vectorised.learning.resolve_kronecker_settings`), on the
-        batch-mean gradient of ``learning_kind``. Its two factors mix in, as one
-        increment per batch, the mean over the batch of each sample's increments
-        (:func:`_kronecker_vectors`). That mean runs over the **active** samples, those
-        whose observed layer carries a non-zero prediction error, weighted by
-        ``sample_weight`` where it is given: a sample with no error moves no weight, so
-        its activations are no part of the curvature the step divides by. A batch with
-        no active sample leaves both factors unchanged. With ``weight_reuse``
-        :math:`k`, the output increment is multiplied by :math:`k`, as the gradient is.
-        The gradient of ``learning_kind="variational"`` is not available here.
+        correction can be had with a smaller ``k``. Under the Kronecker-factored weight
+        belief, the output increment is multiplied by ``k``, as the gradient is.
     trust_region_scale :
         Multiplies the trust region :math:`\kappa` of the Kronecker-factored weight
         belief for this step (see
-        :func:`~pyhgf.updates.vectorised.learning.kronecker_step_scale`). Default
-        ``1.0``; ignored without ``kronecker_settings``.
+        :func:`~pyhgf.updates.vectorised.learning.kronecker.kronecker_step_scale`).
+        Default ``1.0``; ignored unless ``belief_settings`` are
+        :class:`~pyhgf.updates.vectorised.learning.kronecker.KroneckerSettings`.
 
     Returns
     -------
@@ -2310,47 +1410,36 @@ def _batch_step(
         The advanced optimiser state (``None`` if no optimiser was given).
     input_errors :
         Per-sample prediction errors at the input layer, shape
-        ``(batch, n_input_features)`` — the messages a caller passes to
+        ``(batch, n_input_features)``: the messages a caller passes to
         whatever sits behind this network.
     """
     if learning_kind in (VARIATIONAL_KIND, BACKPROP_KIND):
         raise NotImplementedError(
-            f"learning_kind={learning_kind!r} is available for online learning (fit, "
-            "update) only: its gradient is not a product of two per-sample vectors, "
-            "which is what the batch average contracts. With "
-            "learning_kind='kronecker', set learning_kwargs={'gradient': "
-            "'precision_weighted'} (or 'standard') for batch learning."
+            f"The {learning_kind!r} gradient is available in online learning (fit) "
+            "only: it is not a product of two per-sample vectors, which is what the "
+            "batch average contracts. With learning_kind='kronecker', set "
+            "learning_kwargs={'gradient': 'precision_weighted'} for batch learning."
         )
-    if learning_kind == KRONECKER_KIND:
-        raise ValueError(
-            "learning_kind='kronecker' names a weight belief, not a gradient: resolve "
-            "it with resolve_kronecker_settings and pass the result as "
-            "kronecker_settings, with its gradient as learning_kind."
-        )
-    learns = (
-        optimiser is not None
-        or synaptic_uncertainty_settings is not None
-        or kronecker_settings is not None
-    )
+    learns = optimiser is not None or belief_settings is not None
 
     # Each sample contributes only its two gradient factors (small vectors);
     # the batch-mean gradient is then one contraction per weight matrix. This
     # avoids materialising one weight-matrix-sized gradient per sample under
-    # vmap — the same arithmetic, a batch factor less memory traffic. Every
-    # gradient kind is separable, so this is the only path. The Kronecker factors
-    # are contracted from per-sample vectors in the same way.
+    # vmap: the same arithmetic, a batch factor less memory traffic. Every
+    # gradient kind accepted here is separable. The Kronecker factors are
+    # contracted from per-sample vectors in the same way.
     def finish_sample(swept: VectorisedNetwork, yi):
         updated = _update_sweep(swept, yi, time_step=time_step)
         factors = None
         if learns:
             factors = _weight_quantities(updated, learning_kind)
         kronecker = None
-        if kronecker_settings is not None:
+        if isinstance(belief_settings, KroneckerSettings):
             observed = updated.layers[0].state
             active = jnp.any(observed.mean != observed.expected_mean).astype(
                 observed.mean.dtype
             )
-            kronecker = (_kronecker_vectors(updated), active)
+            kronecker = (kronecker_increment_vectors(updated), active)
         return (
             _input_prediction_error(updated),
             _precision_increments(network, carry_precisions(updated)),
@@ -2397,60 +1486,70 @@ def _batch_step(
         # its k uses, so both contractions are scaled by weight_reuse.
         learning_weights = weights * weight_reuse
         mean_grads = tuple(_contract_factors(f, learning_weights) for f in factors)
-        if kronecker_settings is not None:
-            for i, elem in enumerate(network.layers[1:], start=1):
-                if elem.weights_output_factor is None:
-                    raise ValueError(
-                        f"layers[{i}] holds weights but no Kronecker factors. Install "
-                        "them with install_kronecker_belief(), or let "
-                        "learning_kind='kronecker' install them."
-                    )
+        if isinstance(belief_settings, KroneckerSettings):
             vectors, active = kronecker
+            # The factors mix in the mean over the active samples. A batch with no
+            # active sample gives all-zero weights, which leave the factors and their
+            # mass as they are.
             mass = active if sample_weight is None else active * sample_weight
             total = mass.sum()
-            factor_weights = mass / jnp.where(total > 0, total, 1.0)
-            contracted = tuple(
-                _contract_kronecker(v, factor_weights * weight_reuse, factor_weights)
-                for v in vectors
-            )
-            outputs = (None,) + tuple(pair[0] for pair in contracted[1:])
-            inputs = (None,) + tuple(pair[1] for pair in contracted[1:])
-            # A batch with no active sample leaves the factors and their mass as
-            # they are.
-            new_network = _apply_kronecker_updates(
+            new_network = vectorised_kronecker_update(
                 new_network,
                 mean_grads,
-                kronecker_settings,
-                (outputs, inputs),
-                mix=(total > 0).astype(factor_weights.dtype),
+                belief_settings,
+                vectors,
+                mass / jnp.where(total > 0, total, 1.0),
+                weight_reuse=weight_reuse,
                 trust_region_scale=trust_region_scale,
             )
-        elif synaptic_uncertainty_settings is not None:
+        elif belief_settings is not None:
             importance = tuple(
                 _contract_factors(_importance_pair(f), learning_weights)
                 for f in factors
             )
-            # Contracted with the same weights as the importance, so the Gram's
-            # diagonal follows the parent side of the increment, weight reuse
-            # and sample weights included. Weight reuse scales the gradient and
-            # the Gram matrix alike, so it cancels from a natural-gradient step
-            # taken from the recorded fields. Under gram_evidence each sample is
-            # weighted by its evidence within the batch, the matrix keeping its
-            # unweighted trace.
-            grams = tuple(
-                _batch_gram(
-                    f, learning_weights, synaptic_uncertainty_settings.gram_evidence
-                )
-                if _records_gram(elem)
-                else None
-                for f, elem in zip(factors, network.layers)
-            )
+            # The batch mean of h h^T, contracted with the same weights as the
+            # importance, so the Gram's diagonal follows the parent side of the
+            # increment, weight reuse and sample weights included. Weight reuse
+            # scales the gradient and the Gram matrix alike, so it cancels from a
+            # natural-gradient step taken from the recorded fields. Under
+            # gram_evidence each sample is weighted by r_t, the mean over the
+            # child's units of its evidence factor, and the matrix is rescaled to
+            # its unweighted trace; a batch that received no evidence keeps the
+            # unweighted matrix. The leading slice axis of a LayerStack is carried
+            # through, one matrix per slice.
+            grams: list = []
+            for f, elem in zip(factors, network.layers):
+                if f is None or not any(
+                    getattr(elem, name, None) is not None for name in _GRAM_FIELDS
+                ):
+                    grams.append(None)
+                    continue
+                h = f[1]
+                gram = jnp.einsum("b,b...i,b...j->...ij", learning_weights, h, h)
+                if belief_settings.gram_evidence:
+                    r = jnp.mean(f[2], axis=-1)
+                    norms = jnp.sum(h**2, axis=-1)
+                    plain_trace = jnp.einsum("b,b...->...", learning_weights, norms)
+                    weighted_trace = jnp.einsum(
+                        "b,b...,b...->...", learning_weights, r, norms
+                    )
+                    weighted = jnp.einsum(
+                        "b,b...,b...i,b...j->...ij", learning_weights, r, h, h
+                    )
+                    received = weighted_trace > 0
+                    scale = plain_trace / jnp.where(received, weighted_trace, 1.0)
+                    gram = jnp.where(
+                        received[..., None, None],
+                        weighted * scale[..., None, None],
+                        gram,
+                    )
+                grams.append(gram)
             new_network = _apply_synaptic_uncertainty_updates(
                 new_network,
                 mean_grads,
                 importance,
-                synaptic_uncertainty_settings,
-                grams,
+                belief_settings,
+                tuple(grams),
             )
         else:
             new_network, opt_state = _apply_weight_updates(
@@ -2469,26 +1568,6 @@ def _batch_step(
 # Compiled entry point. The unjitted ``_batch_step`` is importable so a larger
 # compiled program (e.g. a fused pipeline step) can inline it.
 batch_step = eqx.filter_jit(_batch_step)
-
-
-def _contract_factors(factors, weights: jnp.ndarray) -> Optional[jnp.ndarray]:
-    r"""Weighted sum over the batch of per-sample outer products :math:`u \otimes v`.
-
-    ``factors`` is ``None`` for the bottom element, or a tuple whose first two entries
-    ``(u, v)`` carry a leading batch axis: ``(batch, n_children)`` and ``(batch,
-    n_parents)`` for a ``Layer``, ``(batch, n_slices, ...)`` for a ``LayerStack``.
-    ``weights`` has shape ``(batch,)``; with the normalised weights of
-    :func:`_batch_step` the result is the weighted batch mean, with the weights' shape.
-
-    Each sample's two factors are multiplied before the sum, so their covariance over
-    the batch is kept. For the importance pair of :func:`_importance_pair` this gives
-    the batch mean of the per-sample curvatures, since discrete likelihood curvature and
-    pulled-back evidence vary with the sample.
-    """
-    if factors is None:
-        return None
-    u, v = factors[:2]
-    return jnp.einsum("b,b...i,b...j->...ij", weights, u, v)
 
 
 @eqx.filter_jit

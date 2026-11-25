@@ -579,11 +579,13 @@ def test_evidence_walk_curvature():
     """
     from jax.nn import leaky_relu
 
-    from pyhgf.utils.vectorised_belief_propagation import (
+    from pyhgf.updates.vectorised.learning.factors import (
         _importance_pair,
+        _weight_quantities,
+    )
+    from pyhgf.utils.vectorised_belief_propagation import (
         _prediction_sweep,
         _update_sweep,
-        _weight_quantities,
     )
 
     def build():
@@ -643,10 +645,10 @@ def test_evidence_walk_through_a_layer_stack():
     slices the way the factors are; the scan that carries it must leave the stack with
     the same evidence a chain of plain layers would.
     """
+    from pyhgf.updates.vectorised.learning.factors import _weight_quantities
     from pyhgf.utils.vectorised_belief_propagation import (
         _prediction_sweep,
         _update_sweep,
-        _weight_quantities,
     )
 
     def build(stacked: bool):
@@ -889,8 +891,7 @@ def _install_records(
     net,
     input_gram=True,
     step_gram=False,
-    rate=None,
-    surprise=False,
+    rate=0.1,
     rows=False,
     batch=False,
 ):
@@ -898,9 +899,8 @@ def _install_records(
 
     ``input_gram`` installs ``weights_input_gram`` and ``weights_gradient`` at zero.
     ``step_gram`` installs ``weights_step_gram`` and ``weights_step_mass`` at zero, with
-    an optional ``weights_step_rate`` at ``rate``, ``weights_step_surprise`` at 1
-    (``surprise``), ``weights_step_rows`` at zero (``rows``) and ``weights_batch_gram``
-    at zero (``batch``).
+    ``weights_step_rate`` at ``rate`` (left out when ``None``), ``weights_step_rows`` at
+    zero (``rows``) and ``weights_batch_gram`` at zero (``batch``).
     """
     layers = []
     for elem in net.state.layers:
@@ -917,8 +917,6 @@ def _install_records(
             fields.update(weights_step_gram=gram, weights_step_mass=mass)
             if rate is not None:
                 fields["weights_step_rate"] = jnp.asarray(rate, weights.dtype)
-            if surprise:
-                fields["weights_step_surprise"] = jnp.ones((), weights.dtype)
             if rows:
                 fields["weights_step_rows"] = jnp.zeros(
                     weights.shape[:-1], weights.dtype
@@ -1079,37 +1077,33 @@ def test_input_gram_through_the_pipeline_with_weight_reuse():
     assert bool(jnp.any(top.weights_gradient != 0))
 
 
-def test_importance_source_is_validated():
-    """The importance source is the carried evidence, and no other value is accepted."""
-    resolve = resolve_synaptic_uncertainty_settings
-    assert resolve({"window": 10}).importance_source == "evidence"
-    given = resolve({"window": 10, "importance_source": "evidence"})
-    assert given.importance_source == "evidence"
-    for other in ("gradient", "none"):
-        with pytest.raises(ValueError, match="importance_source"):
-            resolve({"window": 10, "importance_source": other})
-
-
-def test_step_gram_settings_are_validated():
-    """The memory of the running Gram matrix and the surprise ridge are checked."""
-    resolve = resolve_synaptic_uncertainty_settings
-    settings = resolve({"window": 10})
-    assert settings.natural_memory == 10.0 and settings.natural_ridge == 1e-2
-    with pytest.raises(ValueError, match="natural_memory"):
-        resolve({"window": 10, "natural_memory": 0.5})
-    with pytest.raises(ValueError, match="natural_ridge"):
-        resolve({"window": 10, "natural_ridge": 0.0})
+def test_step_gram_requires_a_rate():
+    """A running Gram matrix installed without its mixing rate is rejected."""
+    net = _install_records(
+        _recording_network(record=False), input_gram=False, step_gram=True, rate=None
+    )
+    x = jax.random.normal(jax.random.key(7), (6, 3))
+    y = jax.random.normal(jax.random.key(8), (6, 2))
+    with pytest.raises(ValueError, match="weights_step_rate"):
+        net.batch_update(
+            x,
+            y,
+            learning_kind="synaptic_uncertainty",
+            learning_kwargs={"window": 1e6},
+            update_precisions=False,
+        )
 
 
 def test_step_gram_is_the_bias_corrected_average_of_the_batches():
     """After one step G / m is that batch's Gram matrix; after two, their average."""
     x = jax.random.normal(jax.random.key(7), (6, 3))
     y = jax.random.normal(jax.random.key(8), (6, 2))
-    settings = {"window": 1e6, "natural_memory": 4.0}
+    settings = {"window": 1e6}
     net = _install_records(
         _recording_network(precision=1.0, record=False),
         input_gram=False,
         step_gram=True,
+        rate=0.25,
     )
     h1, h2 = _augmented_inputs(x), _augmented_inputs(x * 0.5 + 1.0)
     first, second = h1.T @ h1 / 6, h2.T @ h2 / 6
@@ -1139,49 +1133,7 @@ def test_step_gram_is_the_bias_corrected_average_of_the_batches():
     assert top.weights_input_gram is None
 
 
-def test_step_rate_replaces_the_memory_and_surprise_is_read_before_mixing():
-    """A layer's own step rate sets the mixing, and the surprise uses the old average.
-
-    The second batch is mixed in at the installed rate 0.5, not at 1/M = 0.25, and
-    the surprise recorded on that step is lambda_max((G_1 + delta I)^-1 G_2) with
-    G_1 the first batch's Gram matrix alone.
-    """
-    x = jax.random.normal(jax.random.key(7), (6, 3))
-    y = jax.random.normal(jax.random.key(8), (6, 2))
-    settings = {"window": 1e6, "natural_memory": 4.0}
-    net = _install_records(
-        _recording_network(record=False),
-        input_gram=False,
-        step_gram=True,
-        rate=0.5,
-        surprise=True,
-    )
-    h1, h2 = _augmented_inputs(x), _augmented_inputs(x * 0.5 + 1.0)
-    first, second = h1.T @ h1 / 6, h2.T @ h2 / 6
-    for inputs in (x, x * 0.5 + 1.0):
-        net.batch_update(
-            inputs,
-            y,
-            learning_kind="synaptic_uncertainty",
-            learning_kwargs=settings,
-            update_precisions=False,
-        )
-        if inputs is x:
-            np.testing.assert_allclose(net.state.layers[1].weights_step_surprise, 1.0)
-    top = net.state.layers[1]
-    expected = (0.5 * 0.5 * first + 0.5 * second) / (0.5 * 0.5 + 0.5)
-    np.testing.assert_allclose(
-        top.weights_step_gram / top.weights_step_mass, expected, rtol=1e-5
-    )
-    first = np.asarray(first)
-    delta = 1e-2 * np.trace(first) / first.shape[0]
-    regularised = first + delta * np.eye(first.shape[0])
-    largest = np.max(np.real(np.linalg.eigvals(np.linalg.solve(regularised, second))))
-    np.testing.assert_allclose(top.weights_step_surprise, largest, rtol=1e-3)
-    np.testing.assert_allclose(top.weights_step_rate, 0.5)
-
-
-def _evidence_network(kind="volatile", rate=None):
+def _evidence_network(kind="volatile", rate=0.1):
     """Return the recording network with the row evidence and batch Gram recorded."""
     return _install_records(
         _recording_network(kind=kind, record=False),
@@ -1344,5 +1296,5 @@ def test_one_to_one_layer_records_only_its_edges(path):
     off_diagonal = ~np.eye(3, dtype=bool)
     np.testing.assert_array_equal(np.asarray(top.weights_gradient)[off_diagonal], 0.0)
     assert bool(jnp.all(jnp.diag(top.weights_gradient) != 0))
-    # Mixed in from zero at the default rate 1 / natural_memory = 0.1.
+    # Mixed in from zero at the installed rate 0.1.
     np.testing.assert_allclose(top.weights_step_rows, 0.1 * 2.0 * squares, rtol=1e-5)

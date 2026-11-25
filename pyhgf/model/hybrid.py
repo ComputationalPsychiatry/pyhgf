@@ -2,25 +2,25 @@
 
 """Mixed pipelines: declaring models that mix PyHGF networks and fixed calculations.
 
-A pipeline is a tree of **parts**. Each part either learns — a
+A pipeline is a tree of **parts**. Each part either learns (a
 :class:`DeepNetworkAdapter` wrapping a PyHGF :class:`~pyhgf.model.DeepNetwork`, which
-learns locally through PyHGF's belief updates — or is frozen — an
-:class:`EquinoxAdapter` wrapping a fixed calculation (an activation function, a
-normalisation) that never learns and only translates errors with a hand-derived formula.
+learns locally through PyHGF's belief updates) or is frozen (an :class:`EquinoxAdapter`
+wrapping a fixed calculation, such as an activation function or a normalisation, that
+never learns and only translates errors with a hand-derived formula).
 :class:`PCSequential` chains parts; :class:`Residual` declares the "add back the input"
 shortcut.
 
 The classes here *declare* the model: which slots learn, what configuration each
 learning part uses, which formulas the frozen parts apply. Execution is the job of
-:class:`~pyhgf.model.fused.FusedPipeline`, which stages the whole tree — forward walk,
-error at the output, every part's local learning step — into one compiled program per
+:class:`~pyhgf.model.fused.FusedPipeline`, which stages the whole tree (forward walk,
+error at the output, every part's local learning step) into one compiled program per
 training step. Walked forward, the tree predicts; walked backward, each part learns from
 the error at its output and hands the error at its *input* to the part behind it.
 Nothing resembling backpropagation runs anywhere: no global computation graph, no
 automatic differentiation.
 
-Error convention: the arrays passed between parts are *descent* errors — the gradient
-of the loss with respect to that signal, the same object a backprop library would hand
+Error convention: the arrays passed between parts are *descent* errors: the gradient of
+the loss with respect to that signal, the same object a backprop library would hand
 around. PyHGF's internal prediction errors follow the opposite, observed-minus-predicted
 convention; the executor converts between the two at the learning part's boundary, in
 exactly one place.
@@ -40,11 +40,6 @@ import optax
 
 from pyhgf.model.deep_network import DeepNetwork
 from pyhgf.model.error_types import DescentError, ObservedMinusPredicted
-from pyhgf.updates.vectorised.learning import (
-    KRONECKER_KIND,
-    resolve_kronecker_settings,
-    resolve_synaptic_uncertainty_settings,
-)
 
 __all__ = [
     "PCModule",
@@ -308,20 +303,20 @@ class DeepNetworkAdapter(PCModule):
         weight's own belief variance, so ``optimiser`` is then unused.
         ``"kronecker"`` selects the Kronecker-factored weight belief, which also
         takes its own step; in batch learning its ``gradient`` setting has to be
-        ``"precision_weighted"`` or ``"standard"`` (see
-        :func:`pyhgf.utils.vectorised_belief_propagation._batch_step`).
+        ``"precision_weighted"`` (see
+        :meth:`~pyhgf.model.DeepNetwork.batch_update`).
     learning_kwargs :
         Settings of the learning rule, used by
         ``learning_kind="synaptic_uncertainty"`` (see
-        :func:`pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`)
+        :func:`pyhgf.updates.vectorised.learning.synaptic_uncertainty.resolve_synaptic_uncertainty_settings`)
         and ``learning_kind="kronecker"`` (see
-        :func:`pyhgf.updates.vectorised.learning.resolve_kronecker_settings`).
+        :func:`pyhgf.updates.vectorised.learning.kronecker.resolve_kronecker_settings`).
     update_precisions :
         Whether the precision state adapts across batches (see
-        :meth:`~pyhgf.model.DeepNetwork.batch_update`). Defaults to False —
-        the setting used for exact comparisons against backpropagation.
+        :meth:`~pyhgf.model.DeepNetwork.batch_update`). Defaults to False, the
+        setting used for exact comparisons against backpropagation.
     time_step :
-        Inference time step — scales the precision leak per batch (one batch
+        Inference time step. It scales the precision leak per batch (one batch
         counts as one observation of duration ``time_step``).
     weight_reuse :
         How many times ``net``'s weights are applied per sample, default ``1.0``.
@@ -354,29 +349,9 @@ class DeepNetworkAdapter(PCModule):
         self.weight_reuse = float(weight_reuse)
         # The rule is resolved once here rather than per step: the settings are
         # static, and the executor stages one compiled program per part.
-        self.kronecker_settings = None
-        if learning_kind == KRONECKER_KIND:
-            self.kronecker_settings = resolve_kronecker_settings(learning_kwargs)
-            net.install_kronecker_belief(
-                self.kronecker_settings.bias_correction,
-                self.kronecker_settings.anchor > 0,
-            )
-            self.gradient_kind = self.kronecker_settings.gradient
-            self.synaptic_uncertainty_settings = None
-        elif learning_kind != "synaptic_uncertainty":
-            if learning_kwargs:
-                raise ValueError(
-                    "learning_kwargs is only used by "
-                    "learning_kind='synaptic_uncertainty' and "
-                    f"learning_kind='kronecker', not by {learning_kind!r}."
-                )
-            self.gradient_kind, self.synaptic_uncertainty_settings = learning_kind, None
-        else:
-            self.synaptic_uncertainty_settings = resolve_synaptic_uncertainty_settings(
-                learning_kwargs
-            )
-            net.install_weight_belief()
-            self.gradient_kind = "synaptic_uncertainty"
+        self.gradient_kind, self.belief_settings = net._resolve_learning(
+            learning_kind, learning_kwargs
+        )
 
     def init_state(self) -> tuple:
         """Return the ``(network, opt_state)`` state pytree.

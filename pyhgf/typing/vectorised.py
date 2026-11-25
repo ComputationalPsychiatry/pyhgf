@@ -258,19 +258,19 @@ class Layer(eqx.Module):
         stored rather than the precision itself because it starts at zero, so a
         per-step increment far below the prior precision accumulates exactly.
     value_child_idx :
-        Continuous layers only — index (into ``VectorisedNetwork.layers``) of the layer this
-        layer is the *value parent* of, or ``None``. ``weights_mean`` then connects
+        Continuous layers only: index (into ``VectorisedNetwork.layers``) of the layer
+        this layer is the *value parent* of, or ``None``. ``weights_mean`` then connects
         that child into this layer, shape ``(n_child, n_self)``, and enters the
         drift of the child's predicted mean. The chain convention of volatile
         networks (``weights_mean`` always connects the layer directly below) is a
         special case with ``value_child_idx = self_index - 1``.
     volatility_child_idx :
-        Continuous layers only — index of the layer this layer is the *volatility
+        Continuous layers only: index of the layer this layer is the *volatility
         parent* of, or ``None``. ``volatility_weights`` connects that child.
     volatility_weights :
         Volatility-coupling matrix :math:`\kappa`, shape ``(n_child, n_self)``,
         connecting the volatility child named by ``volatility_child_idx`` into
-        this layer. Fixed at construction — never part of the learned weights
+        this layer. Fixed at construction and never part of the learned weights
         (excluded from :meth:`VectorisedNetwork.weights_tuple`).
     weights_input_gram :
         Accumulated second moment of the coupled parent activations, or ``None``
@@ -281,7 +281,7 @@ class Layer(eqx.Module):
         increment scale and the same ``1 / window`` decay, but with the full
         outer product :math:`h h^\top` of the parent activations in place of
         the increment :math:`p \otimes h^2` (see
-        :func:`pyhgf.updates.vectorised.learning.vectorised_input_gram_update`).
+        :func:`pyhgf.updates.vectorised.learning.synaptic_uncertainty.vectorised_input_gram_update`).
         In a one-to-one layer (``fully_connected=False``) each row has a single
         input, so only the diagonal :math:`h_i^2` is recorded. It is recorded
         only and does not enter the weight update.
@@ -294,13 +294,13 @@ class Layer(eqx.Module):
         only and does not enter the weight update.
     weights_step_gram :
         Running average of the second moment of the coupled parent activations
-        over the last ``natural_memory`` learning steps, or ``None`` when none is
-        installed. Same shape as ``weights_input_gram``, and diagonal in a
-        one-to-one layer as that matrix is. Under
+        over the recent learning steps, or ``None`` when none is installed. Same
+        shape as ``weights_input_gram``, and diagonal in a one-to-one layer as
+        that matrix is. Requires ``weights_step_rate``. Under
         ``learning_kind="synaptic_uncertainty"`` each learning step advances it
         as :math:`G \leftarrow (1 - \alpha) G + \alpha \overline{h h^\top}`, with
-        :math:`\alpha` the ``weights_step_rate`` or :math:`1/M` (see
-        :func:`pyhgf.updates.vectorised.learning.vectorised_step_gram_update`).
+        :math:`\alpha` the ``weights_step_rate`` (see
+        :func:`pyhgf.updates.vectorised.learning.synaptic_uncertainty.vectorised_step_gram_update`).
         It is independent of ``weights_input_gram``, whose scale and memory
         follow the accumulated precision, and is the input side of a
         natural-gradient step a caller can take from the recorded fields. It is
@@ -312,22 +312,15 @@ class Layer(eqx.Module):
         start.
     weights_step_rate :
         Scalar mixing rate :math:`\alpha` of ``weights_step_gram`` for this
-        weight matrix, in :math:`(0, 1]`, or ``None`` (default) for
-        :math:`1/M` with :math:`M` the ``natural_memory``. The learning step
-        reads it and never writes it, so a caller can set it between steps.
-    weights_step_surprise :
-        Scalar written by every learning step that advances
-        ``weights_step_gram``, or ``None`` (default) to skip it: the largest
-        eigenvalue of :math:`(\bar G + \delta I)^{-1} G_b`, with :math:`G_b`
-        the batch's Gram matrix and :math:`\bar G` the running average before
-        the batch is mixed in (see
-        :func:`pyhgf.updates.vectorised.learning.step_gram_surprise`).
+        weight matrix, in :math:`(0, 1]`, or ``None`` (default) when no
+        ``weights_step_gram`` is installed. The learning step reads it and never
+        writes it, so a caller can set it between steps.
     weights_step_rows :
         Running row evidence, shape ``(n_children,)``, or ``None`` (default)
         when none is installed. Every learning step that advances
         ``weights_step_gram`` mixes in, at the same rate, the row sums of the
         batch's importance increment :math:`p \otimes h^2` over the edges (see
-        :func:`pyhgf.updates.vectorised.learning.vectorised_step_rows_update`).
+        :func:`pyhgf.updates.vectorised.learning.synaptic_uncertainty.vectorised_step_rows_update`).
         Divided by its mean over rows it is the row scale of the
         Kronecker-factored curvature whose input side is ``weights_step_gram``.
         It is recorded only and does not enter the weight update.
@@ -344,7 +337,7 @@ class Layer(eqx.Module):
         none is installed. Under ``learning_kind="kronecker"`` each learning step
         mixes in the precision the observations give the child's prediction, and the
         weight step is preconditioned by it (see
-        :func:`pyhgf.updates.vectorised.learning.resolve_kronecker_settings`).
+        :func:`pyhgf.updates.vectorised.learning.kronecker.resolve_kronecker_settings`).
     weights_input_factor :
         Input factor :math:`\Gamma` of the same precision, shape
         ``(n_self[+1], n_self[+1])``, the last axis of ``weights_mean`` on both sides,
@@ -356,13 +349,13 @@ class Layer(eqx.Module):
         ``None`` (default) when they start at the identity. Bias-corrected factors are
         decayed sums of their increments, and divided by the mass they are the
         weighted means of those increments (see
-        :func:`pyhgf.updates.vectorised.learning.kronecker_mass_update`).
+        :func:`pyhgf.updates.vectorised.learning.kronecker.kronecker_mass_update`).
     weights_anchor_mean :
         Slow mean of the Kronecker-factored weight belief, shape of
         ``weights_mean``, or ``None`` (default) when none is installed. Under
         ``learning_kind="kronecker"`` with an ``anchor`` above zero, each learning
         step combines it with the batch and pulls the weights toward it (see
-        :func:`pyhgf.updates.vectorised.learning.kronecker_slow_mean_update`).
+        :func:`pyhgf.updates.vectorised.learning.kronecker.kronecker_slow_mean_update`).
     """
 
     state: LayerState
@@ -385,7 +378,6 @@ class Layer(eqx.Module):
     weights_step_gram: Optional[Array] = None
     weights_step_mass: Optional[Array] = None
     weights_step_rate: Optional[Array] = None
-    weights_step_surprise: Optional[Array] = None
     weights_step_rows: Optional[Array] = None
     weights_batch_gram: Optional[Array] = None
     weights_output_factor: Optional[Array] = None

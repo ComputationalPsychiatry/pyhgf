@@ -59,11 +59,11 @@ class _Core(NamedTuple):
     """A part tree's training step as pure functions with explicit state.
 
     ``forward(state, x)`` returns the tree's output and a cache of whatever the backward
-    walk needs; ``backward(state, cache, error, trust_region_scale=1.0)`` returns the
-    error at the tree's input, the advanced state, and a tuple of per-part report entries
-    (see :func:`step_report`), multiplying the trust region of every part stepped by the
-    Kronecker-factored weight belief by ``trust_region_scale``. All are pure: the
-    recursion over the tree happens while tracing, staging one graph.
+    walk needs; ``backward(state, cache, error, trust_region_scale)`` returns the
+    error at the tree's input, the advanced state, and a tuple of per-part report
+    entries (see :func:`step_report`), multiplying the trust region of every part
+    stepped by the Kronecker-factored weight belief by ``trust_region_scale``. All are
+    pure: the recursion over the tree happens while tracing, staging one graph.
     ``write_back(state)`` copies a state pytree onto the part objects the core was built
     from.
     """
@@ -83,8 +83,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
     """
     optimiser = part.optimiser
     learning_kind = part.gradient_kind
-    synaptic_uncertainty_settings = part.synaptic_uncertainty_settings
-    kronecker_settings = part.kronecker_settings
+    belief_settings = part.belief_settings
     update_precisions = part.update_precisions
     time_step = part.time_step
     weight_reuse = part.weight_reuse
@@ -105,7 +104,7 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
         out = states[0].expected_mean
         return out.reshape(*x.shape[:-1], -1), (flat, states)
 
-    def backward(state, cache, error, trust_region_scale=1.0):
+    def backward(state, cache, error, trust_region_scale):
         network, opt_state = state
         flat_x, states = cache
         out = states[0].expected_mean
@@ -120,11 +119,10 @@ def _adapter_core(part: DeepNetworkAdapter, path: str) -> _Core:
             optimiser=optimiser,
             learning_kind=learning_kind,
             update_precisions=update_precisions,
-            synaptic_uncertainty_settings=synaptic_uncertainty_settings,
+            belief_settings=belief_settings,
             time_step=time_step,
             predicted=states,
             weight_reuse=weight_reuse,
-            kronecker_settings=kronecker_settings,
             trust_region_scale=trust_region_scale,
         )
         update_norm = jnp.sqrt(
@@ -166,7 +164,7 @@ def _frozen_core(part: EquinoxAdapter, path: str) -> _Core:
     def forward(state, x):
         return part.forward_fn(x)
 
-    def backward(state, cache, error, trust_region_scale=1.0):
+    def backward(state, cache, error, trust_region_scale):
         return part.backward_fn(cache, error), state, ()
 
     return _Core(init_state_pytree, forward, backward, lambda state: None)
@@ -188,7 +186,7 @@ def _sequential_core(part: PCSequential, path: str) -> _Core:
             caches.append(cache)
         return x, tuple(caches)
 
-    def backward(state, caches, error, trust_region_scale=1.0):
+    def backward(state, caches, error, trust_region_scale):
         new_state = list(state)
         reports: list = []
         for i in reversed(range(len(cores))):
@@ -218,7 +216,7 @@ def _residual_core(part: Residual, path: str) -> _Core:
         y, cache = inner.forward(state, x)
         return x + y, cache
 
-    def backward(state, cache, error, trust_region_scale=1.0):
+    def backward(state, cache, error, trust_region_scale):
         error_in, new_state, report = inner.backward(
             state, cache, error, trust_region_scale
         )
@@ -248,7 +246,7 @@ def _fused_qkv_attention_core(part: MultiHeadAttention, path: str) -> _Core:
         y, cache_o = o_core.forward(state_o, ctx)
         return y, (cache_qkv, cache_mix, cache_o)
 
-    def backward(state, cache, error, trust_region_scale=1.0):
+    def backward(state, cache, error, trust_region_scale):
         state_qkv, state_o = state
         cache_qkv, cache_mix, cache_o = cache
         d_ctx, new_o, report_o = o_core.backward(
@@ -306,7 +304,7 @@ def _attention_core(part: MultiHeadAttention, path: str) -> _Core:
         y, cache_o = o_core.forward(state_o, ctx)
         return y, (cache_q, cache_k, cache_v, cache_mix, cache_o)
 
-    def backward(state, cache, error, trust_region_scale=1.0):
+    def backward(state, cache, error, trust_region_scale):
         state_q, state_k, state_v, state_o = state
         cache_q, cache_k, cache_v, cache_mix, cache_o = cache
         d_ctx, new_o, report_o = o_core.backward(
@@ -387,7 +385,7 @@ def _gpt_core(part: HybridGPT, path: str) -> _Core:
         out, cache_pipe = pipeline_core.forward(state_pipe, tok + pos[None])
         return out, (cache_pipe, cache_tok, cache_pos)
 
-    def backward(state, cache, error, trust_region_scale=1.0):
+    def backward(state, cache, error, trust_region_scale):
         state_pipe, state_tok, state_pos = state
         cache_pipe, cache_tok, cache_pos = cache
         embedding_error, new_pipe, reports = pipeline_core.backward(
@@ -492,7 +490,7 @@ class FusedPipeline:
         belief is scaled at each step, ``(output, target) -> scalar``, from the tree's
         output before the step and the training target. The bound :math:`\kappa` of each
         such part (see
-        :func:`~pyhgf.updates.vectorised.learning.resolve_kronecker_settings`) is
+        :func:`~pyhgf.updates.vectorised.learning.kronecker.resolve_kronecker_settings`) is
         multiplied by the returned value for this step only, so a value of zero moves no
         weight and a non-finite value is treated as zero. Must be a pure function of
         arrays. ``None`` (default) leaves every trust region at its setting. Parts

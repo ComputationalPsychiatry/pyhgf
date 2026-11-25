@@ -293,16 +293,90 @@ Continuous layers
     vectorised_continuous_posterior_update_unbounded
 
 Vectorised learning
--------------------
+===================
 
-.. currentmodule:: pyhgf.updates.vectorised.learning
+Weight learning of :class:`pyhgf.model.DeepNetwork`, with one submodule of
+``pyhgf.updates.vectorised.learning`` per ``learning_kind`` or gradient. Every function
+below is also importable from ``pyhgf.updates.vectorised.learning`` itself.
+
+Rank-one factors
+----------------
+
+The gradient and importance factors of ``"standard"`` and ``"precision_weighted"``, and
+the evidence walk that feeds the importance factor of ``"synaptic_uncertainty"``.
+
+.. currentmodule:: pyhgf.updates.vectorised.learning.factors
 
 .. autosummary::
-   :toctree: generated/pyhgf.updates.vectorised.learning
+   :toctree: generated/pyhgf.updates.vectorised.learning.factors
 
     learning_weights_vectorised
+    clamped_layer_evidence
+    evidence_pullback
+
+Variational gradient
+--------------------
+
+The ``"variational"`` gradient of ``"kronecker"``.
+
+.. currentmodule:: pyhgf.updates.vectorised.learning.variational
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.vectorised.learning.variational
+
+    vectorised_variational_gradient
+    relaxed_effective_precision
+
+Backprop gradient
+-----------------
+
+The ``"backprop"`` gradient of ``"kronecker"``: the gradient of the forward pass, by
+automatic differentiation.
+
+.. currentmodule:: pyhgf.updates.vectorised.learning.backprop
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.vectorised.learning.backprop
+
+    vectorised_backprop_gradient
+
+Synaptic uncertainty
+--------------------
+
+The weight-belief rule of ``"synaptic_uncertainty"``, and the input Gram matrices a layer
+can record beside it.
+
+.. currentmodule:: pyhgf.updates.vectorised.learning.synaptic_uncertainty
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.vectorised.learning.synaptic_uncertainty
+
     resolve_synaptic_uncertainty_settings
     vectorised_synaptic_uncertainty_update
+    create_input_gram
+    vectorised_input_gram_update
+    create_step_gram
+    vectorised_step_gram_update
+    vectorised_step_rows_update
+
+Kronecker-factored weight belief
+--------------------------------
+
+The weight belief of ``"kronecker"``.
+
+.. currentmodule:: pyhgf.updates.vectorised.learning.kronecker
+
+.. autosummary::
+   :toctree: generated/pyhgf.updates.vectorised.learning.kronecker
+
+    resolve_kronecker_settings
+    kronecker_increment_vectors
+    vectorised_kronecker_update
+    kronecker_factor_update
+    kronecker_mass_update
+    kronecker_direction
+    kronecker_step_scale
+    kronecker_slow_mean_update
 
 Model
 *****

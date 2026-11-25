@@ -32,14 +32,15 @@ from pyhgf.typing.vectorised import (
     stack_layers,
 )
 from pyhgf.updates.vectorised.learning import (
+    BACKPROP_KIND,
     KRONECKER_KIND,
-    KroneckerSettings,
-    SynapticUncertaintySettings,
+    VARIATIONAL_KIND,
     resolve_kronecker_settings,
     resolve_synaptic_uncertainty_settings,
 )
+from pyhgf.updates.vectorised.learning.factors import _weight_quantities
 from pyhgf.utils.vectorised_belief_propagation import (
-    _weight_quantities,
+    BeliefSettings,
     batch_step,
     batched_prediction_pass,
     batched_prediction_states,
@@ -1242,7 +1243,7 @@ class DeepNetwork:
         copy of ``weights_mean`` where none is installed.
         ``learning_kind="kronecker"`` calls this itself, and factors already installed
         keep the running means of earlier calls to :meth:`fit` (see
-        :func:`~pyhgf.updates.vectorised.learning.resolve_kronecker_settings`).
+        :func:`~pyhgf.updates.vectorised.learning.kronecker.resolve_kronecker_settings`).
 
         Parameters
         ----------
@@ -1270,7 +1271,8 @@ class DeepNetwork:
             )
         elements = []
         for elem in self.state.layers:
-            if elem.weights_mean is None:
+            weights_mean = elem.weights_mean
+            if weights_mean is None:
                 elements.append(elem)
                 continue
             if not isinstance(elem, Layer):
@@ -1284,13 +1286,13 @@ class DeepNetwork:
                 )
             if anchor and elem.weights_anchor_mean is None:
                 elem = dataclasses.replace(
-                    elem, weights_anchor_mean=jnp.array(elem.weights_mean)
+                    elem, weights_anchor_mean=jnp.array(weights_mean)
                 )
             if elem.weights_output_factor is not None:
                 elements.append(elem)
                 continue
-            n_child, n_in = elem.weights_mean.shape
-            dtype = elem.weights_mean.dtype
+            n_child, n_in = weights_mean.shape
+            dtype = weights_mean.dtype
             if bias_correction:
                 output = jnp.zeros((n_child, n_child), dtype)
                 input_ = jnp.zeros((n_in, n_in), dtype)
@@ -1453,7 +1455,7 @@ class DeepNetwork:
 
     def _resolve_learning(
         self, learning_kind: str, learning_kwargs: Optional[dict]
-    ) -> tuple[str, Optional[Union[SynapticUncertaintySettings, KroneckerSettings]]]:
+    ) -> tuple[str, Optional[BeliefSettings]]:
         """Resolve a learning kind into the gradient it descends and its settings.
 
         ``'synaptic_uncertainty'`` names both the weight-belief rule and the
@@ -1471,8 +1473,8 @@ class DeepNetwork:
             The kind requested by :meth:`fit` or :meth:`batch_update`.
         learning_kwargs :
             Settings for the belief rule, resolved by
-            :func:`~pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`
-            or :func:`~pyhgf.updates.vectorised.learning.resolve_kronecker_settings`.
+            :func:`~pyhgf.updates.vectorised.learning.synaptic_uncertainty.resolve_synaptic_uncertainty_settings`
+            or :func:`~pyhgf.updates.vectorised.learning.kronecker.resolve_kronecker_settings`.
             Only meaningful for ``'synaptic_uncertainty'`` and ``'kronecker'``.
 
         Returns
@@ -1628,34 +1630,36 @@ class DeepNetwork:
         y :
             Target data, shape (n_samples, n_output_features).
         optimiser :
-            Any ``optax.GradientTransformation`` — e.g. ``optax.sgd(0.2)``,
-            ``optax.adam(1e-3)``, or any chain. Migration from the legacy
-            ``lr=`` API: ``lr=0.2`` → ``optimiser=optax.sgd(0.2)``,
-            ``lr="adam"`` → ``optimiser=optax.adam(1e-3)``.
+            Any ``optax.GradientTransformation``, for example ``optax.sgd(0.2)``,
+            ``optax.adam(1e-3)``, or any chain.
         learning_kind :
             Gradient computation mode passed to
-            :func:`~pyhgf.updates.vectorised.learning.learning_weights_vectorised`:
+            :func:`~pyhgf.updates.vectorised.learning.factors.learning_weights_vectorised`:
             ``"standard"`` or ``"precision_weighted"`` (default), both reading
-            the settled beliefs, strictly local per edge. ``"variational"``
-            descends the expected log-likelihood of each weight matrix under the
-            posterior of the beliefs, posterior variances included
-            (:func:`~pyhgf.updates.vectorised.learning.vectorised_variational_gradient`);
-            it is available with layers added one by one, and not in
-            :meth:`batch_update`. ``"synaptic_uncertainty"`` runs the weight-belief
-            rule (:func:`~pyhgf.updates.vectorised.learning.resolve_synaptic_uncertainty_settings`)
+            the settled beliefs, strictly local per edge.
+            ``"synaptic_uncertainty"`` runs the weight-belief
+            rule (:func:`~pyhgf.updates.vectorised.learning.synaptic_uncertainty.resolve_synaptic_uncertainty_settings`)
             and ``"kronecker"`` the Kronecker-factored weight belief
-            (:func:`~pyhgf.updates.vectorised.learning.resolve_kronecker_settings`;
-            layers added one by one, fully connected; in :meth:`batch_update` with a
-            ``gradient`` other than ``"variational"``); both take their own steps,
-            so ``optimiser`` is then unused.
+            (:func:`~pyhgf.updates.vectorised.learning.kronecker.resolve_kronecker_settings`;
+            layers added one by one, fully connected). The ``gradient`` setting of
+            ``"kronecker"`` can also be ``"variational"``, the expected
+            log-likelihood of each weight matrix under the posterior of the beliefs,
+            posterior variances included
+            (:func:`~pyhgf.updates.vectorised.learning.variational.vectorised_variational_gradient`),
+            or ``"backprop"``, the precision-weighted squared error of the network's
+            forward pass, by automatic differentiation, reading none of the hidden
+            beliefs (see :mod:`pyhgf.updates.vectorised.learning.backprop`; it needs
+            a continuous observed layer); in :meth:`batch_update` it has to be
+            ``"precision_weighted"``. Both beliefs take their own steps, so
+            ``optimiser`` is then unused.
         learning_kwargs :
             Settings of ``"synaptic_uncertainty"`` or ``"kronecker"``, as the two
             functions above resolve them.
         record :
             Tuple of ``LayerState`` field names to record at every time step,
             e.g. ``("expected_mean", "precision")``. ``None`` (default) skips
-            recording. Use the :data:`~pyhgf.typing.RECORD_ALL` constant
-            for the legacy "record everything" behaviour. The result lands in
+            recording. :data:`~pyhgf.typing.RECORD_ALL` records every field. The
+            result lands in
             ``self.trajectories`` as ``dict[field_name, tuple[Array, ...]]``
             where each per-layer array has a leading ``(T,)`` axis.
         weight_update :
@@ -1666,18 +1670,17 @@ class DeepNetwork:
             If True (default), probe the per-matrix gradient magnitudes on the
             last sample after training and raise :class:`DeadGradientWarning`
             when part of the network receives no learning signal. The probe reads
-            the rank-one gradient factors, so it is skipped for
-            ``learning_kind="variational"``.
+            the rank-one gradient factors, so it is skipped for the
+            ``"variational"`` and ``"backprop"`` gradients.
         update_precisions :
-            If True (default), the carried confidence fields evolve from sample to
+            If True (default), the carried precision fields evolve from sample to
             sample: the value-level precision each volatile layer carries (its
             conditional posterior precision with ``carry_precision``, its prior
             precision without) and the volatility level. If False, they are reset to
             their pre-fit values after every sample.
         time_step :
             Uniform inference time step :math:`\\Delta t` applied at every
-            ``propagation_step``. Replaces the legacy ``net.state.time_step``
-            attribute (``NetworkState`` no longer carries it). Default ``1.0``.
+            ``propagation_step``. Default ``1.0``.
 
         Returns
         -------
@@ -1700,12 +1703,6 @@ class DeepNetwork:
                 )
 
         gradient_kind, settings = self._resolve_learning(learning_kind, learning_kwargs)
-        kronecker_settings = (
-            settings if isinstance(settings, KroneckerSettings) else None
-        )
-        synaptic_uncertainty_settings = (
-            None if kronecker_settings is not None else settings
-        )
 
         if settings is None and optimiser is None:
             raise ValueError(
@@ -1728,8 +1725,7 @@ class DeepNetwork:
             record_tuple,
             float(time_step),
             update_precisions,
-            synaptic_uncertainty_settings,
-            kronecker_settings,
+            settings,
         )
 
         if record_tuple:
@@ -1738,7 +1734,11 @@ class DeepNetwork:
             self.trajectories = None
             self.predictions = step_output
 
-        if check_gradient_health and weight_update and gradient_kind != "variational":
+        if (
+            check_gradient_health
+            and weight_update
+            and gradient_kind not in (VARIATIONAL_KIND, BACKPROP_KIND)
+        ):
             self._warn_if_gradients_dead(x[-1], y[-1], gradient_kind)
 
         return self
@@ -1936,9 +1936,9 @@ class DeepNetwork:
             Optional ``optax.GradientTransformation``. If given, run the weight-learning
             phase and update ``self.opt_state``. If ``None``, only beliefs are updated.
         learning_kind :
-            Weight-gradient mode used when ``optimiser`` is supplied. One of
-            ``"standard"``, ``"precision_weighted"`` (default) or
-            ``"variational"`` (see :meth:`fit`). All are strictly local. Each
+            Weight-gradient mode used when ``optimiser`` is supplied:
+            ``"standard"`` or ``"precision_weighted"`` (default, see :meth:`fit`).
+            Both are strictly local. Each
             weight update reads only its own connection's beliefs, activation, and
             precision.
 
@@ -2037,14 +2037,14 @@ class DeepNetwork:
     ) -> "DeepNetwork":
         """One batch-synchronous learning step over many samples at once.
 
-        Every sample in the batch is processed from the same state — same
-        weights, same precisions — in parallel; the per-sample weight
+        Every sample in the batch is processed from the same state (same
+        weights, same precisions) in parallel; the per-sample weight
         gradients and precision changes are then *averaged* and applied
         once, so the whole batch counts as a single observation. This
         differs from :meth:`fit`, which scans samples sequentially and lets
         the precisions adapt from one sample to the next (the natural mode
-        for a time series). Use this method when samples are exchangeable —
-        e.g. many token positions learned together.
+        for a time series). Use this method when samples are exchangeable,
+        for example many token positions learned together.
 
         The per-sample errors at the input layer are stored on
         ``self.input_errors``, shape ``(batch, n_input_features)``. See
@@ -2099,12 +2099,6 @@ class DeepNetwork:
             )
 
         gradient_kind, settings = self._resolve_learning(learning_kind, learning_kwargs)
-        kronecker_settings = (
-            settings if isinstance(settings, KroneckerSettings) else None
-        )
-        synaptic_uncertainty_settings = (
-            None if kronecker_settings is not None else settings
-        )
 
         self._ensure_optimiser_state(optimiser)
 
@@ -2120,8 +2114,7 @@ class DeepNetwork:
             time_step=float(time_step),
             predicted=predicted,
             sample_weight=None if sample_weight is None else jnp.asarray(sample_weight),
-            synaptic_uncertainty_settings=synaptic_uncertainty_settings,
-            kronecker_settings=kronecker_settings,
+            belief_settings=settings,
         )
         return self
 
