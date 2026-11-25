@@ -57,12 +57,7 @@ from pyhgf.updates.vectorised.learning.kronecker import (
 from pyhgf.updates.vectorised.learning.synaptic_uncertainty import (
     SYNAPTIC_UNCERTAINTY_DEFAULTS,
     SynapticUncertaintySettings,
-    create_input_gram,
-    create_step_gram,
     resolve_synaptic_uncertainty_settings,
-    vectorised_input_gram_update,
-    vectorised_step_gram_update,
-    vectorised_step_rows_update,
     vectorised_synaptic_uncertainty_update,
 )
 from pyhgf.updates.vectorised.learning.variational import (
@@ -82,8 +77,6 @@ __all__ = [
     "SynapticUncertaintySettings",
     "VARIATIONAL_KIND",
     "clamped_layer_evidence",
-    "create_input_gram",
-    "create_step_gram",
     "evidence_pullback",
     "kronecker_direction",
     "kronecker_factor_update",
@@ -96,10 +89,7 @@ __all__ = [
     "resolve_kronecker_settings",
     "resolve_synaptic_uncertainty_settings",
     "vectorised_backprop_gradient",
-    "vectorised_input_gram_update",
     "vectorised_kronecker_update",
-    "vectorised_step_gram_update",
-    "vectorised_step_rows_update",
     "vectorised_synaptic_uncertainty_update",
     "vectorised_variational_gradient",
 ]

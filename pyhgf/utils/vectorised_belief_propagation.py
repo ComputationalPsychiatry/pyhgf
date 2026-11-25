@@ -61,7 +61,6 @@ from pyhgf.updates.vectorised.learning.kronecker import (
 )
 from pyhgf.updates.vectorised.learning.optimiser import _apply_weight_updates
 from pyhgf.updates.vectorised.learning.synaptic_uncertainty import (
-    _GRAM_FIELDS,
     SynapticUncertaintySettings,
     _apply_synaptic_uncertainty_updates,
 )
@@ -1067,18 +1066,8 @@ def _learn_sweep(
     if belief_settings is None:
         return _apply_weight_updates(network, grads, opt_state, optimiser)
     importance = tuple(_importance_pair(f) for f in factors)
-    # One sample: the batch mean of h h^T is that sample's outer product. The evidence
-    # weighting of gram_evidence is rescaled to the unweighted trace, which for a lone
-    # sample cancels it exactly, so it is not applied here.
-    grams = tuple(
-        f[1][..., :, None] * f[1][..., None, :]
-        if f is not None
-        and any(getattr(elem, name, None) is not None for name in _GRAM_FIELDS)
-        else None
-        for f, elem in zip(factors, network.layers)
-    )
     return _apply_synaptic_uncertainty_updates(
-        network, grads, importance, belief_settings, grams
+        network, grads, importance, belief_settings
     ), opt_state
 
 
@@ -1507,49 +1496,11 @@ def _batch_step(
                 _contract_factors(_importance_pair(f), learning_weights)
                 for f in factors
             )
-            # The batch mean of h h^T, contracted with the same weights as the
-            # importance, so the Gram's diagonal follows the parent side of the
-            # increment, weight reuse and sample weights included. Weight reuse
-            # scales the gradient and the Gram matrix alike, so it cancels from a
-            # natural-gradient step taken from the recorded fields. Under
-            # gram_evidence each sample is weighted by r_t, the mean over the
-            # child's units of its evidence factor, and the matrix is rescaled to
-            # its unweighted trace; a batch that received no evidence keeps the
-            # unweighted matrix. The leading slice axis of a LayerStack is carried
-            # through, one matrix per slice.
-            grams: list = []
-            for f, elem in zip(factors, network.layers):
-                if f is None or not any(
-                    getattr(elem, name, None) is not None for name in _GRAM_FIELDS
-                ):
-                    grams.append(None)
-                    continue
-                h = f[1]
-                gram = jnp.einsum("b,b...i,b...j->...ij", learning_weights, h, h)
-                if belief_settings.gram_evidence:
-                    r = jnp.mean(f[2], axis=-1)
-                    norms = jnp.sum(h**2, axis=-1)
-                    plain_trace = jnp.einsum("b,b...->...", learning_weights, norms)
-                    weighted_trace = jnp.einsum(
-                        "b,b...,b...->...", learning_weights, r, norms
-                    )
-                    weighted = jnp.einsum(
-                        "b,b...,b...i,b...j->...ij", learning_weights, r, h, h
-                    )
-                    received = weighted_trace > 0
-                    scale = plain_trace / jnp.where(received, weighted_trace, 1.0)
-                    gram = jnp.where(
-                        received[..., None, None],
-                        weighted * scale[..., None, None],
-                        gram,
-                    )
-                grams.append(gram)
             new_network = _apply_synaptic_uncertainty_updates(
                 new_network,
                 mean_grads,
                 importance,
                 belief_settings,
-                tuple(grams),
             )
         else:
             new_network, opt_state = _apply_weight_updates(

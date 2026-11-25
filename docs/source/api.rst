@@ -343,8 +343,7 @@ automatic differentiation.
 Synaptic uncertainty
 --------------------
 
-The weight-belief rule of ``"synaptic_uncertainty"``, and the input Gram matrices a layer
-can record beside it.
+The weight-belief rule of ``"synaptic_uncertainty"``.
 
 .. currentmodule:: pyhgf.updates.vectorised.learning.synaptic_uncertainty
 
@@ -353,11 +352,6 @@ can record beside it.
 
     resolve_synaptic_uncertainty_settings
     vectorised_synaptic_uncertainty_update
-    create_input_gram
-    vectorised_input_gram_update
-    create_step_gram
-    vectorised_step_gram_update
-    vectorised_step_rows_update
 
 Kronecker-factored weight belief
 --------------------------------
