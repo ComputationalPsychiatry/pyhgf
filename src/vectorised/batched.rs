@@ -552,9 +552,7 @@ fn batched_posterior_update(
     let msg = w.t().dot(&gd);
 
     if parent_layer.coupling_fn.kind == crate::math::CouplingKind::Linear {
-        // Linear coupling: g' ≡ 1 and g'' ≡ 0, so the curvature term of the
-        // precision update vanishes with its gemm, and no derivative matrices
-        // are needed.
+        // Linear coupling: g' ≡ 1, so no derivative matrix is needed.
         Zip::from(&mut parent.precision)
             .and(&parent.expected_precision)
             .and(&pc1_base)
@@ -567,29 +565,21 @@ fn batched_posterior_update(
         return;
     }
 
-    let (mut coupling_prime, mut coupling_second) = {
-        let dim = parent.expected_mean.raw_dim();
-        (Matrix::zeros(dim), Matrix::zeros(dim))
-    };
-    crate::math::with_coupling!(parent_layer.coupling_fn, |_f, df, d2f| {
+    let mut coupling_prime = Matrix::zeros(parent.expected_mean.raw_dim());
+    crate::math::with_coupling!(parent_layer.coupling_fn, |_f, df, _d2f| {
         Zip::from(&mut coupling_prime)
-            .and(&mut coupling_second)
             .and(&parent.expected_mean)
-            .for_each(|p, sec, &m| {
-                *p = df(m as f64) as Float;
-                *sec = d2f(m as f64) as Float;
-            });
+            .for_each(|p, &m| *p = df(m as f64) as Float);
     });
 
-    // Precision: clip(π̂_b + pc1·g'² − g''·(Wᵀ@(gain∘δ))).
+    // Precision: clip(π̂_b + pc1·g'²), first-order in the coupling function as in
+    // `layer_posterior_update`.
     Zip::from(&mut parent.precision)
         .and(&parent.expected_precision)
         .and(&pc1_base)
-        .and(&msg)
         .and(&coupling_prime)
-        .and(&coupling_second)
-        .for_each(|p, &ep, &b, &mg, &gp, &gs| {
-            let raw = ep + b * (gp * gp) - gs * mg;
+        .for_each(|p, &ep, &b, &gp| {
+            let raw = ep + b * (gp * gp);
             *p = raw.max(ep).min(max_posterior_precision);
         });
 
