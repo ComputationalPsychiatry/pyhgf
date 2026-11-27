@@ -17,12 +17,21 @@ from .posterior_update_precision_continuous_node import (
 )
 
 
-@partial(jit, static_argnames=("edges", "node_idx", "max_posterior_precision"))
+@partial(
+    jit,
+    static_argnames=(
+        "edges",
+        "node_idx",
+        "max_posterior_precision",
+        "coupling_moments",
+    ),
+)
 def continuous_node_posterior_update(
     attributes: dict,
     node_idx: int,
     edges: Edges,
     max_posterior_precision: float = 1e10,
+    coupling_moments: str = "taylor",
     **args,
 ) -> dict:
     """Update the posterior of a continuous node using the standard HGF update.
@@ -45,6 +54,11 @@ def continuous_node_posterior_update(
         For each node, the index list value and volatility parents and children.
     max_posterior_precision :
         Upper bound applied to the posterior precision write. Default ``1e10``.
+    coupling_moments :
+        ``"taylor"`` (default) linearises the coupling functions of the value children
+        with their derivatives. ``"exact"`` uses their statistical linearisation under
+        the predicted belief of the node, see
+        :func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update`.
 
     Returns
     -------
@@ -57,14 +71,18 @@ def continuous_node_posterior_update(
     """
     # update the posterior mean and precision
     posterior_precision = posterior_update_precision_continuous_node(
-        attributes, edges, node_idx
+        attributes, edges, node_idx, coupling_moments=coupling_moments
     )
     attributes[node_idx]["precision"] = jnp.minimum(
         posterior_precision, max_posterior_precision
     )
 
     attributes[node_idx]["mean"] = posterior_update_mean_continuous_node(
-        attributes, edges, node_idx, node_precision=attributes[node_idx]["precision"]
+        attributes,
+        edges,
+        node_idx,
+        node_precision=attributes[node_idx]["precision"],
+        coupling_moments=coupling_moments,
     )
 
     return attributes

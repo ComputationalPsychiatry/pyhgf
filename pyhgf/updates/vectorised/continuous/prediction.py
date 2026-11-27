@@ -6,8 +6,8 @@ import dataclasses
 from typing import Callable, Optional
 
 import jax.numpy as jnp
-from jax import grad, vmap
 
+from pyhgf.coupling import Coupling
 from pyhgf.typing.vectorised import LayerParams, LayerState
 from pyhgf.updates.prediction.continuous import MIN_PREDICTED_VARIANCE
 
@@ -23,6 +23,7 @@ def vectorised_continuous_prediction(
     volatility_weights: Optional[jnp.ndarray] = None,
     is_input_layer: bool = False,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
 ) -> LayerState:
     r"""Predict expected mean and precisions for a layer of continuous nodes.
 
@@ -80,6 +81,17 @@ def vectorised_continuous_prediction(
     - \sum_j \kappa_{u,j} \hat{\mu}_{q,j})`, and :math:`\gamma_u = 1`, as in
     :func:`pyhgf.updates.prediction.continuous.predict_noise_precision`.
 
+    With ``coupling_moments="exact"``, the coupling function is replaced by its
+    statistical linearisation under the predicted belief
+    :math:`x_b \sim \mathcal{N}(\hat{\mu}_b, 1/\hat{\pi}_b)` of the value parent, as
+    in :func:`pyhgf.updates.prediction.continuous.predict_value_coupling_variance`:
+    the drift takes :math:`\mathbb{E}[g(x_b)]`, the slope :math:`g'(\hat{\mu}_b)`
+    becomes the mean slope :math:`A_b = \mathbb{E}[g'(x_b)]`, and the variance
+    :math:`R_b = \mathrm{Var}[g(x_b)] - A_b^2 / \hat{\pi}_b` of the residual of the
+    linear function adds :math:`\sum_b (t^{(k)} W_{a,b})^2 R_b` to the conditional
+    predicted variance :math:`1/\bar{\pi}_a^{(k)}`, and to the variance of the
+    observation noise of the observation layer (without the time step).
+
     Parameters
     ----------
     child_state :
@@ -113,12 +125,17 @@ def vectorised_continuous_prediction(
         variance term is dropped, so the conditional and the marginal predicted
         precision coincide, as in
         :func:`pyhgf.updates.prediction.continuous.predict_precision_mean_field`.
+    coupling_moments :
+        ``"taylor"`` (default) linearises the coupling function at the expected means
+        of the value parent. ``"exact"`` uses its moments under the predicted belief
+        of the value parent. Not read with ``mean_field_updates``.
 
     Returns
     -------
     LayerState
         Updated layer state with ``expected_mean``, ``expected_precision``,
-        ``conditional_expected_precision`` and ``effective_precision`` populated.
+        ``conditional_expected_precision``, ``effective_precision`` and
+        ``residual_variance`` populated.
 
     References
     ----------
@@ -135,11 +152,24 @@ def vectorised_continuous_prediction(
     # al., 2026), so its drift does not take the time step.
     drift_scale = 1.0 if is_input_layer else time_step
     driftrate = params.tonic_drift
+    exact_moments = (
+        coupling_moments == "exact"
+        and value_parent_state is not None
+        and not mean_field_updates
+    )
     if value_parent_state is not None:
         assert weights is not None and coupling_fn is not None
-        driftrate = driftrate + jnp.matmul(
-            weights, coupling_fn(value_parent_state.expected_mean)
-        )
+        coupling = Coupling.from_callable(coupling_fn)
+        if exact_moments:
+            # Moments of g under the parent's predicted belief N(μ̂_b, 1/π̂_b): the
+            # mean E[g], the variance Var[g] and the mean slope A = E[g'].
+            coupled_parents, coupling_variance, slope = coupling.moments(
+                value_parent_state.expected_mean,
+                1.0 / value_parent_state.expected_precision,
+            )
+        else:
+            coupled_parents = coupling(value_parent_state.expected_mean)
+        driftrate = driftrate + jnp.matmul(weights, coupled_parents)
     expected_mean = (
         params.autoconnection_strength * child_state.mean + drift_scale * driftrate
     )
@@ -156,25 +186,46 @@ def vectorised_continuous_prediction(
         predicted_volatility > 1e-128, predicted_volatility, jnp.nan
     )
 
-    # 3. Taylor value-coupling variance: Σ_b (t · W_ab · g'(μ̂_b))² / π̂_b.
-    # Absent under mean-field, where value parents enter at their means alone.
+    # 3. Value-coupling variance: Σ_b (t · W_ab · A_b)² / π̂_b, with the slope A_b
+    # of the linearised coupling function: g'(μ̂_b) (first-order Taylor expansion)
+    # or, with the exact moments, E[g'(x_b)], which leaves the residual variance
+    # Σ_b (t · W_ab)² · (Var[g_b] − A_b² / π̂_b). Absent under mean-field, where value
+    # parents enter at their means alone.
     value_coupling_variance = jnp.zeros_like(child_state.precision)
+    residual_variance = jnp.zeros_like(child_state.precision)
     if value_parent_state is not None and not mean_field_updates:
         assert weights is not None and coupling_fn is not None
-        g_prime = vmap(grad(coupling_fn))(value_parent_state.expected_mean)
+        if exact_moments:
+            g_prime = slope
+            residual_variance = (drift_scale**2) * jnp.matmul(
+                weights**2,
+                # Floored at zero against rounding.
+                jnp.maximum(
+                    coupling_variance
+                    - slope**2 / value_parent_state.expected_precision,
+                    0.0,
+                ),
+            )
+        else:
+            g_prime = coupling.df(value_parent_state.expected_mean)
         value_coupling_variance = (drift_scale**2) * jnp.matmul(
             weights**2, g_prime**2 / value_parent_state.expected_precision
         )
 
     # 4. Conditional (π̄) and marginal (π̂) predicted precisions, effective γ.
     # Scaling the belief by λ scales its variance by λ². The drift is added after
-    # the autoregression, so the value-coupling term is unscaled.
+    # the autoregression, so the value-coupling term is unscaled. With the exact
+    # moments, the residual of the linearised coupling function does not depend on
+    # the parent's value and adds to the conditional variance.
     carried_variance = (params.autoconnection_strength**2) / child_state.precision
+    conditional_variance = carried_variance + predicted_volatility
+    if exact_moments:
+        conditional_variance = conditional_variance + residual_variance
     conditional_expected_precision = 1.0 / jnp.maximum(
-        carried_variance + predicted_volatility, MIN_PREDICTED_VARIANCE
+        conditional_variance, MIN_PREDICTED_VARIANCE
     )
     expected_precision = 1.0 / jnp.maximum(
-        carried_variance + predicted_volatility + value_coupling_variance,
+        conditional_variance + value_coupling_variance,
         MIN_PREDICTED_VARIANCE,
     )
     effective_precision = predicted_volatility * expected_precision
@@ -194,6 +245,10 @@ def vectorised_continuous_prediction(
                 - jnp.matmul(volatility_weights, volatility_parent_state.expected_mean)
             )
             effective_precision = jnp.ones_like(expected_precision)
+        if exact_moments:
+            # The residual of the linearised coupling function adds to the variance
+            # of the observation noise.
+            expected_precision = 1.0 / (1.0 / expected_precision + residual_variance)
         conditional_expected_precision = expected_precision
 
     return dataclasses.replace(
@@ -202,4 +257,5 @@ def vectorised_continuous_prediction(
         expected_precision=expected_precision,
         conditional_expected_precision=conditional_expected_precision,
         effective_precision=effective_precision,
+        residual_variance=residual_variance,
     )

@@ -51,6 +51,15 @@ class LayerState(eqx.Module):
         The effective precision of the volatility-level prediction.
     volatility_prediction_error :
         The volatility prediction error of the volatility level.
+    residual_variance :
+        The variance of the residuals of the linearised coupling functions of the
+        value parents, which the prediction counts in the conditional predicted
+        variance :math:`1/\bar{\pi}_a` under ``coupling_moments="exact"`` (see
+        :func:`pyhgf.updates.vectorised.volatile.prediction.vectorised_layer_prediction`).
+        It is zero under ``coupling_moments="taylor"``. The precision that a layer
+        carries to the next sample leaves it out (see
+        :func:`pyhgf.utils.vectorised_belief_propagation.carry_precisions`).
+        ``None`` on a state built without it stands for zero.
     """
 
     # Value level (external)
@@ -69,6 +78,9 @@ class LayerState(eqx.Module):
     expected_precision_vol: Optional[Array]
     effective_precision_vol: Optional[Array]
     volatility_prediction_error: Optional[Array]
+    # Residual variance of the linearised coupling functions of the value parents
+    # (value level), written by the prediction step.
+    residual_variance: Optional[Array] = None
 
     @classmethod
     def create(cls, n_nodes: int, has_volatility_parent: bool = True) -> "LayerState":
@@ -103,6 +115,7 @@ class LayerState(eqx.Module):
             expected_precision_vol=vol(1.0),
             effective_precision_vol=vol(0.0),
             volatility_prediction_error=vol(0.0),
+            residual_variance=jnp.zeros(n_nodes),
         )
 
     @classmethod
@@ -125,6 +138,7 @@ class LayerState(eqx.Module):
             expected_precision_vol=None,
             effective_precision_vol=None,
             volatility_prediction_error=vope,
+            residual_variance=jnp.zeros(n_nodes),
         )
 
 
@@ -474,6 +488,10 @@ class VectorisedNetwork(eqx.Module):
         If ``False`` (default), use the relaxed prediction and posterior updates.
         If ``True``, use the original mean-field updates — see
         :class:`pyhgf.model.DeepNetwork`.
+    coupling_moments :
+        How the relaxed updates take the uncertainty of a value parent through its
+        coupling function, ``"taylor"`` (default) or ``"exact"`` (see
+        :class:`pyhgf.model.DeepNetwork`).
     """
 
     layers: tuple
@@ -485,6 +503,7 @@ class VectorisedNetwork(eqx.Module):
     feedforward_uncertainty: bool = field(static=True, default=False)
     carry_precision: bool = field(static=True, default=True)
     mean_field_updates: bool = field(static=True, default=False)
+    coupling_moments: str = field(static=True, default="taylor")
 
     @property
     def n_layers(self) -> int:

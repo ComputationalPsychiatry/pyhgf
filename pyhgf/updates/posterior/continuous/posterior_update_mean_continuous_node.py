@@ -2,19 +2,21 @@
 
 from functools import partial
 
-from jax import grad, jit
+from jax import jit
 
+from pyhgf.coupling import resolve_coupling_fn
 from pyhgf.typing import Edges
 
 from .posterior_update_precision_continuous_node import _relaxed_child_factors
 
 
-@partial(jit, static_argnames=("edges", "node_idx"))
+@partial(jit, static_argnames=("edges", "node_idx", "coupling_moments"))
 def posterior_update_mean_continuous_node(
     attributes: dict,
     edges: Edges,
     node_idx: int,
     node_precision: float,
+    coupling_moments: str = "taylor",
 ) -> float:
     r"""Continuous mean update without mean-field approximation.
 
@@ -50,6 +52,13 @@ def posterior_update_mean_continuous_node(
     whose drift the time step scales, and stays :math:`\alpha_j` for an input node,
     which its value parents generate rather than drift.
 
+    With ``coupling_moments="exact"``, the derivative :math:`g'_{j,b}` is replaced by
+    the mean slope :math:`\mathbb{E}[g'_{j,b}(x_b)]` under the predicted belief
+    :math:`x_b \sim \mathcal{N}(\hat{\mu}_b^{(k)}, 1/\hat{\pi}_b^{(k)})` of the node,
+    the slope of the statistical linearisation of the coupling function that the
+    prediction step uses
+    (:func:`pyhgf.updates.prediction.continuous.predict_value_coupling_variance`).
+
     .. rubric:: 2. Mean update from volatility coupling
 
     .. math::
@@ -84,6 +93,9 @@ def posterior_update_mean_continuous_node(
         precision-weighted PEs across children. Depending on the volatility update
         schedule this is either the just-updated posterior precision (standard
         scheme) or the marginal predicted precision (eHGF scheme).
+    coupling_moments :
+        ``"taylor"`` (default) takes the derivative of the coupling functions.
+        ``"exact"`` takes their mean slope under the predicted belief of the node.
 
     Returns
     -------
@@ -119,11 +131,17 @@ def posterior_update_mean_continuous_node(
             value_prediction_error *= attributes[value_child_idx]["observed"]
 
             # get differential of coupling function with value children
-            if coupling_fn is None:  # linear coupling
+            coupling = resolve_coupling_fn(coupling_fn)
+            if coupling is None:  # linear coupling
                 coupling_fn_prime = 1
+            elif coupling_moments == "exact":  # statistical linearisation
+                _, _, coupling_fn_prime = coupling.moments(
+                    attributes[node_idx]["expected_mean"],
+                    1.0 / attributes[node_idx]["expected_precision"],
+                )
             else:  # non-linear coupling
                 # Compute the derivative of the coupling function
-                coupling_fn_prime = grad(coupling_fn)(attributes[node_idx]["mean"])
+                coupling_fn_prime = coupling.df(attributes[node_idx]["mean"])
 
             # Coupling gain precision g_a. From the joint (x_a, x_b) Gaussian the
             # exact marginal-mean gain is
@@ -321,10 +339,11 @@ def posterior_update_mean_continuous_node_mean_field(
             ]
             value_prediction_error *= attributes[value_child_idx]["observed"]
 
-            if coupling_fn is None:
+            coupling = resolve_coupling_fn(coupling_fn)
+            if coupling is None:
                 coupling_fn_prime = 1
             else:
-                coupling_fn_prime = grad(coupling_fn)(attributes[node_idx]["mean"])
+                coupling_fn_prime = coupling.df(attributes[node_idx]["mean"])
 
             # the time step scales the drift of a continuous state child (one with
             # children), not the prediction of an input node

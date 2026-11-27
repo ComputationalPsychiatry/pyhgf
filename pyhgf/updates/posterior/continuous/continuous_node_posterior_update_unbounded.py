@@ -31,6 +31,7 @@ from .posterior_update_precision_continuous_node import (
         "node_idx",
         "max_posterior_precision",
         "mean_field_updates",
+        "coupling_moments",
     ),
 )
 def continuous_node_posterior_update_unbounded(
@@ -39,6 +40,7 @@ def continuous_node_posterior_update_unbounded(
     edges: Edges,
     max_posterior_precision: float = 1e10,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
     **args,
 ) -> dict:
     """Update the posterior of a continuous node with unbounded quadratic approximation.
@@ -66,6 +68,12 @@ def continuous_node_posterior_update_unbounded(
         value-coupling terms use the relaxed updates; if ``True``, the mean-field
         updates. This mirrors the ``mean_field_updates`` argument of
         :py:class:`pyhgf.model.Network`.
+    coupling_moments :
+        Only used when the node also has value children, with the relaxed updates.
+        ``"taylor"`` (default) linearises their coupling functions with their
+        derivatives. ``"exact"`` uses their statistical linearisation under the
+        predicted belief of the node, see
+        :func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update`.
 
     Returns
     -------
@@ -83,6 +91,7 @@ def continuous_node_posterior_update_unbounded(
         node_idx=node_idx,
         edges=edges,
         mean_field_updates=mean_field_updates,
+        coupling_moments=coupling_moments,
     )
     # without any observed child, the posterior precision is the predicted precision
     posterior_precision = jnp.where(
@@ -99,12 +108,16 @@ def continuous_node_posterior_update_unbounded(
     return attributes
 
 
-@partial(jit, static_argnames=("edges", "node_idx", "mean_field_updates"))
+@partial(
+    jit,
+    static_argnames=("edges", "node_idx", "mean_field_updates", "coupling_moments"),
+)
 def posterior_update_unbounded(
     attributes: dict,
     node_idx: int,
     edges: Edges,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
     **args,
 ) -> tuple[Array, Array]:
     r"""Compute unbounded posterior for a continuous volatility-parent node.
@@ -129,9 +142,10 @@ def posterior_update_unbounded(
     The known variance :math:`\alpha_i` is the part of the child's predicted variance
     that does not depend on :math:`x`: the carried variance :math:`\lambda^2/\pi` of the
     child and the variance its value parents add to its prediction
-    (:func:`_value_coupling_variance`), so that :math:`\alpha_i + \Omega_i` is the
-    child's marginal predicted variance. Without value parents, :math:`\alpha_i` is the
-    carried variance.
+    (:func:`_value_coupling_variance`, and the variance of the residuals of the
+    linearised coupling functions under ``coupling_moments="exact"``), so that
+    :math:`\alpha_i + \Omega_i` is the child's marginal predicted variance. Without
+    value parents, :math:`\alpha_i` is the carried variance.
 
     :math:`(\tilde{\pi}, \tilde{\mu})` is the prediction :math:`(\hat{\pi}, \hat{\mu})`
     of the node or, when the node also has value children or noise children (input
@@ -194,6 +208,10 @@ def posterior_update_unbounded(
         Only used when the node has value children. If ``False`` (default), the
         effective prior uses the relaxed value-coupling updates; if ``True``, the
         mean-field updates.
+    coupling_moments :
+        Only used when the node has value children, with the relaxed updates:
+        ``"taylor"`` (default) or ``"exact"``, see
+        :func:`continuous_node_posterior_update_unbounded`.
 
     Returns
     -------
@@ -223,7 +241,7 @@ def posterior_update_unbounded(
     # Effective prior (π̃, μ̃): the prediction, combined with the value-coupling and
     # noise-coupling terms when the node also has value or noise children.
     prior_precision, prior_mean = _value_children_effective_prior(
-        attributes, edges, node_idx, mean_field_updates
+        attributes, edges, node_idx, mean_field_updates, coupling_moments
     )
     if n_children == 0:
         return prior_precision, prior_mean
@@ -379,7 +397,11 @@ def posterior_update_unbounded(
 
 
 def _value_children_effective_prior(
-    attributes: dict, edges: Edges, node_idx: int, mean_field_updates: bool
+    attributes: dict,
+    edges: Edges,
+    node_idx: int,
+    mean_field_updates: bool,
+    coupling_moments: str = "taylor",
 ) -> tuple[Array, Array]:
     r"""Absorb the value- and noise-coupling terms of a node in an effective prior.
 
@@ -388,9 +410,9 @@ def _value_children_effective_prior(
     :math:`(\tilde{\pi}, \tilde{\mu})`. Here, this prior is the posterior that the
     standard update returns when the node keeps only its value children and its noise
     children, so that value children are weighted as in the standard and eHGF updates
-    (relaxed or mean-field), and each noise child adds the quadratic term of Eqs. 74
-    and 78 of [2]_. Without value or noise children, this is the prediction of the
-    node.
+    (relaxed or mean-field, and with ``coupling_moments`` under the relaxed updates),
+    and each noise child adds the quadratic term of Eqs. 74 and 78 of [2]_. Without
+    value or noise children, this is the prediction of the node.
 
     References
     ----------
@@ -433,13 +455,25 @@ def _value_children_effective_prior(
         attributes[node_idx]["volatility_coupling_children"][position]
         for position in noise_positions
     )
-    precision_fn, mean_fn = (
-        (precision_update_mean_field, posterior_update_mean_continuous_node_mean_field)
-        if mean_field_updates
-        else (precision_update, posterior_update_mean_continuous_node)
-    )
-    precision = precision_fn(restricted_attributes, restricted_edges, node_idx)
-    mean = mean_fn(
-        restricted_attributes, restricted_edges, node_idx, node_precision=precision
-    )
+    if mean_field_updates:
+        precision = precision_update_mean_field(
+            restricted_attributes, restricted_edges, node_idx
+        )
+        mean = posterior_update_mean_continuous_node_mean_field(
+            restricted_attributes, restricted_edges, node_idx, node_precision=precision
+        )
+    else:
+        precision = precision_update(
+            restricted_attributes,
+            restricted_edges,
+            node_idx,
+            coupling_moments=coupling_moments,
+        )
+        mean = posterior_update_mean_continuous_node(
+            restricted_attributes,
+            restricted_edges,
+            node_idx,
+            node_precision=precision,
+            coupling_moments=coupling_moments,
+        )
     return precision, mean

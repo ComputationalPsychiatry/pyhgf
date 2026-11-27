@@ -92,8 +92,8 @@ def test_layer_state_is_pytree():
     """LayerState is a PyTree: tree_leaves yields the array fields."""
     s = LayerState.create(3)
     leaves = jtu.tree_leaves(s)
-    # 13 array fields; no statics.
-    assert len(leaves) == 13
+    # 14 array fields; no statics.
+    assert len(leaves) == 14
     assert all(isinstance(leaf, jax.Array) for leaf in leaves)
 
 
@@ -111,8 +111,8 @@ def test_layer_static_fields_are_in_treedef_not_leaves():
         kind="volatile",
     )
     leaves = jtu.tree_leaves(layer)
-    # 13 (state) + 2 (params) + 1 (weights_mean) = 16 array leaves
-    assert len(leaves) == 16
+    # 14 (state) + 2 (params) + 1 (weights_mean) = 17 array leaves
+    assert len(leaves) == 17
     treedef_str = str(jtu.tree_structure(layer))
     # Statics show up inside the treedef, not as leaves.
     assert "volatile" in treedef_str
@@ -135,8 +135,8 @@ def test_layer_weights_in_can_be_none():
     assert layer.weights_mean is None
     # tree_leaves still flattens cleanly.
     leaves = jtu.tree_leaves(layer)
-    # 13 + 2 = 15 leaves (no weights_mean)
-    assert len(leaves) == 15
+    # 14 + 2 = 16 leaves (no weights_mean)
+    assert len(leaves) == 16
 
 
 def test_network_is_pytree_with_static_meta():

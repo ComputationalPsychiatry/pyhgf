@@ -24,9 +24,11 @@ Example:
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, fields
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
-import jax.nn
+from pyhgf.coupling import resolve_coupling_fn
+
+__all__ = ["LayerConfig", "resolve_coupling_fn"]
 
 
 @dataclass
@@ -50,7 +52,7 @@ class LayerConfig:
     coupling_fn : Optional[str], default None
         Name of coupling function ("identity", "gelu", "relu", etc.) or None to use the
         network-level default. Must be a name that can be resolved via
-        :func:`resolve_coupling_fn`.
+        :func:`pyhgf.coupling.resolve_coupling_fn`.
     volatility_parent : Optional[bool], default None
         Whether the layer has an internal volatility parent. ``None`` follows the
         network's ``carry_precision`` (see :meth:`DeepNetwork.add_layer`).
@@ -112,63 +114,3 @@ class LayerConfig:
         valid_fields = {f.name for f in fields(cls)}
         filtered = {k: v for k, v in data.items() if k in valid_fields}
         return cls(**filtered)
-
-
-def resolve_coupling_fn(name_or_fn: Optional[str | Callable]) -> Optional[Callable]:
-    """Resolve a coupling function name to a callable.
-
-    Parameters
-    ----------
-    name_or_fn : Optional[str | Callable]
-        Either a string name ("gelu", "relu", "identity", etc.), a callable, or None
-        (returns None).
-
-    Returns
-    -------
-    Optional[Callable]
-        The resolved function, or None if input is None.
-
-    Raises
-    ------
-    ValueError
-        If the name is not recognized.
-
-    Examples
-    --------
-    >>> fn = resolve_coupling_fn("gelu")
-    >>> fn is jax.nn.gelu
-    True
-    >>> resolve_coupling_fn(None) is None
-    True
-    >>> resolve_coupling_fn(lambda x: x)  # Already callable
-    <function <lambda> at ...>
-    """
-    if name_or_fn is None:
-        return None
-
-    if callable(name_or_fn):
-        return name_or_fn
-
-    if isinstance(name_or_fn, str):
-        mapping = {
-            "identity": lambda x: x,
-            "gelu": jax.nn.gelu,
-            "relu": jax.nn.relu,
-            "tanh": jax.nn.tanh,
-            "sigmoid": jax.nn.sigmoid,
-            "elu": jax.nn.elu,
-            "silu": jax.nn.silu,
-            "swish": jax.nn.swish,
-        }
-        if name_or_fn not in mapping:
-            raise ValueError(
-                f"Unknown coupling function: '{name_or_fn}'. "
-                f"Valid names: {sorted(mapping.keys())}. "
-                f"Alternatively, pass a callable directly."
-            )
-        return mapping[name_or_fn]
-
-    raise TypeError(
-        f"coupling_fn must be None, a string name, or a callable; "
-        f"got {type(name_or_fn).__name__}"
-    )

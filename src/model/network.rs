@@ -267,6 +267,12 @@ pub struct Network {
     /// avoids flat, zero-gradient plateaus that hurt gradient-based inference. Shared
     /// with the JAX backends.
     pub precision_clipping_value: f64,
+    /// Whether the relaxed updates take the uncertainty of a value parent through its
+    /// coupling function with the moments of the function under the belief of the
+    /// parent (`coupling_moments="exact"`) instead of its first-order Taylor expansion
+    /// at the mean of the parent (`coupling_moments="taylor"`, the default). Mirrors
+    /// the `coupling_moments` argument of the JAX `Network`.
+    pub exact_coupling_moments: bool,
 }
 
 /// Helper: get the list of trajectory field names to export for a given node type.
@@ -332,6 +338,7 @@ impl Network {
             inputs: Vec::new(),
             volatility_updates: String::from(volatility_updates),
             mean_field_updates: false,
+            exact_coupling_moments: false,
             update_sequence: UpdateSequence {
                 predictions: Vec::new(),
                 updates: Vec::new(),
@@ -739,18 +746,36 @@ fn apply_overrides_continuous(state: &mut NodeState, overrides: &HashMap<String,
 #[pymethods]
 impl Network {
     #[new]
-    #[pyo3(signature = (volatility_updates="unbounded", max_posterior_precision=1e10, mean_field_updates=false, precision_clipping_value=1e-6))]
+    #[pyo3(signature = (volatility_updates="unbounded", max_posterior_precision=1e10, mean_field_updates=false, precision_clipping_value=1e-6, coupling_moments="taylor"))]
     fn py_new(
         volatility_updates: &str,
         max_posterior_precision: f64,
         mean_field_updates: bool,
         precision_clipping_value: f64,
-    ) -> Self {
+        coupling_moments: &str,
+    ) -> PyResult<Self> {
+        let exact_coupling_moments = match coupling_moments {
+            "taylor" => false,
+            "exact" => true,
+            other => {
+                return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "Invalid coupling_moments '{other}'. Choose from 'taylor' or 'exact'."
+                )))
+            }
+        };
+        if exact_coupling_moments && mean_field_updates {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "coupling_moments='exact' is incompatible with mean_field_updates=True: \
+                 the mean-field updates treat value parents as point estimates, so there \
+                 is no belief to take the moments of the coupling functions under.",
+            ));
+        }
         let mut net = Network::new(volatility_updates);
         net.max_posterior_precision = max_posterior_precision;
         net.mean_field_updates = mean_field_updates;
         net.precision_clipping_value = precision_clipping_value;
-        net
+        net.exact_coupling_moments = exact_coupling_moments;
+        Ok(net)
     }
 
     #[getter]

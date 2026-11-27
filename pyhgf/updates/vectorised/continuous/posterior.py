@@ -19,9 +19,9 @@ import dataclasses
 from typing import Callable, NamedTuple, Optional
 
 import jax.numpy as jnp
-from jax import grad, vmap
 from jax.nn import sigmoid
 
+from pyhgf.coupling import Coupling
 from pyhgf.math import lambert_w0_log
 from pyhgf.typing.vectorised import LayerParams, LayerState
 
@@ -147,6 +147,7 @@ def _value_precision_pwpe(
     eval_mean: jnp.ndarray,
     child: ValueChild,
     mean_field_updates: bool = False,
+    slope: Optional[jnp.ndarray] = None,
 ) -> jnp.ndarray:
     r"""Value-coupling precision-weighted prediction error.
 
@@ -162,11 +163,22 @@ def _value_precision_pwpe(
     are evaluated at *eval_mean*: the parent's previous posterior mean in the
     standard scheme, its freshly updated posterior mean in the eHGF scheme
     (which updates the mean first), mirroring the nodalised call order.
+
+    When *slope* is given, the coupling function is replaced by its statistical
+    linearisation: :math:`g'` is *slope*, the mean slope
+    :math:`\mathbb{E}[g'(x_m)]` under the predicted belief of the parent (see
+    :func:`vectorised_continuous_posterior_update`), and the :math:`g''` term is
+    absent.
     """
     effective_child_precision, gain = _relaxed_factors(child, mean_field_updates)
 
-    coupling_prime = vmap(grad(child.coupling_fn))(eval_mean)
-    coupling_second = vmap(grad(grad(child.coupling_fn)))(eval_mean)
+    if slope is None:
+        coupling = Coupling.from_callable(child.coupling_fn)
+        coupling_prime = coupling.df(eval_mean)
+        coupling_second = coupling.d2f(eval_mean)
+    else:
+        coupling_prime = slope
+        coupling_second = jnp.zeros_like(slope)
 
     # Derivative of the child's prediction with respect to the parent's value, up to
     # the coupling function: the time step scales the drift of a state layer.
@@ -185,6 +197,7 @@ def _value_mean_pwpe(
     child: ValueChild,
     node_precision: jnp.ndarray,
     mean_field_updates: bool = False,
+    slope: Optional[jnp.ndarray] = None,
 ) -> jnp.ndarray:
     r"""Value-coupling mean shift, accumulated across child nodes.
 
@@ -194,11 +207,16 @@ def _value_mean_pwpe(
             \sum_a t W_{a,m} \, g_a \, \delta_a,
 
     with the joint-Gaussian gain :math:`g_a` from :func:`_relaxed_factors` and
-    :math:`t` the ``time_scale`` of the child.
+    :math:`t` the ``time_scale`` of the child. When *slope* is given, it replaces
+    :math:`g'(\mu_m)` (see :func:`_value_precision_pwpe`).
     """
     _, gain = _relaxed_factors(child, mean_field_updates)
 
-    coupling_prime = vmap(grad(child.coupling_fn))(eval_mean)
+    coupling_prime = (
+        Coupling.from_callable(child.coupling_fn).df(eval_mean)
+        if slope is None
+        else slope
+    )
     return (
         jnp.matmul(
             (child.time_scale * child.weights).T,
@@ -253,7 +271,8 @@ def _value_coupling_variance(state: LayerState) -> jnp.ndarray:
         T_a = \frac{1}{\hat{\pi}_a} - \frac{1}{\bar{\pi}_a},
 
     the gap between the marginal and the conditional predicted variance, which is the
-    first-order Taylor term of the prediction step. Zero for a layer without a value
+    variance that the value parents add through the slopes of their linearised
+    coupling functions in the prediction step. Zero for a layer without a value
     parent and under the mean-field prediction, and floored at zero against rounding.
     Mirrors
     :func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._value_coupling_variance`.
@@ -372,8 +391,9 @@ def vectorised_continuous_posterior_update_standard(
     volatility_child: Optional[VolatilityChild] = None,
     max_posterior_precision: float = 1e10,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
 ) -> LayerState:
-    """Apply the standard HGF posterior update: precision first, then the mean.
+    r"""Apply the standard HGF posterior update: precision first, then the mean.
 
     This is the vectorised equivalent of
     :func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update`.
@@ -394,6 +414,13 @@ def vectorised_continuous_posterior_update_standard(
         update
         (:func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update_mean_field`).
         The volatility-coupling increment is the same in both schemes.
+    coupling_moments :
+        ``"taylor"`` (default) linearises the coupling function of the value child
+        with its derivatives. ``"exact"`` uses its statistical linearisation under
+        the predicted belief :math:`\mathcal{N}(\hat{\mu}_m, 1/\hat{\pi}_m)` of the
+        layer: the mean slope :math:`\mathbb{E}[g'(x_m)]` and no curvature, as in
+        :func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update`.
+        Not read with ``mean_field_updates``.
 
     Returns
     -------
@@ -402,9 +429,20 @@ def vectorised_continuous_posterior_update_standard(
     """
     eval_mean = layer.mean  # previous posterior mean
 
+    # With the exact moments, the value messages take the mean slope E[g'] of the
+    # coupling function under the layer's predicted belief, and no curvature.
+    slope = None
+    if value_child is not None and coupling_moments == "exact":
+        if not mean_field_updates:
+            _, _, slope = Coupling.from_callable(value_child.coupling_fn).moments(
+                layer.expected_mean, 1.0 / layer.expected_precision
+            )
+
     pwpe = jnp.zeros_like(layer.precision)
     if value_child is not None:
-        pwpe = pwpe + _value_precision_pwpe(eval_mean, value_child, mean_field_updates)
+        pwpe = pwpe + _value_precision_pwpe(
+            eval_mean, value_child, mean_field_updates, slope
+        )
     if volatility_child is not None:
         pwpe = pwpe + _volatility_precision_pwpe_standard(volatility_child)
     posterior_precision = _finalize_precision(
@@ -414,7 +452,7 @@ def vectorised_continuous_posterior_update_standard(
     mean_pwpe = jnp.zeros_like(layer.mean)
     if value_child is not None:
         mean_pwpe = mean_pwpe + _value_mean_pwpe(
-            eval_mean, value_child, posterior_precision, mean_field_updates
+            eval_mean, value_child, posterior_precision, mean_field_updates, slope
         )
     if volatility_child is not None:
         mean_pwpe = mean_pwpe + _volatility_mean_pwpe(
@@ -434,8 +472,9 @@ def vectorised_continuous_posterior_update_ehgf(
     time_step: float = 1.0,
     max_posterior_precision: float = 1e10,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
 ) -> LayerState:
-    """Enhanced-HGF posterior update: mean first, then the safe precision.
+    r"""Enhanced-HGF posterior update: mean first, then the safe precision.
 
     This is the vectorised equivalent of
     :func:`pyhgf.updates.posterior.continuous.continuous_node_posterior_update_ehgf`:
@@ -459,6 +498,13 @@ def vectorised_continuous_posterior_update_ehgf(
         If ``True``, the value-coupling messages use the canonical predicted
         precision instead of the relaxed factors. The volatility-coupling increment
         is the same in both schemes.
+    coupling_moments :
+        ``"taylor"`` (default) linearises the coupling function of the value child
+        with its derivatives. ``"exact"`` uses its statistical linearisation under
+        the predicted belief :math:`\mathcal{N}(\hat{\mu}_m, 1/\hat{\pi}_m)` of the
+        layer: the mean slope :math:`\mathbb{E}[g'(x_m)]` and no curvature, as in
+        :func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update`.
+        Not read with ``mean_field_updates``.
 
     Returns
     -------
@@ -467,10 +513,19 @@ def vectorised_continuous_posterior_update_ehgf(
     """
     eval_mean = layer.mean  # previous posterior mean
 
+    # With the exact moments, the value messages take the mean slope E[g'] of the
+    # coupling function under the layer's predicted belief, and no curvature.
+    slope = None
+    if value_child is not None and coupling_moments == "exact":
+        if not mean_field_updates:
+            _, _, slope = Coupling.from_callable(value_child.coupling_fn).moments(
+                layer.expected_mean, 1.0 / layer.expected_precision
+            )
+
     mean_pwpe = jnp.zeros_like(layer.mean)
     if value_child is not None:
         mean_pwpe = mean_pwpe + _value_mean_pwpe(
-            eval_mean, value_child, layer.expected_precision, mean_field_updates
+            eval_mean, value_child, layer.expected_precision, mean_field_updates, slope
         )
     if volatility_child is not None:
         mean_pwpe = mean_pwpe + _volatility_mean_pwpe(
@@ -483,7 +538,7 @@ def vectorised_continuous_posterior_update_ehgf(
     pwpe = jnp.zeros_like(layer.precision)
     if value_child is not None:
         pwpe = pwpe + _value_precision_pwpe(
-            posterior_mean, value_child, mean_field_updates
+            posterior_mean, value_child, mean_field_updates, slope
         )
     if volatility_child is not None:
         pwpe = pwpe + _volatility_precision_pwpe_ehgf(
@@ -656,6 +711,7 @@ def vectorised_continuous_posterior_update(
     time_step: float = 1.0,
     max_posterior_precision: float = 1e10,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
 ) -> LayerState:
     """Dispatch the continuous posterior update on the layer's children.
 
@@ -683,6 +739,9 @@ def vectorised_continuous_posterior_update(
         If ``True``, the value-coupling messages use the mean-field forms; see
         the individual update schemes. The volatility-coupling updates are the
         same in both schemes.
+    coupling_moments :
+        ``"taylor"`` (default) or ``"exact"``: how the value messages linearise the
+        coupling function of the value child; see the individual update schemes.
 
     Returns
     -------
@@ -702,6 +761,7 @@ def vectorised_continuous_posterior_update(
             volatility_child=volatility_child,
             max_posterior_precision=max_posterior_precision,
             mean_field_updates=mean_field_updates,
+            coupling_moments=coupling_moments,
         )
     if volatility_updates == "eHGF":
         return vectorised_continuous_posterior_update_ehgf(
@@ -711,6 +771,7 @@ def vectorised_continuous_posterior_update(
             time_step=time_step,
             max_posterior_precision=max_posterior_precision,
             mean_field_updates=mean_field_updates,
+            coupling_moments=coupling_moments,
         )
     if volatility_updates == "unbounded":
         if value_child is not None:

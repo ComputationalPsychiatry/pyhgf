@@ -53,6 +53,10 @@ pub struct DeepNetwork {
     /// from its prior precision and has no volatility parent. Mirrors the JAX
     /// `DeepNetwork(carry_precision=...)`.
     carry_precision: bool,
+    /// Whether the uncertainty of a value parent crosses its coupling function with
+    /// the exact moments of the function (`coupling_moments="exact"`). Mirrors the
+    /// JAX `DeepNetwork(coupling_moments=...)`.
+    exact_coupling_moments: bool,
     /// Whether volatile layers carry a value-level tonic volatility ω. With
     /// `false` (the default) the parameter is unallocated — a layer has no
     /// intrinsic volatility and only inherits it from its volatility parent.
@@ -91,6 +95,7 @@ impl DeepNetwork {
             self.predict_precision,
             self.feedforward_uncertainty,
             self.carry_precision,
+            self.exact_coupling_moments,
         );
         self.net = Some(net);
         self.opt_state = None;
@@ -239,6 +244,7 @@ impl DeepNetwork {
         feedforward_uncertainty = false,
         tonic_volatility = false,
         carry_precision = true,
+        coupling_moments = "taylor",
     ))]
     #[allow(clippy::too_many_arguments)]
     fn py_new(
@@ -250,6 +256,7 @@ impl DeepNetwork {
         feedforward_uncertainty: bool,
         tonic_volatility: bool,
         carry_precision: bool,
+        coupling_moments: &str,
     ) -> PyResult<Self> {
         let volatility_updates =
             VolatilityUpdate::parse(volatility_updates).map_err(PyValueError::new_err)?;
@@ -261,6 +268,22 @@ impl DeepNetwork {
                 "precision_clipping_value must be in (0, 0.5), got \
                  {precision_clipping_value}."
             )));
+        }
+        let exact_coupling_moments = match coupling_moments {
+            "taylor" => false,
+            "exact" => true,
+            other => {
+                return Err(PyValueError::new_err(format!(
+                    "Invalid coupling_moments '{other}'. Choose from 'taylor' or 'exact'."
+                )))
+            }
+        };
+        if exact_coupling_moments && !(feedforward_uncertainty && predict_precision) {
+            return Err(PyValueError::new_err(
+                "coupling_moments='exact' requires feedforward_uncertainty=True and \
+                 predict_precision=True: the moments of the coupling functions are taken \
+                 under the uncertainty that the value parents propagate to their children.",
+            ));
         }
         Ok(DeepNetwork {
             configs: Vec::new(),
@@ -275,6 +298,7 @@ impl DeepNetwork {
             predict_precision,
             feedforward_uncertainty,
             carry_precision,
+            exact_coupling_moments,
             tonic_volatility,
             default_coupling: coupling_fn.to_string(),
         })
@@ -387,10 +411,18 @@ impl DeepNetwork {
     /// for 1-D input, matching the JAX `predict`. Every sample is predicted
     /// from the current network as one `gemm` per layer; the network state is
     /// not modified.
+    ///
+    /// `time_step` is the time step of the prediction sweep. The predictions depend
+    /// on it only under `coupling_moments="exact"`, where the predicted means take
+    /// the moments of the coupling functions under the predicted beliefs: pass the
+    /// `time_step` given to `fit` to predict as the training steps do. Matches the
+    /// `time_step` argument of the JAX `predict`.
+    #[pyo3(signature = (x, time_step = 1.0))]
     fn predict<'py>(
         slf: PyRef<'py, Self>,
         py: Python<'py>,
         x: Bound<'py, PyAny>,
+        time_step: Float,
     ) -> PyResult<Py<PyAny>> {
         let net = slf.require_net()?;
         let top = slf.top_size();
@@ -400,7 +432,7 @@ impl DeepNetwork {
         if let Ok(arr) = x.extract::<PyReadonlyArray2<Float>>() {
             let xv = arr.as_array();
             check_predict_cols(xv.ncols(), top)?;
-            let out = net.predict_batch(xv);
+            let out = net.predict_batch(xv, time_step);
             return Ok(out.to_pyarray(py).into_any().unbind());
         }
         // f32 engine: a 2-D float64 buffer pays one vectorised cast instead.
@@ -408,13 +440,13 @@ impl DeepNetwork {
         if let Ok(arr) = x.extract::<PyReadonlyArray2<f64>>() {
             let xmat = arr.as_array().mapv(|v| v as Float);
             check_predict_cols(xmat.ncols(), top)?;
-            let out = net.predict_batch(xmat.view());
+            let out = net.predict_batch(xmat.view(), time_step);
             return Ok(out.to_pyarray(py).into_any().unbind());
         }
         // Fallback: 1-D single sample or a Python list.
         let (xmat, was_1d) = extract_matrix(&x)?;
         check_predict_cols(xmat.ncols(), top)?;
-        let out = net.predict_batch(xmat.view());
+        let out = net.predict_batch(xmat.view(), time_step);
         if was_1d {
             Ok(out.row(0).to_pyarray(py).into_any().unbind())
         } else {

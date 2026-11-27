@@ -130,6 +130,7 @@ Continuous nodes
 
     predict_mean
     predict_precision
+    predict_value_coupling_variance
     predict_precision_mean_field
     predict_noise_precision
     is_noise_child
@@ -566,6 +567,22 @@ Scan-based belief propagation used internally by :class:`pyhgf.model.DeepNetwork
    apply_precision_increments
    batched_prediction_pass
    batched_prediction_states
+
+Coupling functions
+******************
+
+Coupling functions between a value parent and its value children, with their
+derivatives and their moments under a Gaussian belief.
+
+.. currentmodule:: pyhgf.coupling
+
+.. autosummary::
+   :toctree: generated/pyhgf.coupling
+
+    Coupling
+    resolve_coupling_fn
+    leaky_relu_moments
+    gauss_hermite_moments
 
 Math
 ****

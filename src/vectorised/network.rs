@@ -24,6 +24,7 @@ use ndarray::{s, ArrayView1, ArrayView2};
 /// Predict a single child layer from its parent, in place, dispatching on the
 /// child kind. `child` is borrowed mutably; `parent` provides the read-only
 /// weights/coupling/bias.
+#[allow(clippy::too_many_arguments)]
 fn predict_child(
     child: &mut Layer,
     parent: &Layer,
@@ -32,6 +33,7 @@ fn predict_child(
     pcv: Float,
     predict_precision: bool,
     feedforward_uncertainty: bool,
+    exact_moments: bool,
 ) {
     match child.kind {
         LayerKind::Volatile => volatile::prediction::layer_prediction(
@@ -46,6 +48,7 @@ fn predict_child(
             child.is_input_layer,
             predict_precision,
             feedforward_uncertainty,
+            exact_moments,
         ),
         LayerKind::Binary => binary::prediction::binary_prediction(
             &mut child.state,
@@ -54,6 +57,7 @@ fn predict_child(
             parent.coupling_fn,
             parent.add_constant_input,
             pcv,
+            exact_moments,
         ),
         LayerKind::Categorical => categorical::prediction::categorical_prediction(
             &mut child.state,
@@ -61,6 +65,7 @@ fn predict_child(
             weights,
             parent.coupling_fn,
             parent.add_constant_input,
+            exact_moments,
         ),
     }
 }
@@ -147,6 +152,7 @@ impl DeepNet {
         let pcv = self.precision_clipping_value;
         let predict_precision = self.predict_precision;
         let feedforward_uncertainty = self.feedforward_uncertainty;
+        let exact_moments = self.exact_moments();
         for i in (1..n).rev() {
             let (lower, upper) = self.layers.split_at_mut(i);
             let child = &mut lower[i - 1];
@@ -160,6 +166,7 @@ impl DeepNet {
                 pcv,
                 predict_precision,
                 feedforward_uncertainty,
+                exact_moments,
             );
         }
     }
@@ -171,6 +178,7 @@ impl DeepNet {
         let vol = self.volatility_updates;
         let max_pp = self.max_posterior_precision;
         let ffu = self.feedforward_uncertainty;
+        let exact_moments = self.exact_moments();
 
         // Clamp observations and compute the leaf prediction error.
         self.set_bottom_observations(y);
@@ -192,6 +200,7 @@ impl DeepNet {
                 parent.add_constant_input,
                 max_pp,
                 child.is_input_layer,
+                exact_moments,
             );
             // Then the parent's own prediction error, in place.
             layer_pe(parent, vol, time_step, max_pp, ffu);
@@ -217,6 +226,7 @@ impl DeepNet {
                 kind,
                 parent.add_constant_input,
                 child.kind == LayerKind::Binary,
+                self.exact_moments(),
             );
             grads.push(Some(g));
         }
@@ -290,11 +300,21 @@ impl DeepNet {
             });
         let mut routed = w.t().dot(&message);
         if top.coupling_fn.kind != crate::math::CouplingKind::Linear {
-            crate::math::with_coupling!(top.coupling_fn, |_f, df, _d2f| {
+            if self.exact_moments() {
+                // Mean slope E[g'] under the top layer's predicted belief, as in the
+                // interior posterior mean update.
+                let moments = top.coupling_fn.moments;
                 ndarray::Zip::from(&mut routed)
                     .and(&top.state.expected_mean)
-                    .for_each(|r, &m| *r *= df(m as f64) as Float);
-            });
+                    .and(&top.state.expected_precision)
+                    .for_each(|r, &m, &ep| *r *= moments(m as f64, 1.0 / ep as f64).2 as Float);
+            } else {
+                crate::math::with_coupling!(top.coupling_fn, |_f, df, _d2f| {
+                    ndarray::Zip::from(&mut routed)
+                        .and(&top.state.expected_mean)
+                        .for_each(|r, &m| *r *= df(m as f64) as Float);
+                });
+            }
         }
         routed
     }
@@ -655,15 +675,29 @@ impl DeepNet {
     /// buffer at the Python boundary — no input copy); returns the bottom
     /// layer's predicted mean `(n_samples, bottom_size)`. Mirrors JAX's
     /// `batched_prediction_pass`: every sample is predicted from the same
-    /// (current) network — the pass does not mutate state. The returned
-    /// expected mean is a pure matmul chain through the coupling functions and
-    /// never depends on the precision or volatility levels, so this is exact,
-    /// not an approximation, and it collapses the per-sample `gemv`s into one
-    /// `gemm` per layer.
-    pub fn predict_batch(&self, x: ArrayView2<Float>) -> Matrix {
+    /// (current) network — the pass does not mutate state. Without the exact
+    /// coupling moments, the returned expected mean is a pure matmul chain through
+    /// the coupling functions and never depends on the precision or volatility
+    /// levels, nor on `time_step`, so this is exact, not an approximation, and it
+    /// collapses the per-sample `gemv`s into one `gemm` per layer.
+    ///
+    /// With the exact coupling moments ([`Self::exact_moments`]), the expected mean
+    /// of each layer takes the mean of the coupling function under the predicted
+    /// belief of its parent, so it depends on the predicted precisions: the pass
+    /// then runs the full prediction sweep at `time_step`, from the current
+    /// network state, in a scratch workspace. Use the time step of the training
+    /// steps to predict as they do.
+    pub fn predict_batch(&self, x: ArrayView2<Float>, time_step: Float) -> Matrix {
         let n = self.layers.len();
         if n == 1 {
             return x.to_owned(); // degenerate single-layer network (no weights)
+        }
+        if self.exact_moments() {
+            return self.batch_forward(
+                &mut crate::vectorised::batched::BatchWorkspace::default(),
+                x,
+                time_step,
+            );
         }
         // Work in a **features × samples** layout so every layer is a contiguous
         // `W @ A` gemm. In (samples × features) the forward would be `A @ Wᵀ`,
@@ -745,7 +779,7 @@ mod tests {
         ];
         let net = DeepNet::from_configs(&configs).unwrap();
         let x = Matrix::from_shape_vec((1, 3), vec![1.0, 2.0, 3.0]).unwrap();
-        let out = net.predict_batch(x.view());
+        let out = net.predict_batch(x.view(), 1.0);
         // weights_in on layer 1 is ones (2,3); each output = sum(x) = 6.
         assert_eq!(out.shape(), &[1, 2]);
         assert!((out[[0, 0]] - 6.0).abs() < 1e-10);
@@ -760,7 +794,7 @@ mod tests {
         let net = DeepNet::from_configs(&configs).unwrap();
         // weights_in on layer 1: shape (1, 2 + bias) = (1, 3), all ones.
         let x = Matrix::from_shape_vec((1, 2), vec![1.0, 4.0]).unwrap();
-        let out = net.predict_batch(x.view());
+        let out = net.predict_batch(x.view(), 1.0);
         // sum(x)=5 plus bias weight 1 = 6.
         assert!((out[[0, 0]] - 6.0).abs() < 1e-10);
     }
@@ -786,7 +820,7 @@ mod tests {
         let x = Array1::from_vec(vec![1.0]);
         let y = Array1::from_vec(vec![0.5]); // target below the initial prediction (=x=1)
 
-        let first = net.predict_batch(x.view().insert_axis(ndarray::Axis(0)))[[0, 0]];
+        let first = net.predict_batch(x.view().insert_axis(ndarray::Axis(0)), 1.0)[[0, 0]];
         let mut last = first;
         for _ in 0..20 {
             last = net.propagation_step(
@@ -1334,7 +1368,7 @@ mod tests {
         ];
         let net = DeepNet::from_configs(&configs).unwrap();
         let x = Matrix::from_shape_vec((1, 2), vec![0.5, -0.5]).unwrap();
-        let out = net.predict_batch(x.view());
+        let out = net.predict_batch(x.view(), 1.0);
         assert!(out[[0, 0]] > 0.0 && out[[0, 0]] < 1.0);
     }
 
@@ -1350,7 +1384,7 @@ mod tests {
         ];
         let net = DeepNet::from_configs(&configs).unwrap();
         let x = Matrix::from_shape_vec((1, 2), vec![1.0, -1.0]).unwrap();
-        let out = net.predict_batch(x.view());
+        let out = net.predict_batch(x.view(), 1.0);
         assert_eq!(out.shape(), &[1, 3]);
         assert!((out.sum() - 1.0).abs() < 1e-10);
         assert!(out.iter().all(|&p| p > 0.0));

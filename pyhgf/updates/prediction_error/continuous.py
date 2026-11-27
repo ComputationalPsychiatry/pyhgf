@@ -3,13 +3,17 @@
 from functools import partial
 
 import jax.numpy as jnp
-from jax import grad, jit
+from jax import jit
 
+from pyhgf.coupling import resolve_coupling_fn
 from pyhgf.typing import Edges
 from pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node import (
     _has_observations,
 )
-from pyhgf.updates.prediction.continuous import is_noise_child
+from pyhgf.updates.prediction.continuous import (
+    is_noise_child,
+    predict_noise_precision,
+)
 
 
 @partial(jit, static_argnames=("node_idx", "edges"))
@@ -199,9 +203,13 @@ def continuous_node_prediction_error(
     return attributes
 
 
-@partial(jit, static_argnames=("edges", "node_idx"))
+@partial(jit, static_argnames=("edges", "node_idx", "coupling_moments"))
 def continuous_node_noise_prediction_error(
-    attributes: dict, node_idx: int, edges: Edges, **args
+    attributes: dict,
+    node_idx: int,
+    edges: Edges,
+    coupling_moments: str = "taylor",
+    **args,
 ) -> dict:
     r"""Compute the noise prediction error of an input node.
 
@@ -240,6 +248,24 @@ def continuous_node_noise_prediction_error(
     With one linear value parent, :math:`\alpha = 1`, no drift and an autoconnection
     strength of 0 (the defaults of an input node), this is Eq. 72.
 
+    With ``coupling_moments="exact"``, the expected squared noise is computed from
+    the moments of the coupling functions under the posteriors
+    :math:`x_b \sim \mathcal{N}(\mu_b^{(k)}, 1/\pi_b^{(k)})` of the value parents
+    (:meth:`pyhgf.coupling.Coupling.moments`):
+
+    .. math::
+
+        \epsilon_u^{(k)} = \hat{\pi}_u^{(k)} \left( \sum_b
+            \alpha_b^2 \, \mathrm{Var}[g_b(x_b)]
+            + \left( u^{(k)} - m_u^{(k)} \right)^2 \right) - 1,
+
+    where :math:`m_u^{(k)}` is the predicted mean of :math:`u` with
+    :math:`\mathbb{E}[g_b(x_b)]` taken under the posterior of every value parent.
+    :math:`\hat{\pi}_u^{(k)}` is the precision of the observation noise of
+    :func:`pyhgf.updates.prediction.continuous.predict_noise_precision`, without the
+    variance that the prediction step adds for the residuals of the linearised
+    coupling functions.
+
     Parameters
     ----------
     attributes :
@@ -249,6 +275,10 @@ def continuous_node_noise_prediction_error(
     edges :
         The edges of the probabilistic nodes as a tuple of
         :py:class:`pyhgf.typing.AdjacencyLists`.
+    coupling_moments :
+        ``"taylor"`` (default) evaluates the coupling functions and their derivatives
+        at the posterior means of the value parents. ``"exact"`` takes their moments
+        under the posteriors of the value parents.
 
     Returns
     -------
@@ -273,22 +303,47 @@ def continuous_node_noise_prediction_error(
             attributes[node_idx]["value_coupling_parents"],
         ):
             child_position = edges[value_parent_idx].value_children.index(node_idx)
-            coupling_fn = edges[value_parent_idx].coupling_fn[child_position]
+            coupling = resolve_coupling_fn(
+                edges[value_parent_idx].coupling_fn[child_position]
+            )
             parent_mean = attributes[value_parent_idx]["mean"]
             parent_expected_mean = attributes[value_parent_idx]["expected_mean"]
-            if coupling_fn is None:
+            parent_precision = attributes[value_parent_idx]["precision"]
+            if coupling is not None and coupling_moments == "exact":
+                # Moments of the coupling function under the posterior of the parent,
+                # against its mean under the predicted belief of the parent.
+                posterior_value, coupling_variance, _ = coupling.moments(
+                    parent_mean, 1.0 / parent_precision
+                )
+                expected_value, _, _ = coupling.moments(
+                    parent_expected_mean,
+                    1.0 / attributes[value_parent_idx]["expected_precision"],
+                )
+                posterior_mean += value_coupling * (posterior_value - expected_value)
+                posterior_variance += value_coupling**2 * coupling_variance
+                continue
+
+            if coupling is None:
                 shift = parent_mean - parent_expected_mean
                 coupling_fn_prime = 1.0
             else:
-                shift = coupling_fn(parent_mean) - coupling_fn(parent_expected_mean)
-                coupling_fn_prime = grad(coupling_fn)(parent_mean)
+                shift = coupling(parent_mean) - coupling(parent_expected_mean)
+                coupling_fn_prime = coupling.df(parent_mean)
             posterior_mean += value_coupling * shift
             posterior_variance += (
                 value_coupling * coupling_fn_prime
-            ) ** 2 / attributes[value_parent_idx]["precision"]
+            ) ** 2 / parent_precision
 
+    # Precision of the observation noise. With the exact moments, the predicted
+    # precision of the input node also counts the residuals of the linearised
+    # coupling functions, which are not observation noise.
+    noise_precision = (
+        predict_noise_precision(attributes, edges, node_idx)
+        if coupling_moments == "exact"
+        else attributes[node_idx]["expected_precision"]
+    )
     attributes[node_idx]["temp"]["volatility_prediction_error"] = (
-        attributes[node_idx]["expected_precision"]
+        noise_precision
         * (posterior_variance + (attributes[node_idx]["mean"] - posterior_mean) ** 2)
         - 1.0
     )

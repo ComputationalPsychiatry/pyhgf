@@ -9,6 +9,7 @@ from typing import Callable
 import jax.numpy as jnp
 from jax.nn import sigmoid
 
+from pyhgf.coupling import Coupling
 from pyhgf.typing.vectorised import LayerState
 
 
@@ -19,6 +20,7 @@ def vectorised_binary_prediction(
     coupling_fn: Callable,
     parent_has_constant: bool = False,
     precision_clipping_value: float = 1e-6,
+    coupling_moments: str = "taylor",
 ) -> LayerState:
     r"""Predict expected mean and precision for a binary state node layer.
 
@@ -61,6 +63,15 @@ def vectorised_binary_prediction(
         If True, the parent layer has a constant input node (mean = 1.0)
         appended to its activations; the corresponding column of *weights* carries
         the bias connections and is treated as linearly coupled (:math:`g(1) = 1`).
+    precision_clipping_value :
+        The expected mean is clipped to
+        ``[precision_clipping_value, 1 - precision_clipping_value]``.
+    coupling_moments :
+        ``"taylor"`` (default) evaluates the coupling function at the expected means
+        of the parent layer. ``"exact"`` takes its mean
+        :math:`\mathbb{E}[g(x_a)]` under the predicted belief
+        :math:`x_a \sim \mathcal{N}(\hat{\mu}_a, 1/\hat{\pi}_a)` of each parent node
+        (:meth:`pyhgf.coupling.Coupling.moments`).
 
     Returns
     -------
@@ -69,7 +80,13 @@ def vectorised_binary_prediction(
     """
     # Apply coupling to the parent activations only; the constant bias node is
     # always wired in linearly (g(1) = 1) regardless of coupling_fn.
-    coupled_parents = coupling_fn(parent_state.expected_mean)
+    coupling = Coupling.from_callable(coupling_fn)
+    if coupling_moments == "exact":
+        coupled_parents, _, _ = coupling.moments(
+            parent_state.expected_mean, 1.0 / parent_state.expected_precision
+        )
+    else:
+        coupled_parents = coupling(parent_state.expected_mean)
     if parent_has_constant:
         coupled_parents = jnp.concatenate([coupled_parents, jnp.ones(1)])
     logit = jnp.matmul(weights, coupled_parents)

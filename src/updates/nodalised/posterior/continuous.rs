@@ -73,6 +73,12 @@ fn relaxed_factors(network: &Network, child_idx: usize, mean_field: bool) -> (f6
 /// equals π̂_a and the g'' term is the canonical one. The time step scales the drift of
 /// a continuous state child (one with children), so α becomes t α for a state child,
 /// and stays α for an input node, which its value parents generate rather than drift.
+///
+/// With the exact coupling moments (`network.exact_coupling_moments`, relaxed update
+/// only), the coupling function is replaced by its statistical linearisation under
+/// the predicted belief x_b ~ N(μ̂_b, 1/π̂_b) of the node, as in the prediction step:
+/// g' is the mean slope A = E[g'(x_b)] and the g'' term is absent, so that each child
+/// contributes π̄_a · π_y / (π̄_a + π_y) · (α A)².
 fn value_coupling_precision_wpe(
     network: &Network,
     node_idx: usize,
@@ -85,6 +91,9 @@ fn value_coupling_precision_wpe(
         let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
         let parent_mean = network.attributes.states[node_idx].mean;
         let coupling_fn = network.attributes.fn_ptrs[node_idx].coupling_fn;
+        let exact_moments = network.exact_coupling_moments && !mean_field;
+        let parent_expected_mean = network.attributes.states[node_idx].expected_mean;
+        let parent_expected_precision = network.attributes.states[node_idx].expected_precision;
 
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
             let child_state = &network.attributes.states[child_idx];
@@ -100,6 +109,13 @@ fn value_coupling_precision_wpe(
                 * if child_is_state { time_step } else { 1.0 };
 
             let (coupling_fn_prime_sq, coupling_fn_second_term) = match coupling_fn {
+                Some(cf) if exact_moments => {
+                    // Statistical linearisation: the mean slope E[g'] under the
+                    // node's predicted belief, and no curvature.
+                    let (_, _, slope) =
+                        (cf.moments)(parent_expected_mean, 1.0 / parent_expected_precision);
+                    (slope.powi(2), 0.0)
+                }
                 Some(cf) => {
                     let g_prime = (cf.df)(parent_mean);
                     let g_second = (cf.d2f)(parent_mean);
@@ -135,7 +151,8 @@ fn value_coupling_precision_wpe(
 /// RTS gains. A Gaussian leaf takes the fully observed limit π_y → ∞, g_a = π̄_a;
 /// non-Gaussian children use the canonical gain π̂_a (= `child.expected_precision`).
 /// With `mean_field`, every child uses π̂_a. As in [`value_coupling_precision_wpe`], α
-/// becomes t α for a state child.
+/// becomes t α for a state child, and the exact coupling moments replace g' by the
+/// mean slope E[g'(x_b)] under the predicted belief of the node.
 fn value_coupling_mean_wpe(
     network: &Network,
     node_idx: usize,
@@ -149,6 +166,9 @@ fn value_coupling_mean_wpe(
         let coupling_strengths = &network.attributes.vectors[node_idx].value_coupling_children;
         let parent_mean = network.attributes.states[node_idx].mean;
         let coupling_fn = network.attributes.fn_ptrs[node_idx].coupling_fn;
+        let exact_moments = network.exact_coupling_moments && !mean_field;
+        let parent_expected_mean = network.attributes.states[node_idx].expected_mean;
+        let parent_expected_precision = network.attributes.states[node_idx].expected_precision;
 
         for (i, &child_idx) in vc_idxs.iter().enumerate() {
             let child_state = &network.attributes.states[child_idx];
@@ -163,6 +183,9 @@ fn value_coupling_mean_wpe(
                 * if child_is_state { time_step } else { 1.0 };
 
             let coupling_fn_prime = match coupling_fn {
+                Some(cf) if exact_moments => {
+                    (cf.moments)(parent_expected_mean, 1.0 / parent_expected_precision).2
+                }
                 Some(cf) => (cf.df)(parent_mean),
                 None => 1.0,
             };

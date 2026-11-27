@@ -10,7 +10,7 @@
 //! into the child side), so the optimiser step `w ← w + update` reproduces
 //! gradient descent.
 
-use crate::math::{with_coupling, CouplingFn};
+use crate::math::{with_coupling, CouplingFn, CouplingKind};
 use crate::vectorised::layer::LayerState;
 use crate::vectorised::mat::{Float, Vector};
 
@@ -35,6 +35,13 @@ fn sanitize(v: &Vector) -> Vector {
 /// Mirrors `vectorised_weight_gradient_factors`: `u = -δ` (scaled by the
 /// child's posterior precision in `PrecisionWeighted` unless the child is
 /// binary), `v = g(parent.mean)` with a trailing `1` for the bias column.
+///
+/// With `exact_moments` and a non-linear coupling function, the parent-side factor
+/// is the mean `E[g(x)]` of the coupling function under the parent's predicted
+/// belief `N(μ̂, 1/π̂)`: the activation that the child's prediction read, so that
+/// `u ⊗ v` is the gradient of the prediction error that the sweep computed. The
+/// linear coupling keeps the posterior mean, so that a linear network learns the
+/// same weights with and without the exact moments.
 pub fn weight_gradient_factors(
     parent: &LayerState,
     child: &LayerState,
@@ -42,11 +49,18 @@ pub fn weight_gradient_factors(
     kind: WeightKind,
     parent_has_constant: bool,
     child_is_binary: bool,
+    exact_moments: bool,
 ) -> (Vector, Vector) {
     let pe = &child.mean - &child.expected_mean;
-    let mut coupled_parent = with_coupling!(coupling_fn, |f, _df, _d2f| parent
-        .mean
-        .mapv(|v| f(v as f64) as Float));
+    let mut coupled_parent = if exact_moments && coupling_fn.kind != CouplingKind::Linear {
+        ndarray::Zip::from(&parent.expected_mean)
+            .and(&parent.expected_precision)
+            .map_collect(|&m, &p| (coupling_fn.moments)(m as f64, 1.0 / p as f64).0 as Float)
+    } else {
+        with_coupling!(coupling_fn, |f, _df, _d2f| parent
+            .mean
+            .mapv(|v| f(v as f64) as Float))
+    };
     if parent_has_constant {
         coupled_parent = super::push(&coupled_parent, 1.0);
     }
@@ -88,6 +102,7 @@ mod tests {
             WeightKind::Standard,
             false,
             false,
+            false,
         );
         // δ = [1,1], a = [1,3]; descent grad g[i][j] = u[i]·v[j] = -(δ ⊗ a).
         assert_eq!((u.len(), v.len()), (2, 2));
@@ -112,6 +127,7 @@ mod tests {
             WeightKind::PrecisionWeighted,
             false,
             false,
+            false,
         );
         // δ·π = 1*4 = 4, a = 2 → descent -(4*2) = -8.
         assert!((u[0] * v[0] - (-8.0)).abs() < 1e-12);
@@ -126,11 +142,51 @@ mod tests {
         child.expected_mean = Array1::from_vec(vec![0.0]);
         child.precision = Array1::from_vec(vec![1.0]);
 
-        let (_, v) =
-            weight_gradient_factors(&parent, &child, linear(), WeightKind::Standard, true, false);
+        let (_, v) = weight_gradient_factors(
+            &parent,
+            &child,
+            linear(),
+            WeightKind::Standard,
+            true,
+            false,
+            false,
+        );
         // v = [g(5), 1] = [5, 1].
         assert_eq!(v.len(), 2);
         assert!((v[0] - 5.0).abs() < 1e-12);
         assert!((v[1] - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_exact_moments_parent_factor() {
+        // A parent below the kink of a ReLU, with a wide predicted belief: the
+        // posterior mean gives g(μ) = 0, the predicted belief gives E[g] > 0.
+        let mut parent = LayerState::create(1, true);
+        parent.mean = Array1::from_vec(vec![-0.5]);
+        parent.expected_mean = Array1::from_vec(vec![-0.75]);
+        parent.expected_precision = Array1::from_vec(vec![1.0]);
+        let mut child = LayerState::create(1, true);
+        child.mean = Array1::from_vec(vec![1.0]);
+        child.expected_mean = Array1::from_vec(vec![0.0]);
+
+        let factor = |coupling: &CouplingFn, exact_moments: bool| {
+            weight_gradient_factors(
+                &parent,
+                &child,
+                coupling,
+                WeightKind::Standard,
+                false,
+                false,
+                exact_moments,
+            )
+            .1[0] as f64
+        };
+        let relu = resolve_coupling_fn("relu");
+        assert_eq!(factor(relu, false), 0.0);
+        // E[relu(x)] for x ~ N(-0.75, 1), from `pyhgf.coupling`.
+        assert!((factor(relu, true) - 0.131_166_917_872_153_3).abs() < 1e-6);
+        // The linear coupling keeps the posterior mean in both cases.
+        assert!((factor(linear(), false) + 0.5).abs() < 1e-12);
+        assert!((factor(linear(), true) + 0.5).abs() < 1e-12);
     }
 }

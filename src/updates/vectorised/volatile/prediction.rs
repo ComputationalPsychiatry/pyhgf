@@ -30,7 +30,11 @@ pub fn layer_prediction(
     is_input_layer: bool,
     predict_precision: bool,
     feedforward_uncertainty: bool,
+    exact_moments: bool,
 ) {
+    // The moments of the coupling function are taken under the uncertainty that the
+    // value parents propagate.
+    let exact_moments = exact_moments && predict_precision && feedforward_uncertainty;
     let n = child.mean.len();
     let n_parent = parent.expected_mean.len();
     let p = weights.ncols(); // n_parent (+1 for the bias column)
@@ -72,18 +76,36 @@ pub fn layer_prediction(
     // value-parent contribution over the interval (`μ̂ = autoconnection·μ + t·drift`)
     // and so carries `(t·ψ·g')²` to match. Mixing the two suppresses parent
     // uncertainty by t² relative to the map it belongs to.
+    //
+    // With the exact moments, g is replaced by its statistical linearisation under
+    // each parent's predicted belief N(μ̂, 1/π̂): the activation is E[g], the slope
+    // is A = E[g'], and the residual of the linear function has the variance
+    // Var[g] − A²/π̂, kept per parent in `residual`.
     let mut coupled = Array1::<Float>::zeros(p);
     let mut ppv = Array1::<Float>::zeros(p);
-    with_coupling!(coupling_fn, |f, df, _d2f| {
+    let mut residual = Array1::<Float>::zeros(p);
+    if exact_moments {
         for j in 0..n_parent {
-            let mu = parent.expected_mean[j];
-            coupled[j] = f(mu as f64) as Float;
-            let num = df(mu as f64) as Float;
-            ppv[j] = (num * num) / parent.expected_precision[j];
+            let precision = parent.expected_precision[j] as f64;
+            let (expected_value, coupling_variance, slope) =
+                (coupling_fn.moments)(parent.expected_mean[j] as f64, 1.0 / precision);
+            coupled[j] = expected_value as Float;
+            ppv[j] = (slope * slope / precision) as Float;
+            // Floored at zero against rounding.
+            residual[j] = (coupling_variance - slope * slope / precision).max(0.0) as Float;
         }
-    });
+    } else {
+        with_coupling!(coupling_fn, |f, df, _d2f| {
+            for j in 0..n_parent {
+                let mu = parent.expected_mean[j];
+                coupled[j] = f(mu as f64) as Float;
+                let num = df(mu as f64) as Float;
+                ppv[j] = (num * num) / parent.expected_precision[j];
+            }
+        });
+    }
     if parent_has_constant {
-        coupled[n_parent] = 1.0; // ppv[n_parent] stays 0
+        coupled[n_parent] = 1.0; // ppv[n_parent] and residual[n_parent] stay 0
     }
 
     // Mean prediction: W @ g(parent means).
@@ -118,15 +140,21 @@ pub fn layer_prediction(
     // Without `feedforward_uncertainty` the value parents do not propagate their
     // uncertainty, so the term is zero and the marginal predicted precision collapses
     // onto the conditional one: every layer then behaves as the top layer already does.
+    // With the exact moments, the residual variance rv[i] = Σ_j W[i,j]²·residual[j]
+    // of the linearised coupling function is accumulated in the same pass.
     let mut value_coupling_variance = Array1::<Float>::zeros(n);
+    let mut residual_variance = Array1::<Float>::zeros(n);
     if feedforward_uncertainty {
         for i in 0..n {
             let mut s = 0.0;
+            let mut r = 0.0;
             for j in 0..p {
                 let w = weights[[i, j]];
                 s += w * w * ppv[j];
+                r += w * w * residual[j];
             }
             value_coupling_variance[i] = s;
+            residual_variance[i] = r;
         }
     }
 
@@ -135,17 +163,35 @@ pub fn layer_prediction(
         // Input/leaf override, and the same treatment when precision prediction
         // is switched off network-wide: no random walk between observations, no
         // parent-uncertainty bleed-through, nothing carried into the
-        // volatility-coupling posterior update.
-        let prior = child.precision.clone();
+        // volatility-coupling posterior update. With the exact moments, the
+        // residual of the linearised coupling function adds to the variance of the
+        // observation noise.
+        let prior = if exact_moments {
+            ndarray::Zip::from(&child.precision)
+                .and(&residual_variance)
+                .map_collect(|&p, &r| 1.0 / (1.0 / p + r))
+        } else {
+            child.precision.clone()
+        };
         child.conditional_expected_precision.assign(&prior);
         child.expected_precision.assign(&prior);
         child.effective_precision.fill(0.0);
+    } else if exact_moments {
+        // π̄ = 1/(1/π + Ω + residual variance): the residual of the linearised
+        // coupling function does not depend on the parents' values.
+        ndarray::Zip::from(&mut child.conditional_expected_precision)
+            .and(&child.precision)
+            .and(&predicted_vol)
+            .and(&residual_variance)
+            .for_each(|c, &p, &pv, &r| *c = 1.0 / (1.0 / p + pv + r));
     } else {
         // π̄ = 1/(1/π + Ω)
         ndarray::Zip::from(&mut child.conditional_expected_precision)
             .and(&child.precision)
             .and(&predicted_vol)
             .for_each(|c, &p, &pv| *c = 1.0 / (1.0 / p + pv));
+    }
+    if !is_input_layer && predict_precision {
         // π̂ = 1/(1/π̄ + value_coupling_variance)
         ndarray::Zip::from(&mut child.expected_precision)
             .and(&child.conditional_expected_precision)
@@ -156,6 +202,12 @@ pub fn layer_prediction(
             .and(&predicted_vol)
             .and(&child.expected_precision)
             .for_each(|ef, &pv, &e| *ef = pv * e);
+    }
+
+    // The residual variance is stored for the precision carried to the next sample,
+    // which leaves it out. It stays zero without the exact moments.
+    if exact_moments {
+        child.residual_variance.assign(&residual_variance);
     }
 
     if has_volatility_parent {
@@ -197,6 +249,7 @@ mod tests {
             false,
             true,
             true,
+            false, // exact_moments
         );
         // rows: [1,0]·[1,2]=1, [0,1]·[1,2]=2, [1,1]·[1,2]=3
         assert!((child.expected_mean[0] - 1.0).abs() < 1e-12);
@@ -226,6 +279,7 @@ mod tests {
             false,
             true,
             true,
+            false, // exact_moments
         );
         // 3*2 + 5*1 = 11
         assert!((child.expected_mean[0] - 11.0).abs() < 1e-12);
@@ -253,6 +307,7 @@ mod tests {
             true, // is_input_layer
             true,
             true,
+            false, // exact_moments
         );
         assert_eq!(child.expected_precision, prior_precision);
         assert_eq!(child.conditional_expected_precision, prior_precision);
@@ -288,6 +343,7 @@ mod tests {
                 false, // is_input_layer
                 true,  // predict_precision
                 feedforward_uncertainty,
+                false, // exact_moments
             );
             child
         };
@@ -335,6 +391,7 @@ mod tests {
             false, // is_input_layer
             false, // predict_precision
             true,  // feedforward_uncertainty
+            false, // exact_moments
         );
 
         assert_eq!(child.expected_precision, prior_precision);

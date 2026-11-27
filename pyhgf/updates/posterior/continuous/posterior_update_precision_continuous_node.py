@@ -4,10 +4,11 @@ from functools import partial
 from typing import Callable
 
 import jax.numpy as jnp
-from jax import Array, grad, jit
+from jax import Array, jit
 from jax.lax import cond
 from jax.tree_util import Partial
 
+from pyhgf.coupling import resolve_coupling_fn
 from pyhgf.typing import Edges
 from pyhgf.updates.prediction.continuous import is_noise_child
 
@@ -117,6 +118,7 @@ def _value_coupling_pwpe(
     edges: Edges,
     node_idx: int,
     child_factors_fn: Callable[[dict, Edges, int], tuple[Array, Array]],
+    coupling_moments: str = "taylor",
 ) -> Array:
     r"""Precision-weighted prediction error from value-coupled children.
 
@@ -131,6 +133,14 @@ def _value_coupling_pwpe(
     so that its prediction moves by :math:`t \alpha g'` per unit of the parent, and 1
     for an input node, which its value parents generate rather than drift (Eq. 64 of
     [1]_), and for the other node types.
+
+    With ``coupling_moments="exact"``, the coupling function is replaced by its
+    statistical linearisation under the predicted belief
+    :math:`\mathcal{N}(\hat{\mu}_b, 1/\hat{\pi}_b)` of the node, as in the prediction
+    step (:func:`pyhgf.updates.prediction.continuous.predict_value_coupling_variance`).
+    The linear function has the mean slope :math:`A = \mathbb{E}[g'(x_b)]` and no
+    curvature, so that each child contributes
+    :math:`\pi^{\mathrm{eff}}_a (t_a \alpha A)^2`.
 
     References
     ----------
@@ -156,19 +166,27 @@ def _value_coupling_pwpe(
             or child_edges.volatility_children is not None
         ):
             value_coupling = value_coupling * attributes[-1]["time_step"]
-        if coupling_fn is None:  # linear coupling
+        coupling = resolve_coupling_fn(coupling_fn)
+        if coupling is None:  # linear coupling
             coupling_fn_prime = value_coupling**2
+            coupling_fn_second = 0
+        elif coupling_moments == "exact":  # statistical linearisation
+            _, _, slope = coupling.moments(
+                attributes[node_idx]["expected_mean"],
+                1.0 / attributes[node_idx]["expected_precision"],
+            )
+            coupling_fn_prime = value_coupling**2 * slope**2
             coupling_fn_second = 0
         else:  # non-linear coupling
             coupling_fn_prime = (
-                value_coupling**2 * grad(coupling_fn)(attributes[node_idx]["mean"]) ** 2
+                value_coupling**2 * coupling.df(attributes[node_idx]["mean"]) ** 2
             )
             value_prediction_error = attributes[value_child_idx]["temp"][
                 "value_prediction_error"
             ]
             coupling_fn_second = (
                 value_coupling
-                * grad(grad(coupling_fn))(attributes[node_idx]["mean"])
+                * coupling.d2f(attributes[node_idx]["mean"])
                 * value_prediction_error
             )
 
@@ -217,7 +235,8 @@ def _value_coupling_variance(attributes: dict, node_idx: int) -> Array:
         T_a = \frac{1}{\hat{\pi}_a} - \frac{1}{\bar{\pi}_a},
 
     the gap between the marginal and the conditional predicted variance, which is the
-    first-order Taylor term of the prediction step
+    variance that the value parents add through the slopes of their linearised
+    coupling functions in the prediction step
     (:func:`pyhgf.updates.prediction.continuous.predict_precision`). It is zero for a
     node without value parents and under the mean-field prediction, and floored at
     zero against rounding.
@@ -304,11 +323,12 @@ def _finalize_precision(expected_precision: Array, pwpe: Array) -> Array:
     return jnp.where(posterior_precision > 1e-128, posterior_precision, jnp.nan)
 
 
-@partial(jit, static_argnames=("edges", "node_idx"))
+@partial(jit, static_argnames=("edges", "node_idx", "coupling_moments"))
 def posterior_update_precision_continuous_node(
     attributes: dict,
     edges: Edges,
     node_idx: int,
+    coupling_moments: str = "taylor",
 ) -> float:
     r"""Update the precision of a state node using the volatility prediction errors.
 
@@ -389,6 +409,8 @@ def posterior_update_precision_continuous_node(
         children.
     node_idx :
         Pointer to the value parent node that will be updated.
+    coupling_moments :
+        ``"taylor"`` (default) or ``"exact"``, see :func:`precision_update`.
 
     Returns
     -------
@@ -415,14 +437,21 @@ def posterior_update_precision_continuous_node(
     # ----------------------------------------------------------------------------------
     return cond(
         _has_observations(attributes, edges, node_idx),
-        Partial(precision_update, edges=edges, node_idx=node_idx),
+        Partial(
+            precision_update,
+            edges=edges,
+            node_idx=node_idx,
+            coupling_moments=coupling_moments,
+        ),
         Partial(precision_update_missing_values, edges=edges, node_idx=node_idx),
         attributes,
     )
 
 
-@partial(jit, static_argnames=("edges", "node_idx"))
-def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
+@partial(jit, static_argnames=("edges", "node_idx", "coupling_moments"))
+def precision_update(
+    attributes: dict, edges: Edges, node_idx: int, coupling_moments: str = "taylor"
+) -> Array:
     r"""Compute new precision in the case of observed values.
 
     Applies the canonical value- and volatility-coupling posterior-precision updates
@@ -449,6 +478,22 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
     both factors are :math:`\bar{\pi}_a`. Non-Gaussian children fall back to the
     canonical predicted-precision factor :math:`\hat{\pi}_a` in both terms.
 
+    With ``coupling_moments="exact"``, the coupling function is replaced by its
+    statistical linearisation under the predicted belief of the node, as in the
+    prediction step
+    (:func:`pyhgf.updates.prediction.continuous.predict_value_coupling_variance`):
+    :math:`g'` is the mean slope :math:`A = \mathbb{E}[g'(x_b)]` under
+    :math:`x_b \sim \mathcal{N}(\hat{\mu}_b, 1/\hat{\pi}_b)`, the :math:`g''` term is
+    absent, and each Gaussian-interior value child contributes
+
+    .. math::
+
+        \frac{\bar{\pi}_a \, \pi_y}{\bar{\pi}_a + \pi_y} \, (\alpha A)^2,
+
+    where the conditional predicted precision :math:`\bar{\pi}_a` of the child
+    includes the variance of the residual of the linear function. The prediction and
+    the update then use the same joint Gaussian of the node and its child.
+
     Parameters
     ----------
     attributes :
@@ -458,6 +503,10 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
         :py:class:`pyhgf.typing.AdjacencyLists`.
     node_idx :
         Pointer to the value parent node that will be updated.
+    coupling_moments :
+        ``"taylor"`` (default) linearises the coupling functions with their
+        derivatives. ``"exact"`` uses their statistical linearisation under the
+        predicted belief of the node.
 
     Returns
     -------
@@ -471,7 +520,9 @@ def precision_update(attributes: dict, edges: Edges, node_idx: int) -> Array:
        Mathys, C. (2026). The generalized hierarchical Gaussian filter.
        doi:10.7554/elife.110174.1
     """
-    pwpe = _value_coupling_pwpe(attributes, edges, node_idx, _relaxed_child_factors)
+    pwpe = _value_coupling_pwpe(
+        attributes, edges, node_idx, _relaxed_child_factors, coupling_moments
+    )
     pwpe += _volatility_coupling_pwpe(
         attributes, edges, node_idx, _standard_volatility_increment
     )
@@ -774,8 +825,10 @@ def _ehgf_volatility_precision_increment(
     return increment * attributes[volatility_child_idx]["observed"]
 
 
-@partial(jit, static_argnames=("edges", "node_idx"))
-def precision_update_ehgf(attributes: dict, edges: Edges, node_idx: int) -> Array:
+@partial(jit, static_argnames=("edges", "node_idx", "coupling_moments"))
+def precision_update_ehgf(
+    attributes: dict, edges: Edges, node_idx: int, coupling_moments: str = "taylor"
+) -> Array:
     """Enhanced-HGF precision update for observed values (relaxed value coupling).
 
     The value-coupling contribution is identical to :func:`precision_update` (the
@@ -792,13 +845,17 @@ def precision_update_ehgf(attributes: dict, edges: Edges, node_idx: int) -> Arra
         value/volatility parents and children.
     node_idx :
         Pointer to the value parent node that will be updated.
+    coupling_moments :
+        ``"taylor"`` (default) or ``"exact"``, see :func:`precision_update`.
 
     Returns
     -------
     posterior_precision :
         The new posterior precision.
     """
-    pwpe = _value_coupling_pwpe(attributes, edges, node_idx, _relaxed_child_factors)
+    pwpe = _value_coupling_pwpe(
+        attributes, edges, node_idx, _relaxed_child_factors, coupling_moments
+    )
     pwpe += _volatility_coupling_pwpe(
         attributes, edges, node_idx, _ehgf_volatility_precision_increment
     )
@@ -838,9 +895,9 @@ def precision_update_ehgf_mean_field(
     return _finalize_precision(attributes[node_idx]["expected_precision"], pwpe)
 
 
-@partial(jit, static_argnames=("edges", "node_idx"))
+@partial(jit, static_argnames=("edges", "node_idx", "coupling_moments"))
 def posterior_update_precision_continuous_node_ehgf(
-    attributes: dict, edges: Edges, node_idx: int
+    attributes: dict, edges: Edges, node_idx: int, coupling_moments: str = "taylor"
 ) -> float:
     """Route to the relaxed enhanced-HGF precision or missing-value update.
 
@@ -854,6 +911,8 @@ def posterior_update_precision_continuous_node_ehgf(
         value/volatility parents and children.
     node_idx :
         Pointer to the value parent node that will be updated.
+    coupling_moments :
+        ``"taylor"`` (default) or ``"exact"``, see :func:`precision_update`.
 
     Returns
     -------
@@ -862,7 +921,12 @@ def posterior_update_precision_continuous_node_ehgf(
     """
     return cond(
         _has_observations(attributes, edges, node_idx),
-        Partial(precision_update_ehgf, edges=edges, node_idx=node_idx),
+        Partial(
+            precision_update_ehgf,
+            edges=edges,
+            node_idx=node_idx,
+            coupling_moments=coupling_moments,
+        ),
         Partial(precision_update_missing_values, edges=edges, node_idx=node_idx),
         attributes,
     )
