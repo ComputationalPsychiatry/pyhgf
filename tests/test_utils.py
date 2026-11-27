@@ -390,6 +390,37 @@ def test_add_parent():
     assert len(new_edges) == 7
 
 
+@pytest.mark.parametrize("coupling_type", ["value", "volatility"])
+def test_add_parent_runs_belief_propagation(coupling_type):
+    """A network extended with add_parent runs input_data and matches add_nodes."""
+    u = np.random.default_rng(0).normal(size=(20,))
+    base = Network().add_nodes().add_nodes(value_children=0)
+    attributes, edges, _ = base.get_network()
+    new_attributes, new_edges = add_parent(attributes, edges, 1, coupling_type, 0.5)
+
+    extended = Network()
+    extended.attributes, extended.edges = new_attributes, new_edges
+    extended.input_data(input_data=u)
+
+    reference = Network().add_nodes().add_nodes(value_children=0)
+    if coupling_type == "value":
+        reference.add_nodes(
+            value_children=1, node_parameters={"mean": 0.5, "expected_mean": 0.5}
+        )
+    else:
+        reference.add_nodes(
+            volatility_children=1, node_parameters={"mean": 0.5, "expected_mean": 0.5}
+        )
+    reference.input_data(input_data=u)
+
+    for idx in range(3):
+        for key in ("mean", "precision", "expected_mean", "expected_precision"):
+            assert jnp.allclose(
+                extended.node_trajectories[idx][key],
+                reference.node_trajectories[idx][key],
+            )
+
+
 def test_remove_node():
     """Test the remove_node function."""
     network = (

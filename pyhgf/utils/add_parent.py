@@ -53,8 +53,10 @@ def add_parent(
         "observed": 1,
         "temp": {
             "effective_precision": 0.0,
+            "conditional_expected_precision": 1.0,
             "value_prediction_error": 0.0,
             "volatility_prediction_error": 0.0,
+            "current_variance": 1.0,
         },
     }
 
