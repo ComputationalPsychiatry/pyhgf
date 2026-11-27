@@ -118,7 +118,6 @@ def _predict_layer_from_parent(
     precision_clipping_value: float,
     predict_precision: bool = True,
     feedforward_uncertainty: bool = False,
-    mean_field_updates: bool = False,
 ):
     """Predict a single ``Layer`` child from a parent view."""
     if child.kind == "binary":
@@ -151,7 +150,6 @@ def _predict_layer_from_parent(
             is_input_layer=child.is_input_layer,
             predict_precision=predict_precision,
             feedforward_uncertainty=feedforward_uncertainty,
-            mean_field_updates=mean_field_updates,
         )
     return dataclasses.replace(child, state=new_state)
 
@@ -166,7 +164,6 @@ def _predict_stack_from_parent(
     time_step: float,
     predict_precision: bool = True,
     feedforward_uncertainty: bool = False,
-    mean_field_updates: bool = False,
 ):
     """Top-down sweep over a ``LayerStack``.
 
@@ -191,7 +188,6 @@ def _predict_stack_from_parent(
         is_input_layer=False,
         predict_precision=predict_precision,
         feedforward_uncertainty=feedforward_uncertainty,
-        mean_field_updates=mean_field_updates,
     )
 
     # xs: per-iteration data for predicting slices N-2 ... 0 from the slice above.
@@ -218,7 +214,6 @@ def _predict_stack_from_parent(
             is_input_layer=False,
             predict_precision=predict_precision,
             feedforward_uncertainty=feedforward_uncertainty,
-            mean_field_updates=mean_field_updates,
         )
         return new_child_state, new_child_state
 
@@ -247,7 +242,6 @@ def _topdown_predict(
     precision_clipping_value: float,
     predict_precision: bool = True,
     feedforward_uncertainty: bool = False,
-    mean_field_updates: bool = False,
 ):
     """Predict ``child_elem`` from ``parent_elem``.
 
@@ -267,7 +261,6 @@ def _topdown_predict(
             time_step=time_step,
             predict_precision=predict_precision,
             feedforward_uncertainty=feedforward_uncertainty,
-            mean_field_updates=mean_field_updates,
         )
     return _predict_layer_from_parent(
         child_elem,
@@ -279,7 +272,6 @@ def _topdown_predict(
         precision_clipping_value=precision_clipping_value,
         predict_precision=predict_precision,
         feedforward_uncertainty=feedforward_uncertainty,
-        mean_field_updates=mean_field_updates,
     )
 
 
@@ -294,7 +286,6 @@ def _leaf_pe(
     volatility_updates: str,
     max_posterior_precision: float,
     time_step: float = 1.0,
-    mean_field_updates: bool = False,
     feedforward_uncertainty: bool = False,
 ):
     """Compute the prediction error of the bottom layer (never a stack)."""
@@ -310,7 +301,6 @@ def _leaf_pe(
             time_step=time_step,
             has_volatility_parent=layer.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
-            mean_field_updates=mean_field_updates,
             feedforward_uncertainty=feedforward_uncertainty,
         )
     return dataclasses.replace(layer, state=new_state)
@@ -357,7 +347,6 @@ def _posterior_pe_layer(
             time_step=time_step,
             has_volatility_parent=parent.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
-            mean_field_updates=mean_field_updates,
             feedforward_uncertainty=feedforward_uncertainty,
         )
     return dataclasses.replace(parent, state=new_state)
@@ -507,7 +496,6 @@ def _posterior_pe_stack(
             time_step=time_step,
             has_volatility_parent=stack.has_volatility_parent,
             max_posterior_precision=max_posterior_precision,
-            mean_field_updates=mean_field_updates,
             feedforward_uncertainty=feedforward_uncertainty,
         )
 
@@ -752,7 +740,6 @@ def _predict_top_precisions(
     *,
     time_step: float,
     predict_precision: bool = True,
-    mean_field_updates: bool = False,
 ):
     """Predict the top element's precisions, which no parent above it can supply.
 
@@ -770,7 +757,6 @@ def _predict_top_precisions(
         time_step=time_step,
         has_volatility_parent=elem.has_volatility_parent,
         predict_precision=predict_precision,
-        mean_field_updates=mean_field_updates,
     )
     return dataclasses.replace(elem, state=new_state)
 
@@ -973,7 +959,6 @@ def _prediction_sweep(
             elements[-1],
             time_step=time_step,
             predict_precision=network.predict_precision,
-            mean_field_updates=network.mean_field_updates,
         )
 
     for i in range(n_elements - 1, 0, -1):
@@ -984,7 +969,6 @@ def _prediction_sweep(
             precision_clipping_value=network.precision_clipping_value,
             predict_precision=network.predict_precision,
             feedforward_uncertainty=network.feedforward_uncertainty,
-            mean_field_updates=network.mean_field_updates,
         )
 
     return dataclasses.replace(network, layers=tuple(elements))
@@ -1017,7 +1001,6 @@ def _update_sweep(
         volatility_updates=network.volatility_updates,
         max_posterior_precision=network.max_posterior_precision,
         time_step=time_step,
-        mean_field_updates=network.mean_field_updates,
         feedforward_uncertainty=network.feedforward_uncertainty,
     )
 

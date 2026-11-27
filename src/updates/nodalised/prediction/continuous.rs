@@ -91,10 +91,9 @@ fn store_input_prediction(network: &mut Network, node_idx: usize) {
 /// * π̂ = 1 / (1/π̄ + Σ_b (Δt · α · g'(μ̂_b))² / π̂_b): inverse marginal
 ///   predictive variance, adding the first-order Taylor contribution from each
 ///   value parent (using the parent's marginal predicted precision π̂_b).
-/// * Ω = Δt · exp(ω + Σ_j κ_j μ̂_vol_j + Σ_j κ_j²/(2 π̂_vol_j)): each volatility
-///   parent enters through its predicted mean μ̂_vol and the
-///   moment-generating-function term κ²/(2 π̂_vol), both from the current step
-///   (parents are predicted before their children).
+/// * Ω = Δt · exp(ω + Σ_j κ_j μ̂_vol_j): each volatility parent enters at its
+///   predicted mean μ̂_vol from the current step (parents are predicted before their
+///   children).
 ///
 /// The carried variance takes λ²: scaling the belief by λ scales its variance by
 /// λ². Only the node's own variance takes the factor; the drift is added after the
@@ -152,9 +151,8 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
     // 2. Predict the two precisions:
     //        π̄ = 1 / (λ²/π + Ω)
     //        π̂ = 1 / (1/π̄ + value-coupling variance)
-    //    Ω = Δt · exp(ω + Σ_j κ_j μ̂_j + Σ_j κ_j²/(2 π̂_vol_j)); the MGF term
-    //    κ²/(2 π̂_vol) marginalises over each volatility parent's Gaussian rather
-    //    than collapsing it to a point estimate.
+    //    Ω = Δt · exp(ω + Σ_j κ_j μ̂_j): the volatility parents enter at their
+    //    predicted means.
     // -------------------------------------------------------
     let mut total_volatility = tonic_volatility;
 
@@ -163,11 +161,8 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
 
         for (i, &parent_idx) in vol_parent_idxs.iter().enumerate() {
             let parent_expected_mean = network.attributes.states[parent_idx].expected_mean;
-            let parent_expected_precision =
-                network.attributes.states[parent_idx].expected_precision;
             let kappa = vol_couplings.get(i).copied().unwrap_or(1.0);
             total_volatility += kappa * parent_expected_mean;
-            total_volatility += (kappa * kappa) / (2.0 * parent_expected_precision);
         }
     }
 

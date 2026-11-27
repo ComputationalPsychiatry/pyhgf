@@ -1961,11 +1961,10 @@ def test_feedforward_uncertainty_counts_as_known_variance(volatility_updates):
     )
 
     # Predicted precisions built from a carried variance, the predicted volatility
-    # of the layer (no tonic volatility, MGF term included) and the value parents'
-    # variance.
+    # of the layer (no tonic volatility) and the value parents' variance.
     expected_mean_vol = jnp.array([0.3, -0.2])
     expected_precision_vol = jnp.array([1.2, 0.9])
-    volatility = jnp.exp(expected_mean_vol + 1.0 / (2.0 * expected_precision_vol))
+    volatility = jnp.exp(expected_mean_vol)
     carried_variance = jnp.array([0.8, 0.5])
     value_coupling_variance = jnp.array([1.5, 0.3])
     conditional = 1.0 / (carried_variance + volatility)

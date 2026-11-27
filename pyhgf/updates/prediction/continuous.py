@@ -127,16 +127,12 @@ def predict_precision(
     r"""Compute the predicted precisions of a continuous state node (no mean-field).
 
     This is the prediction step of the relaxed HGF (rHGF), which marginalises over the
-    parents' variational Gaussians rather than collapsing them to point estimates. Two
-    additional variance terms appear relative to the canonical (g)HGF formulation [1]_:
-
-    * an **exact** volatility-coupling term obtained from the moment-generating
-      function of the Gaussian volatility parent;
-    * a **first-order Taylor** value-coupling term arising from the linearisation of
-      the coupling function around the parent's predicted mean.
-
-    Both terms vanish in the limit of perfectly known parents, recovering the canonical
-    formula exactly.
+    value parents' variational Gaussians rather than collapsing them to point
+    estimates. One variance term appears relative to the canonical (g)HGF formulation
+    [1]_: a **first-order Taylor** value-coupling term arising from the linearisation
+    of the coupling function around the parent's predicted mean. The term vanishes in
+    the limit of perfectly known value parents, recovering the canonical formula
+    exactly. Volatility parents enter at their predicted means, as in [1]_.
 
     Two predicted precisions are computed and stored on the node (see
     :class:`pyhgf.typing.LayerState` for the notation table):
@@ -153,16 +149,12 @@ def predict_precision(
               + \sum_{b} \frac{ (t^{(k)} \alpha_{b,a} g'(\hat{\mu}_b))^2 }
                               { \hat{\pi}_b },
 
-    with the phasic-plus-tonic log-volatility, including the moment-generating-function
-    term of each volatility parent,
+    with the phasic-plus-tonic volatility
 
     .. math::
 
         \Omega_a^{(k)} = t^{(k)} \exp\!\left(
-            \omega_a + \sum_{j} \left(
-                \kappa_{a,\check{a}_j} \hat{\mu}_{\check{a}_j}
-                + \frac{\kappa_{a,\check{a}_j}^2}{2 \hat{\pi}_{\check{a}_j}}
-            \right)
+            \omega_a + \sum_{j} \kappa_{a,\check{a}_j} \hat{\mu}_{\check{a}_j}
         \right).
 
     The factor :math:`\lambda_a^2` scales the carried variance (scaling a Gaussian
@@ -182,11 +174,21 @@ def predict_precision(
     marginal predictive variance, including the first-order Taylor value-coupling
     term. The bleed-through uses each parent's marginal predicted precision
     :math:`\hat{\pi}_b`, so that every parent passes its full marginal predictive
-    variance on to its children. The MGF term
-    :math:`\kappa^2 / (2\, \hat{\pi}_{\check{a}_j})` inside the exponent is the
-    Jensen-inequality contribution of a Gaussian volatility parent through the
-    convex :math:`\exp(\cdot)` non-linearity. Both terms use *predicted*, not
-    posterior, parent precisions, keeping the prediction schedule strictly top-down.
+    variance on to its children. It uses *predicted*, not posterior, parent
+    precisions, keeping the prediction schedule strictly top-down.
+
+    The predicted volatility does not depend on the precision of the volatility
+    parents. For a value :math:`x` of a volatility parent with coupling strength
+    :math:`\kappa`, the predicted variance of the node is
+    :math:`V(x) = \lambda_a^2 / \pi_a^{(k-1)} + t^{(k)} \exp(\omega_a + \kappa x)`,
+    and the node moves towards evidence of variance :math:`\sigma` by the fraction
+    :math:`V(x) / (V(x) + \sigma)`, which is concave in :math:`V` and lower than 1.
+    The average of this fraction over the belief
+    :math:`\mathcal{N}(\hat{\mu}, 1/\hat{\pi})` on the parent is therefore at most
+    its value at the average variance :math:`\mathbb{E}[V(x)]` (Jensen's
+    inequality). The average variance multiplies the volatility term of
+    :math:`V(\hat{\mu})` by :math:`\exp(\kappa^2 / (2\hat{\pi}))`, which has no
+    upper bound.
 
     The *effective precision* :math:`\gamma_a^{(k)}` is defined relative to the
     volatility-driven part of the marginal variance only,
@@ -238,9 +240,8 @@ def predict_precision(
     total_volatility = attributes[node_idx]["tonic_volatility"]
 
     # Look at the (optional) volatility parents and add their value to the tonic
-    # volatility to get the total volatility. The closed-form
-    # moment-generating-function term κ²/(2 π̂) inside the exponent makes the
-    # volatility parent enter as a full Gaussian rather than a point estimate.
+    # volatility to get the total volatility. The volatility parents enter at their
+    # predicted means.
     if volatility_parents_idxs is not None:
         for volatility_parents_idx, volatility_coupling in zip(
             volatility_parents_idxs,
@@ -249,9 +250,6 @@ def predict_precision(
             total_volatility += (
                 volatility_coupling
                 * attributes[volatility_parents_idx]["expected_mean"]
-            )
-            total_volatility += (volatility_coupling**2) / (
-                2.0 * attributes[volatility_parents_idx]["expected_precision"]
             )
 
     # compute the predicted_volatility from the total volatility
@@ -316,10 +314,10 @@ def continuous_node_prediction(
     """Update the expected mean and expected precision of a continuous node [1]_.
 
     The precision prediction follows the relaxed HGF (rHGF) scheme, which marginalises
-    over the parents' variational Gaussians instead of treating them as point estimates.
-    See :func:`predict_precision` for the precise formula and its two additional
-    variance terms (volatility-coupling moment-generating-function term and
-    value-coupling Taylor term).
+    over the value parents' variational Gaussians instead of treating them as point
+    estimates. See :func:`predict_precision` for the precise formula and its additional
+    variance term (the value-coupling Taylor term). Volatility parents enter at their
+    predicted means.
 
     An input node is observed exactly. Without volatility parent, both of its
     predicted precisions are its ``precision``, the fixed precision of the
@@ -602,9 +600,8 @@ def continuous_node_prediction_mean_field(
 ) -> dict:
     """Mean-field prediction step for a continuous node.
 
-    Uses the canonical (g)HGF formula: no moment-generating-function term in the total
-    volatility and no Taylor value-coupling variance term. Input nodes are predicted
-    as in :func:`continuous_node_prediction`.
+    Uses the canonical (g)HGF formula: no Taylor value-coupling variance term. Input
+    nodes are predicted as in :func:`continuous_node_prediction`.
 
     Parameters
     ----------

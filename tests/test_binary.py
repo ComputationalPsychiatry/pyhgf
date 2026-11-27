@@ -49,10 +49,8 @@ def test_update_binary_input_parents():
         edges=binary_hgf.edges,
         input_idxs=(0,),
     )
-    # Expected values reflect the rHGF prediction step: the volatility-parent
-    # variance enters node 1's predicted log-volatility through the exact
-    # moment-generating-function term κ²/(2 π̂_parent), which shifts
-    # node 1's posterior mean and precision relative to the canonical formula.
+    # The volatility parent enters the predicted volatility of node 1 at its
+    # predicted mean.
     for idx, val in zip(
         ["mean", "expected_mean", "expected_precision"],
         [1.0, 0.7310586, 0.19661193],
@@ -60,12 +58,12 @@ def test_update_binary_input_parents():
         assert jnp.isclose(new_attributes[0][idx], val)
     for idx, val in zip(
         ["mean", "expected_mean", "precision", "expected_precision"],
-        [2.2378633, 1.0, 0.21726260, 0.02065066],
+        [1.8515793, 1.0, 0.31581485, 0.11920292],
     ):
         assert jnp.isclose(new_attributes[1][idx], val)
     for idx, val in zip(
         ["mean", "expected_mean", "precision", "expected_precision"],
-        [0.37627372, 1.0, 0.39340553, 0.26894143],
+        [0.3988511, 1.0, 0.39522797, 0.26894143],
     ):
         assert jnp.isclose(new_attributes[2][idx], val)
 
@@ -84,12 +82,12 @@ def test_binary_scan_loop():
 
     for idx, val in zip(
         ["mean", "expected_mean", "precision", "expected_precision"],
-        [-2.3191204, -2.171629, 0.6937843, 0.6019279],
+        [-2.1102364, -1.9987882, 1.0707233, 0.96563274],
     ):
         assert jnp.isclose(binary_hgf.node_trajectories[1][idx][-1], val)
     for idx, val in zip(
         ["mean", "expected_mean", "precision", "expected_precision"],
-        [2.478936, 2.4795845, 1.7116449, 1.6612335],
+        [1.9574078, 1.9569988, 1.6554663, 1.608333],
     ):
         assert jnp.isclose(binary_hgf.node_trajectories[2][idx][-1], val)
 

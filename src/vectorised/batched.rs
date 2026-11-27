@@ -276,24 +276,19 @@ fn batched_volatile_prediction(
         child.effective_precision.fill(0.0);
     } else if child_layer.has_volatility_parent {
         let emv = child.expected_mean_vol.as_ref().unwrap();
-        let epv = child.expected_precision_vol.as_ref().unwrap();
         // Per-node ω of the value level, zero when the params allocate none.
         let tonic = params.tonic_volatility.as_ref();
         let tonic_per_node = ndarray::Array1::from_shape_fn(n, |i| tonic.map_or(0.0, |tv| tv[i]));
         let mut predicted_vol = Matrix::zeros((n, n_samples));
         Zip::from(predicted_vol.rows_mut())
             .and(emv.rows())
-            .and(epv.rows())
             .and(&tonic_per_node)
-            .for_each(|mut out, em, ep, &w| {
+            .for_each(|mut out, em, &w| {
                 // Volatility coupling is fixed at 1; ω enters the exponent
-                // additively.
-                Zip::from(&mut out)
-                    .and(&em)
-                    .and(&ep)
-                    .for_each(|o, &m, &pvv| {
-                        *o = guarded_volatility(w + m + 1.0 / (pvv * 2.0), time_step);
-                    });
+                // additively, and the volatility level at its expected mean.
+                Zip::from(&mut out).and(&em).for_each(|o, &m| {
+                    *o = guarded_volatility(w + m, time_step);
+                });
             });
         Zip::from(&mut child.conditional_expected_precision)
             .and(&mut child.expected_precision)

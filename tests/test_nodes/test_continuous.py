@@ -181,12 +181,10 @@ def test_ehgf_precision_increment_with_two_volatility_parents(cls, mean_field_up
 
     .. math::
 
-        \nu = t \exp\left(\omega_1 + \kappa_2 \mu_2^{(k)} + \kappa_3 \hat{\mu}_3^{(k)}
-            + \frac{\kappa_2^2}{2 \hat{\pi}_2^{(k)}}
-            + \frac{\kappa_3^2}{2 \hat{\pi}_3^{(k)}}\right),
+        \nu = t \exp\left(\omega_1 + \kappa_2 \mu_2^{(k)}
+            + \kappa_3 \hat{\mu}_3^{(k)}\right).
 
-    where the two fractions are the moment-generating-function terms of the relaxed
-    prediction step, left out under the mean-field prediction. It adds
+    It adds
     :math:`\max(0, \tfrac12 \kappa_2^2 \gamma (\gamma + w \Delta))` to the predicted
     precision, with :math:`\gamma`, :math:`w` and :math:`\Delta` computed from
     :math:`\nu` and the carried variance :math:`1/\pi_1^{(k-1)}`. The increment is
@@ -211,14 +209,9 @@ def test_ehgf_precision_increment_with_two_volatility_parents(cls, mean_field_up
 
     # Step 0 is left out: its carried variance comes from the initial precision.
     carried_variance = 1.0 / child["precision"][:-1]
-    log_volatility = (
+    volatility = np.exp(
         tonic_volatility + parent["mean"][1:] + other_parent["expected_mean"][1:]
     )
-    if not mean_field_updates:
-        log_volatility += 1.0 / (2.0 * parent["expected_precision"][1:]) + 1.0 / (
-            2.0 * other_parent["expected_precision"][1:]
-        )
-    volatility = np.exp(log_volatility)
     expected_precision = 1.0 / (carried_variance + volatility)
     effective_precision = volatility * expected_precision
     volatility_error_weight = (volatility - carried_variance) * expected_precision
@@ -243,38 +236,63 @@ def test_ehgf_precision_increment_with_two_volatility_parents(cls, mean_field_up
 
 
 @pytest.mark.parametrize("cls", [PyNetwork, RsNetwork], ids=["jax", "rust"])
-def test_relaxed_ehgf_volatility_parent_keeps_its_precision(cls):
-    r"""The relaxed eHGF keeps the precision of a volatility parent from vanishing.
+@pytest.mark.parametrize("volatility_updates", VOLATILITY_UPDATES)
+def test_volatility_coupling_does_not_depend_on_the_scheme(cls, volatility_updates):
+    r"""Volatility coupling is mean-field under the relaxed and the mean-field updates.
 
-    Under the relaxed prediction, the effective precision and the volatility
-    prediction error that the eHGF mean update of node 2 reads include the
-    moment-generating-function term :math:`\kappa^2 / (2 \hat{\pi}_2)`, and the
-    precision update re-predicts the volatility of node 1 with the same term. A
-    re-prediction without it disagrees with the mean update: on this series the
-    precision increment is then 0 at most time steps, :math:`\pi_2` decreases to
-    0.014 (0.012 without any observation), and :math:`\mu_2` drifts to about -64
-    as the term grows. With the term, the minimum of :math:`\pi_2` is 0.28 and
-    :math:`\mu_2` stays within 0.6 of the standard update, which reads the
-    prediction-step quantities in both steps.
+    A volatility parent enters the predicted volatility of its child at its predicted
+    mean,
+
+    .. math::
+
+        \Omega_1^{(k)} = t^{(k)} \exp\left(\omega_1 + \kappa \hat{\mu}_2^{(k)}\right),
+
+    without any term in its predicted precision :math:`\hat{\pi}_2^{(k)}`. The
+    predicted precision of node 1 is recomputed here from the recorded trajectories.
+    In a network whose only state-to-state couplings are volatility couplings, the
+    relaxed and the mean-field updates therefore give the same beliefs.
     """
+    tonic_volatility = -3.0
 
-    def build(volatility_updates):
+    def build(mean_field_updates):
         return (
-            cls(volatility_updates=volatility_updates)
+            cls(
+                volatility_updates=volatility_updates,
+                mean_field_updates=mean_field_updates,
+            )
             .add_nodes(precision=1e4)
-            .add_nodes(value_children=0)
+            .add_nodes(value_children=0, tonic_volatility=tonic_volatility)
             .add_nodes(volatility_children=1, tonic_volatility=-2.0)
-            .input_data(input_data=load_data("continuous"))
+            .add_nodes(volatility_children=2, tonic_volatility=-2.0)
+            .input_data(input_data=load_data("continuous")[:200])
         )
 
-    ehgf, standard = build("eHGF"), build("standard")
-    precision = np.asarray(ehgf.node_trajectories[2]["precision"], dtype=np.float64)
-    mean = np.asarray(ehgf.node_trajectories[2]["mean"], dtype=np.float64)
-    standard_mean = np.asarray(standard.node_trajectories[2]["mean"], dtype=np.float64)
+    relaxed, mean_field = build(False), build(True)
+    for node_idx in (1, 2, 3):
+        for key in ("mean", "precision", "expected_mean", "expected_precision"):
+            assert np.allclose(
+                np.asarray(relaxed.node_trajectories[node_idx][key], dtype=np.float64),
+                np.asarray(
+                    mean_field.node_trajectories[node_idx][key], dtype=np.float64
+                ),
+                rtol=1e-6,
+                atol=1e-6,
+            ), f"node {node_idx} {key}"
 
-    assert np.all(np.isfinite(precision)) and np.all(np.isfinite(mean))
-    assert np.min(precision) > 0.1
-    assert np.max(np.abs(mean - standard_mean)) < 1.5
+    child, parent = (
+        {
+            key: np.asarray(relaxed.node_trajectories[node_idx][key], dtype=np.float64)
+            for key in ("precision", "expected_mean", "expected_precision")
+        }
+        for node_idx in (1, 2)
+    )
+    # Step 0 is left out: its carried variance comes from the initial precision.
+    predicted_variance = 1.0 / child["precision"][:-1] + np.exp(
+        tonic_volatility + parent["expected_mean"][1:]
+    )
+    assert np.allclose(
+        child["expected_precision"][1:], 1.0 / predicted_variance, rtol=1e-3
+    )
 
 
 @pytest.mark.parametrize("cls", [PyNetwork, RsNetwork], ids=["jax", "rust"])

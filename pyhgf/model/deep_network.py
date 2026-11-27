@@ -228,12 +228,13 @@ class DeepNetwork:
         mean_field_updates :
             If ``False`` (default), use the relaxed prediction and posterior
             updates, which lift the mean-field assumption on value-coupling edges
-            via the Schur-complement, Taylor and moment-generating-function terms
-            of the relaxed HGF (rHGF). If ``True``, use the mean-field updates, as
-            in ``Network(mean_field_updates=True)``: the log-volatility exponent
-            carries no moment-generating-function term, and every value message
-            is weighted by the child's canonical predicted precision instead of
-            the relaxed factors. The mean-field scheme carries no value-coupling variance, so
+            via the Schur-complement and Taylor terms of the relaxed HGF (rHGF).
+            If ``True``, use the mean-field updates, as in
+            ``Network(mean_field_updates=True)``: every value message is weighted
+            by the child's canonical predicted precision instead of the relaxed
+            factors. Volatility coupling is mean-field in both cases: a volatility
+            parent enters the log-volatility exponent at its expected mean. The
+            mean-field scheme carries no value-coupling variance, so
             combining it with ``feedforward_uncertainty=True`` raises a
             ``ValueError``; ``learning_kind='synaptic_uncertainty'`` is likewise
             unavailable, since its curvature and evidence terms are derived from
@@ -602,7 +603,7 @@ class DeepNetwork:
             :math:`\kappa_0 / n_{\mathrm{parents}}` — the fan-in normalisation
             makes the phasic volatility a child receives :math:`\kappa_0` times
             the *average* of the parent layer's means, invariant to the parent
-            layer's width (and its MGF term the variance of that average).
+            layer's width.
             One-to-one κ has fan-in 1 and keeps :math:`\kappa_0` on the diagonal.
             Mirrors the drift-averaging the volatile backend applies on value
             edges.

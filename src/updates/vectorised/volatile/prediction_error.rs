@@ -142,8 +142,7 @@ pub(crate) fn ehgf_vol_node(
     let pvol = |exponent: Float| time_step * exponent.exp();
     // Reconstruct the value level's pre-prediction variance exactly. `tonic` is
     // the value level's own ω, zero when the params allocate none.
-    let mgf = 1.0 / (ep * 2.0);
-    let predicted_vol = pvol(tonic + em + mgf);
+    let predicted_vol = pvol(tonic + em);
     let mut previous_variance = (1.0 / cond - predicted_vol).max(MIN_VOLATILITY);
     if feedforward_uncertainty {
         previous_variance += (1.0 / marginal_ep - 1.0 / cond).max(0.0);
@@ -293,11 +292,11 @@ pub(crate) fn unbounded_vol_node(
 
     // The known variance of the value level's prediction, the part that does not
     // depend on the volatility level: the pre-prediction variance, reconstructed
-    // exactly from the conditional predicted precision (the prediction's full
-    // exponent, MGF included), and, with feedforward uncertainty, the variance the
+    // exactly from the conditional predicted precision (with the prediction's
+    // exponent), and, with feedforward uncertainty, the variance the
     // value parents add, 1/marginal_ep − 1/cond. The volatility coupling is fixed at
     // 1; `tonic` is the value level's own ω, zero when the params allocate none.
-    let predicted_volatility = time_step * (tonic + em + 1.0 / (2.0 * ep)).exp();
+    let predicted_volatility = time_step * (tonic + em).exp();
     let mut previous_variance = (1.0 / cond - predicted_volatility).max(MIN_VOLATILITY as f64);
     if feedforward_uncertainty {
         previous_variance += (1.0 / marginal_ep - 1.0 / cond).max(0.0);

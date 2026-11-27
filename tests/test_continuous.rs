@@ -44,7 +44,7 @@ fn test_one_node_hgf() {
     assert_close(node0.mean[0], 0.2, "node0 mean");
     assert_close(node0.expected_mean[0], 0.0, "node0 expected_mean");
 
-    // Check node 1 trajectories (no volatility parent → rHGF MGF term inactive)
+    // Check node 1 trajectories
     let node1 = &network.node_trajectories.nodes[1];
     assert_close(node1.precision[0], 1.9820137, "node1 precision");
     assert_close(
@@ -216,15 +216,15 @@ fn test_unbounded_shared_volatility_parent() {
     assert_trajectory_matches(
         &node4.mean,
         &[
-            0.026489553894727819,
-            0.085598485010175571,
-            0.24508979947868789,
+            0.026330066717600353,
+            0.08396612693493508,
+            0.2326777649245929,
         ],
         "node4 mean",
     );
     assert_trajectory_matches(
         &node4.precision,
-        &[1.0226162894216737, 1.0378626556476724, 1.0414612182845073],
+        &[1.0226399595637208, 1.0390475710079412, 1.0463037167926148],
         "node4 precision",
     );
 }
@@ -258,15 +258,15 @@ fn test_unbounded_value_and_volatility_parent() {
     assert_trajectory_matches(
         &node4.mean,
         &[
-            0.16932032739006528,
-            0.74129590542993129,
-            -0.040523526657161725,
+            0.16929614965482004,
+            0.7411829432976309,
+            -0.04078316577679757,
         ],
         "node4 mean",
     );
     assert_trajectory_matches(
         &node4.precision,
-        &[1.4932261453879994, 2.0706138669446332, 2.6135937369334141],
+        &[1.4932351037986802, 2.0707873707853373, 2.6159864820497254],
         "node4 precision",
     );
 }
