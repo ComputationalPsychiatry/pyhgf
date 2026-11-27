@@ -1891,21 +1891,19 @@ def test_tonic_volatility_through_configs_and_dict():
 
 @pytest.mark.parametrize("relaxed_prediction", [True, False])
 def test_relaxed_precision_curved_value_coupling(relaxed_prediction):
-    r"""The relaxed precision update weights the g'' term by the relaxed gain.
+    r"""The relaxed precision update weights the first-order term of each child.
 
     With a tanh coupling, each interior value child :math:`a` contributes
 
     .. math::
 
-        \frac{\bar{\pi}_a}{\bar{\pi}_a + \pi_y} \left( \alpha^2 g'^2 \, \pi_y
-            - \alpha \, g'' \, \pi_a \, \delta_a \right), \qquad
+        \frac{\bar{\pi}_a \, \pi_y}{\bar{\pi}_a + \pi_y} \, \alpha^2 g'^2, \qquad
         \pi_y = \pi_a - \hat{\pi}_a,
 
-    to the parent's posterior precision, with the derivatives taken at the parent's
+    to the parent's posterior precision, with the derivative taken at the parent's
     expected mean. Without the prediction-step relaxation
     (:math:`\bar{\pi}_a = \hat{\pi}_a`, the ``feedforward_uncertainty=False``
-    default) the g'' term is the canonical :math:`\hat{\pi}_a \, \alpha \, g'' \,
-    \delta_a`.
+    default) the weight is :math:`\hat{\pi}_a \, \pi_y / \pi_a`.
     """
     alpha = np.array([0.8, -0.5])
     pi_a = np.array([3.0, 2.4])
@@ -1930,23 +1928,49 @@ def test_relaxed_precision_curved_value_coupling(relaxed_prediction):
     )
 
     g_prime = float(jax.grad(jnp.tanh)(0.3))
-    g_second = float(jax.grad(jax.grad(jnp.tanh))(0.3))
     pi_y = pi_a - pi_hat_a
-    increment = (
-        pi_bar_a
-        / (pi_bar_a + pi_y)
-        * (alpha**2 * g_prime**2 * pi_y - alpha * g_second * pi_a * delta_a)
-    )
+    increment = pi_bar_a * pi_y / (pi_bar_a + pi_y) * alpha**2 * g_prime**2
     np.testing.assert_allclose(precision, [1.2 + increment.sum()], rtol=1e-5)
 
     if not relaxed_prediction:
-        first_order = pi_hat_a * pi_y / pi_a * alpha**2 * g_prime**2
-        canonical_second_order = pi_hat_a * alpha * g_second * delta_a
-        np.testing.assert_allclose(
-            precision,
-            [1.2 + (first_order - canonical_second_order).sum()],
-            rtol=1e-5,
-        )
+        canonical = pi_hat_a * pi_y / pi_a * alpha**2 * g_prime**2
+        np.testing.assert_allclose(precision, [1.2 + canonical.sum()], rtol=1e-5)
+
+
+@pytest.mark.parametrize("volatility_updates", ["unbounded", "eHGF", "standard"])
+def test_curved_network_volatility_levels_stay_bounded(volatility_updates):
+    """The volatility levels of a tanh network stay bounded on unit-variance noise.
+
+    With fixed weights and standard normal predictors and targets, the mean of the
+    hidden layer's volatility level stays finite and of order one. With the second-order
+    term of the coupling function in the value posterior precision, it grows by orders
+    of magnitude within tens of samples.
+    """
+    rng = np.random.default_rng(201)
+    weights = [rng.normal(scale=0.5, size=(2, 5)), rng.normal(scale=0.5, size=(4, 4))]
+    x = rng.normal(size=(60, 3))
+    y = rng.normal(size=(60, 2))
+
+    net = DeepNetwork(volatility_updates=volatility_updates, coupling_fn=jnp.tanh)
+    for size in (2, 4, 3):
+        net = net.add_layer(size=size)
+    layers = list(net.state.layers)
+    for i, w in enumerate(weights, start=1):
+        layers[i] = dataclasses.replace(layers[i], weights_mean=jnp.asarray(w))
+    net.state = dataclasses.replace(net.state, layers=tuple(layers))
+    net.fit(
+        x,
+        y,
+        optimiser=optax.sgd(0.0),
+        weight_update=False,
+        record=("mean", "mean_vol"),
+        check_gradient_health=False,
+    )
+
+    for field in ("mean", "mean_vol"):
+        for trajectory in net.trajectories[field][:2]:
+            assert np.isfinite(np.asarray(trajectory)).all()
+    assert np.abs(np.asarray(net.trajectories["mean_vol"][1])).max() < 2.0
 
 
 @pytest.mark.parametrize("volatility_updates", ["eHGF", "unbounded"])

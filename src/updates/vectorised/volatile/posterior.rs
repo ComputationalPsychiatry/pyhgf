@@ -12,6 +12,13 @@ use ndarray::s;
 /// Mirrors `vectorised_layer_posterior_update`. `weights` is the parent's
 /// `weights_in`; the bias column is stripped when `parent_has_constant`.
 /// `coupling_fn` is the parent's, evaluated at the parent's expected mean.
+///
+/// The precision update deviates from the generalised HGF (Weber et al., 2026),
+/// for deep networks only: it is first-order in the coupling function, π̂_b + g'²
+/// · Σ_a α_a² · π_a^eff, without the second-order term −α g'' π̂_a δ_a of Eq. 50.
+/// That term takes either sign and can cancel the first-order one, after which
+/// the mean step, the message divided by the precision, grows as 1/π̂_b. The
+/// nodalised backend keeps the term.
 pub fn layer_posterior_update(
     parent: &mut LayerState,
     child: &LayerState,
@@ -29,19 +36,15 @@ pub fn layer_posterior_update(
         weights.view()
     };
 
-    let (coupling_prime, coupling_second) = with_coupling!(coupling_fn, |_f, df, d2f| {
-        (
-            parent.expected_mean.mapv(|v| df(v as f64) as Float),
-            parent.expected_mean.mapv(|v| d2f(v as f64) as Float),
-        )
-    });
+    let coupling_prime = with_coupling!(coupling_fn, |_f, df, _d2f| parent
+        .expected_mean
+        .mapv(|v| df(v as f64) as Float));
 
     // The two weight contractions, `(W²)ᵀ @ eff` and `Wᵀ @ (gain∘δ)`, are computed
     // in a single row-major pass over `w`, with the per-child effective precision
     // (posterior-step relaxation) and gain formed as scalars on the fly: no `W²`
-    // matrix and no per-child vector temporaries. `eff` weights the first-order
-    // term of the precision; the gain weights both the g'' term of the precision
-    // and the mean shift.
+    // matrix and no per-child vector temporaries. `eff` weights the precision
+    // increment; the gain weights the mean shift.
     let n_child = w.nrows();
     let n_parent = w.ncols();
     let mut pc1_base = ndarray::Array1::<Float>::zeros(n_parent);
@@ -66,15 +69,13 @@ pub fn layer_posterior_update(
         }
     }
 
-    // Precision: clip(π̂_b + pc1·g'² − g''·(Wᵀ@(g_a∘δ))), written in place.
+    // Precision: clip(π̂_b + pc1·g'²), written in place.
     ndarray::Zip::from(&mut parent.precision)
         .and(&parent.expected_precision)
         .and(&pc1_base)
-        .and(&msg)
         .and(&coupling_prime)
-        .and(&coupling_second)
-        .for_each(|p, &ep, &b, &mg, &gp, &gs| {
-            let raw = ep + b * (gp * gp) - gs * mg;
+        .for_each(|p, &ep, &b, &gp| {
+            let raw = ep + b * (gp * gp);
             *p = raw.max(ep).min(max_posterior_precision);
         });
 
@@ -131,8 +132,9 @@ mod tests {
     }
 
     /// With a tanh coupling and interior children, each child contributes
-    /// π̄_a / (π̄_a + π_y) · (α² g'² · π_y − α g'' · π_a · δ_a) to the posterior
-    /// precision, with π_y = π_a − π̂_a and the derivatives at the expected mean.
+    /// π̄_a · π_y / (π̄_a + π_y) · α² g'² to the posterior precision, with
+    /// π_y = π_a − π̂_a and the derivative at the expected mean. The prediction
+    /// errors do not enter: the update has no second-order term.
     #[test]
     fn test_posterior_precision_curved_coupling() {
         let mut parent = LayerState::create(1, true);
@@ -157,14 +159,10 @@ mod tests {
 
         let t = 0.3_f64.tanh();
         let g_prime = 1.0 - t * t;
-        let g_second = -2.0 * t * g_prime;
         let mut expected = 1.2;
-        for (alpha, pi_a, pi_hat_a, pi_bar_a, delta_a) in
-            [(0.8, 3.0, 2.0, 2.5, 0.4), (-0.5, 2.4, 1.5, 1.8, -0.7)]
-        {
+        for (alpha, pi_a, pi_hat_a, pi_bar_a) in [(0.8, 3.0, 2.0, 2.5), (-0.5, 2.4, 1.5, 1.8)] {
             let pi_y = pi_a - pi_hat_a;
-            expected += pi_bar_a / (pi_bar_a + pi_y)
-                * (alpha * alpha * g_prime * g_prime * pi_y - alpha * g_second * pi_a * delta_a);
+            expected += pi_bar_a / (pi_bar_a + pi_y) * alpha * alpha * g_prime * g_prime * pi_y;
         }
         let precision = parent.precision[0] as f64;
         assert!(

@@ -621,8 +621,8 @@ def test_batch_update_validation():
 def test_batch_update_trajectory_parity(optimiser, sizes, coupling):
     """Input errors and weights agree with JAX over several batch steps.
 
-    With two tanh hidden layers, a curved layer has a hidden child, so the g'' term of
-    the posterior precision (Eq. 26 of Legrand et al., 2026) is compared as well.
+    With two tanh hidden layers, a curved layer has a hidden child, so the relaxed
+    precision and gain of an interior child are compared as well.
     """
     rng = np.random.default_rng(30)
     rs, jx = _matched_pair(sizes, rng, coupling=coupling)

@@ -161,6 +161,18 @@ class DeepNetwork:
     Layer indexing follows the convention:
     - Layer 0 is the output layer (receives observations)
     - Layer N is the input layer (receives predictors)
+
+    The value-level precision update of the volatile layers deviates from the
+    generalised HGF [1]_: it is first-order in the coupling function and leaves out
+    the second-order term of the value-coupling precision update (Eq. 50 of [1]_),
+    which the :class:`pyhgf.model.Network` class keeps. See
+    :func:`pyhgf.updates.vectorised.volatile.posterior.vectorised_posterior_update_precision_value_level`.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
 
     def __init__(

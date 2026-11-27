@@ -809,8 +809,8 @@ mod tests {
     /// the rank-one gradients and the carried-field increments, and applying
     /// both once. Covers networks with one and two nonlinear (tanh) hidden
     /// layers, Adam, and precision carrying. With two, a curved layer has a
-    /// hidden child, so the g'' term of the posterior precision (Eq. 26 of
-    /// Legrand et al., 2026) is weighted by the relaxed gain of that child.
+    /// hidden child, so its posterior precision and mean are weighted by the
+    /// relaxed precision and gain of that child.
     #[test]
     fn test_batch_update_matches_per_sample_reference() {
         for n_hidden in [1, 2] {

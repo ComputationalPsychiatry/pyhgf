@@ -33,9 +33,8 @@ def vectorised_posterior_update_precision_value_level(
 
     .. math::
 
-        \frac{\bar{\pi}_a^{(k)}}{\bar{\pi}_a^{(k)} + \pi_y} \left(
-            \alpha^2 \, g'^2 \, \pi_y - \alpha \, g'' \, \pi_a^{(k)} \, \delta_a
-            \right), \qquad
+        \frac{\bar{\pi}_a^{(k)} \, \pi_y}{\bar{\pi}_a^{(k)} + \pi_y} \,
+            \alpha^2 \, g'^2, \qquad
         \pi_y = \pi_a^{(k)} - \hat{\pi}_a^{(k)},
 
     with :math:`\alpha` the weight of the value-coupling edge. Here
@@ -50,16 +49,28 @@ def vectorised_posterior_update_precision_value_level(
     parent uncertainty.
 
     The :math:`(\alpha g')^2` term is weighted by the relaxed child precision
-    :math:`\bar{\pi}_a \pi_y / (\bar{\pi}_a + \pi_y)` and the
-    :math:`\alpha g'' \, \delta_a` term by the relaxed gain
-    :math:`g_a = \bar{\pi}_a \pi_a / (\bar{\pi}_a + \pi_y)` of
-    :func:`vectorised_posterior_update_mean_value_level`: the second-order term is
-    the derivative of the mean shift's :math:`g'` with respect to the parent mean.
-    Reduces to the canonical formula when the child is fully observed
-    (:math:`\pi_y \to \infty`). When :math:`\hat{\pi}_a = \bar{\pi}_a`, the relaxed
-    gain equals :math:`\hat{\pi}_a` and the :math:`g''` term is the canonical one.
-    The :math:`(\alpha g')^2` term vanishes when the child gained no bottom-up
-    information (:math:`\pi_y = 0`), and so does :math:`\delta_a`.
+    :math:`\bar{\pi}_a \pi_y / (\bar{\pi}_a + \pi_y)`. It reduces to
+    :math:`\bar{\pi}_a \, \alpha^2 g'^2` when the child is fully observed
+    (:math:`\pi_y \to \infty`), which is the canonical term when
+    :math:`\hat{\pi}_a = \bar{\pi}_a`, and it vanishes when the child gained no
+    bottom-up information (:math:`\pi_y = 0`).
+
+    .. note::
+
+        This update deviates from the generalised HGF [1]_, for deep networks only.
+        The value-coupling precision update (Eq. 50 of [1]_) adds a second-order
+        term to the contribution of each child,
+        :math:`-\alpha \, g'' \, \hat{\pi}_a \, \delta_a`, which is left out here:
+        the update is first-order in the coupling function, and the posterior
+        precision is never below the predicted precision :math:`\hat{\pi}_b`. The
+        second-order term takes either sign and can cancel the first-order term.
+        The mean update of :func:`vectorised_posterior_update_mean_value_level`
+        divides the message by the posterior precision, so the mean step then
+        grows as :math:`1 / \hat{\pi}_b`, the volatility level of the layer reads
+        it as volatility, and :math:`\hat{\pi}_b` decreases further at the next
+        prediction. The continuous state nodes of :class:`pyhgf.model.Network` and
+        the continuous layers of :mod:`pyhgf.updates.vectorised.continuous` keep
+        the second-order term.
 
     .. note::
 
@@ -79,8 +90,8 @@ def vectorised_posterior_update_precision_value_level(
         Weight matrix connecting child to parent, shape
         ``(n_children, n_parents)``.
     coupling_fn :
-        Coupling function. First and second derivatives are computed inline
-        via ``jax.grad``.
+        Coupling function. The first derivative is computed inline via
+        ``jax.grad``.
     child_is_input_layer :
         If True, the child is a clamped observation leaf (binary or continuous
         output). The fully observed limit (:math:`\pi_y \to \infty`) applies and
@@ -101,14 +112,15 @@ def vectorised_posterior_update_precision_value_level(
     -------
     jnp.ndarray
         Posterior precision for each node in the parent layer.
+
+    References
+    ----------
+    .. [1] Weber, L. A., Waade, P. T., Legrand, N., Møller, A. H., Stephan, K. E., &
+       Mathys, C. (2026). The generalized hierarchical Gaussian filter.
+       doi:10.7554/elife.110174.1
     """
-    coupling_fn_grad = jgrad(coupling_fn)
-
     # Coupling derivatives at parent expected means
-    coupling_prime = vmap(coupling_fn_grad)(layer.expected_mean)
-
-    # Coupling second derivative (for the second-order Taylor term)
-    coupling_second = vmap(jgrad(coupling_fn_grad))(layer.expected_mean)
+    coupling_prime = vmap(jgrad(coupling_fn))(layer.expected_mean)
 
     # Effective child precision under the posterior-step relaxation:
     #     π̄_a · π_y / (π̄_a + π_y),    π_y = π_a − π̂_a.
@@ -126,41 +138,25 @@ def vectorised_posterior_update_precision_value_level(
     # leaves carry no value-coupling bleed-through) so π_y = 0 and the harmonic
     # form would zero out. Short-circuit to the conditional predicted precision
     # π̄_a, the fully observed limit (π_y → ∞) of the harmonic form.
-    #
-    # The g''δ_a term is weighted by the relaxed gain g_a = π̄_a · π_a / (π̄_a + π_y)
-    # of the mean update instead, computed as in
-    # `vectorised_posterior_update_mean_value_level`. For a leaf, π_a = π̂_a = π̄_a,
-    # so g_a equals the short-circuited factor above.
     if mean_field_updates:
         # Mean-field: canonical predicted precision for every child, leaf or
         # interior (a leaf's marginal equals its conditional anyway).
         effective_child_precision = child.expected_precision
-        gain_precision = child.expected_precision
+    elif child_is_input_layer:
+        effective_child_precision = child.conditional_expected_precision
     else:
         pi_y = child.precision - child.expected_precision
-        denominator = child.conditional_expected_precision + pi_y
-        if child_is_input_layer:
-            effective_child_precision = child.conditional_expected_precision
-        else:
-            effective_child_precision = (
-                child.conditional_expected_precision * pi_y / denominator
-            )
-        gain_precision = (
-            child.conditional_expected_precision * child.precision / denominator
+        effective_child_precision = (
+            child.conditional_expected_precision
+            * pi_y
+            / (child.conditional_expected_precision + pi_y)
         )
 
-    # First-order term: Σ_i(w_ij² · effective_child_prec_i) · g'(m_j)²
-    precision_contrib_1 = jnp.matmul(weights.T**2, effective_child_precision) * (
-        coupling_prime**2
-    )
-
-    # Second-order Taylor term: -g''(m_j) · Σ_i(w_ij · g_a_i · δ_a_i).
-    sum_pi_vpe = jnp.matmul(weights.T, gain_precision * child.value_prediction_error)
-    precision_contrib_2 = -coupling_second * sum_pi_vpe
-
-    posterior_precision = (
-        layer.expected_precision + precision_contrib_1 + precision_contrib_2
-    )
+    # First-order term: Σ_i(w_ij² · effective_child_prec_i) · g'(m_j)². The
+    # second-order term of the coupling function is left out (see the docstring).
+    posterior_precision = layer.expected_precision + jnp.matmul(
+        weights.T**2, effective_child_precision
+    ) * (coupling_prime**2)
 
     return posterior_precision
 
@@ -237,9 +233,8 @@ def vectorised_posterior_update_mean_value_level(
     # g_a to π̄_a, holds only in the canonical scheme (π̂_a = π̄_a); with the
     # prediction-step relaxation active π_a = π̂_a + π_y and g_a above is the
     # joint-Gaussian-exact gain. The factor π_a/π_y relative to the
-    # `effective_child_precision` of the precision update's first-order term
-    # reflects the different element of P^{-1}h selected by the mean update versus
-    # the precision update; the precision update's g'' term uses g_a itself.
+    # `effective_child_precision` of the precision update reflects the different
+    # element of P^{-1}h selected by the mean update versus the precision update.
     # For leaves PyHGF keeps π_a = π̂_a, so π_y = 0 and g_a → π_a = π̂_a, matching
     # the canonical leaf treatment used by the precision update.
     if mean_field_updates:
@@ -275,6 +270,9 @@ def vectorised_layer_posterior_update(
     """Update the value-level posterior for all nodes in a parent layer.
 
     Updates the value level precision first, then the mean.
+    The precision update is first-order in the coupling function, a deviation from the
+    generalised HGF that is specific to deep networks (see
+    :func:`vectorised_posterior_update_precision_value_level`).
 
     Parameters
     ----------
@@ -287,8 +285,8 @@ def vectorised_layer_posterior_update(
         ``(n_children, n_parents)`` or ``(n_children, n_parents + 1)``
         when the parent layer includes a constant input node.
     coupling_fn :
-        Coupling function. The first (and second, for the precision update)
-        derivatives are computed inline via ``jax.grad`` in the two helpers.
+        Coupling function. The first derivative is computed inline via
+        ``jax.grad`` in the two helpers.
     parent_has_constant :
         If True, the last column of *weights* corresponds to the constant input node and
         is stripped before computing the posterior update.
