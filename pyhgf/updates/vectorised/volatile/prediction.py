@@ -18,7 +18,6 @@ def _predict_volatility_level(
     params: LayerParams,
     time_step: float,
     has_volatility_parent: bool,
-    mean_field_updates: bool = False,
 ) -> tuple[Optional[Array], Optional[Array], Optional[Array], Array]:
     r"""Advance a layer's internal volatility level and read off its diffusion term.
 
@@ -28,12 +27,9 @@ def _predict_volatility_level(
 
     Returns ``(expected_mean_vol, expected_precision_vol, effective_precision_vol,
     predicted_volatility)``. The last is :math:`\Omega_a^{(k)}`, the variance the
-    value level accumulates over this time step; it carries the closed-form
-    moment-generating-function term :math:`1 / (2 \hat{\pi}_{\mathrm{vol}})`
-    that comes from marginalising over the volatility level's Gaussian rather than
-    collapsing it to a point estimate. The term is dropped under
-    ``mean_field_updates``, where the volatility level enters at its expected mean
-    alone (the mean-field scheme). Volatility coupling is fixed at 1. The
+    value level accumulates over this time step. The volatility level enters it at
+    its expected mean, :math:`\Omega_a^{(k)} = t^{(k)} \exp(\omega_a +
+    \hat{\mu}_{\mathrm{vol}})`. Volatility coupling is fixed at 1. The
     value level carries a tonic volatility :math:`\omega` of its own only when
     ``params.tonic_volatility`` is allocated (see
     ``DeepNetwork(tonic_volatility=True)``); when it is ``None`` the diffusion is
@@ -79,8 +75,6 @@ def _predict_volatility_level(
     effective_precision_vol = predicted_volatility_vol * expected_precision_vol
 
     total_volatility = expected_mean_vol
-    if not mean_field_updates:
-        total_volatility = total_volatility + 1.0 / (2.0 * expected_precision_vol)
     if params.tonic_volatility is not None:
         total_volatility = total_volatility + params.tonic_volatility
     predicted_volatility = time_step * jnp.exp(total_volatility)
@@ -108,7 +102,6 @@ def vectorised_layer_prediction(
     is_input_layer: bool = False,
     predict_precision: bool = True,
     feedforward_uncertainty: bool = False,
-    mean_field_updates: bool = False,
 ) -> LayerState:
     r"""Predict expected mean/precision for all nodes in a volatile-node layer.
 
@@ -132,9 +125,8 @@ def vectorised_layer_prediction(
     value-coupling contribution from each value parent. The bleed-through term uses
     the parent's *marginal* predicted precision :math:`\hat{\pi}_b`
     (``parent_state.expected_precision``), so that every parent passes its full
-    marginal predictive variance on to its children. The volatility-coupling
-    moment-generating-function term :math:`\kappa^2 / (2 \hat{\pi}_{\mathrm{vol}})`
-    enters :math:`\Omega_a^{(k)}` inside the log-volatility exponent.
+    marginal predictive variance on to its children. The volatility level enters
+    :math:`\Omega_a^{(k)}` at its expected mean.
 
     Parameters
     ----------
@@ -175,14 +167,6 @@ def vectorised_layer_prediction(
         so the marginal and the conditional predicted precision coincide and the only
         uncertainty entering the layer is its own volatility parent's. With ``True``
         the parent's uncertainty bleeds through as the law of total variance requires.
-    mean_field_updates :
-        If ``True``, the volatility level enters the log-volatility exponent at its
-        expected mean alone: the MGF term
-        :math:`1 / (2 \hat{\pi}_{\mathrm{vol}})` is dropped, as in the mean-field
-        prediction.
-        Incompatible with ``feedforward_uncertainty`` (the mean-field scheme carries
-        no value-coupling variance either); the network-level constructor enforces
-        this.
     predict_precision :
         Whether the prediction step advances the precisions at all. With ``False``
         both predicted precisions are held at the layer's prior precision, the
@@ -215,7 +199,7 @@ def vectorised_layer_prediction(
             effective_precision_vol,
             predicted_volatility,
         ) = _predict_volatility_level(
-            child_state, params, time_step, has_volatility_parent, mean_field_updates
+            child_state, params, time_step, has_volatility_parent
         )
     else:
         # Nothing downstream reads the volatility level when the value-level
@@ -331,7 +315,6 @@ def vectorised_root_prediction(
     time_step: float,
     has_volatility_parent: bool = True,
     predict_precision: bool = True,
-    mean_field_updates: bool = False,
 ) -> LayerState:
     r"""Predict the precisions of a layer that has no value parent above it.
 
@@ -373,9 +356,6 @@ def vectorised_root_prediction(
         diffuses only through its tonic volatility, when one is allocated; without
         one it does not drift between observations and the predicted precision is
         just the prior precision.
-    mean_field_updates :
-        If ``True``, drop the MGF term from the log-volatility exponent (see
-        :func:`vectorised_layer_prediction`).
 
     Returns
     -------
@@ -390,7 +370,7 @@ def vectorised_root_prediction(
             effective_precision_vol,
             predicted_volatility,
         ) = _predict_volatility_level(
-            layer_state, params, time_step, has_volatility_parent, mean_field_updates
+            layer_state, params, time_step, has_volatility_parent
         )
 
         # No value parent, hence no value-coupling variance: the conditional and

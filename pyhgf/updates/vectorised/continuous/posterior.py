@@ -264,26 +264,8 @@ def _value_coupling_variance(state: LayerState) -> jnp.ndarray:
     )
 
 
-def _volatility_parents_mgf(layer: LayerState, child: VolatilityChild) -> jnp.ndarray:
-    r"""Moment-generating-function term of the volatility parents of each child node.
-
-    .. math::
-
-        \sum_m \frac{\kappa_{a,m}^2}{2 \hat{\pi}_m},
-
-    the term the relaxed prediction step adds to the log-volatility of the child node
-    :math:`a`, with the expected precisions of the parents :math:`m`. Mirrors the
-    relaxed branch of
-    :func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node._ehgf_volatility_precision_increment`.
-    """
-    return jnp.matmul(child.kappa**2, 1.0 / (2.0 * layer.expected_precision))
-
-
 def _child_previous_variance(
-    layer: LayerState,
-    child: VolatilityChild,
-    time_step: float,
-    mean_field_updates: bool = False,
+    layer: LayerState, child: VolatilityChild, time_step: float
 ) -> jnp.ndarray:
     r"""Reconstruct the variance the volatility child carried into its prediction.
 
@@ -301,8 +283,6 @@ def _child_previous_variance(
     total_volatility = child.params.tonic_volatility + jnp.matmul(
         child.kappa, layer.expected_mean
     )
-    if not mean_field_updates:
-        total_volatility = total_volatility + _volatility_parents_mgf(layer, child)
     predicted_volatility = time_step * jnp.exp(total_volatility)
     return jnp.maximum(
         1.0 / child.state.conditional_expected_precision - predicted_volatility,
@@ -315,7 +295,6 @@ def _volatility_precision_pwpe_ehgf(
     layer: LayerState,
     child: VolatilityChild,
     time_step: float,
-    mean_field_updates: bool = False,
 ) -> jnp.ndarray:
     r"""Enhanced-HGF "safe" volatility-coupling precision increment.
 
@@ -328,12 +307,8 @@ def _volatility_precision_pwpe_ehgf(
     .. math::
 
         \nu_{a,m} = t \exp\left(\omega_a + \kappa_{a,m} \mu_m
-            + \sum_{m' \neq m} \kappa_{a,m'} \hat{\mu}_{m'}
-            + \sum_{m''} \frac{\kappa_{a,m''}^2}{2 \hat{\pi}_{m''}}\right).
+            + \sum_{m' \neq m} \kappa_{a,m'} \hat{\mu}_{m'}\right).
 
-    The last sum is the moment-generating-function term of the relaxed prediction
-    step (:func:`_volatility_parents_mgf`), over every parent of the child; it is left
-    out when ``mean_field_updates`` is ``True``, as in the mean-field prediction step.
     Each edge's increment :math:`\tfrac12 \kappa^2 \gamma (\gamma + w \Delta)`
     is floored at zero before summation, so the posterior precision can never fall
     below the predicted precision. The re-predicted volatility adds to the known
@@ -342,19 +317,16 @@ def _volatility_precision_pwpe_ehgf(
     """
     assert child.params.tonic_volatility is not None
     previous_variance = _child_previous_variance(
-        layer, child, time_step, mean_field_updates
+        layer, child, time_step
     ) + _value_coupling_variance(child.state)
 
     # Per-edge re-prediction, shape (n_child, n_parent): the parents at their
-    # predicted means, with the edge's own parent moved to its posterior mean, and
-    # the MGF term the relaxed prediction step added to the child's volatility.
+    # predicted means, with the edge's own parent moved to its posterior mean.
     log_volatility = (
         child.params.tonic_volatility[:, None]
         + jnp.matmul(child.kappa, layer.expected_mean)[:, None]
         + child.kappa * (posterior_mean - layer.expected_mean)[None, :]
     )
-    if not mean_field_updates:
-        log_volatility = log_volatility + _volatility_parents_mgf(layer, child)[:, None]
     predicted_volatility = time_step * jnp.exp(log_volatility)
     expected_precision = 1.0 / (previous_variance[:, None] + predicted_volatility)
     effective_precision = predicted_volatility * expected_precision
@@ -484,10 +456,9 @@ def vectorised_continuous_posterior_update_ehgf(
     max_posterior_precision :
         Upper bound applied to the posterior precision write.
     mean_field_updates :
-        Whether the prediction step ran the mean-field scheme. If ``True``, the
-        value-coupling messages use the canonical predicted precision, and the
-        re-predicted volatility of the volatility child leaves out the
-        moment-generating-function term, as the mean-field prediction step does.
+        If ``True``, the value-coupling messages use the canonical predicted
+        precision instead of the relaxed factors. The volatility-coupling increment
+        is the same in both schemes.
 
     Returns
     -------
@@ -516,7 +487,7 @@ def vectorised_continuous_posterior_update_ehgf(
         )
     if volatility_child is not None:
         pwpe = pwpe + _volatility_precision_pwpe_ehgf(
-            posterior_mean, layer, volatility_child, time_step, mean_field_updates
+            posterior_mean, layer, volatility_child, time_step
         )
     posterior_precision = _finalize_precision(
         layer.expected_precision, pwpe, max_posterior_precision
@@ -532,7 +503,6 @@ def vectorised_continuous_posterior_update_unbounded(
     volatility_child: VolatilityChild,
     time_step: float = 1.0,
     max_posterior_precision: float = 1e10,
-    mean_field_updates: bool = False,
 ) -> LayerState:
     """Unbounded posterior update for a pure volatility-parent layer.
 
@@ -574,7 +544,7 @@ def vectorised_continuous_posterior_update_unbounded(
     # Known variance of the child's prediction: the carried variance and the variance
     # its value parents add, neither of which depends on the parent's value.
     previous_variance = _child_previous_variance(
-        layer, child, time_step, mean_field_updates
+        layer, child, time_step
     ) + _value_coupling_variance(child.state)
     be_aux = (
         1.0 / child.state.precision
@@ -710,9 +680,9 @@ def vectorised_continuous_posterior_update(
     max_posterior_precision :
         Upper bound applied to the posterior precision write.
     mean_field_updates :
-        If ``True``, the value-coupling messages use the original mean-field
-        forms and the variance reconstructions drop the MGF term the mean-field
-        prediction never added; see the individual update schemes.
+        If ``True``, the value-coupling messages use the mean-field forms; see
+        the individual update schemes. The volatility-coupling updates are the
+        same in both schemes.
 
     Returns
     -------
@@ -754,7 +724,6 @@ def vectorised_continuous_posterior_update(
             volatility_child=volatility_child,
             time_step=time_step,
             max_posterior_precision=max_posterior_precision,
-            mean_field_updates=mean_field_updates,
         )
     raise ValueError(
         f"Invalid volatility_updates {volatility_updates!r}. "

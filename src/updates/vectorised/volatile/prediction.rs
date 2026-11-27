@@ -89,20 +89,16 @@ pub fn layer_prediction(
     // Mean prediction: W @ g(parent means).
     child.expected_mean = weights.dot(&coupled);
 
-    // Predicted volatility Ω = t·exp(ω + μ_vol + 1/(2·π̂_vol)), fused. The
-    // volatility coupling is fixed at 1; the value level carries a tonic
-    // volatility ω of its own only when the params allocate one.
+    // Predicted volatility Ω = t·exp(ω + μ̂_vol): the volatility level enters at its
+    // expected mean. The volatility coupling is fixed at 1; the value level carries a
+    // tonic volatility ω of its own only when the params allocate one.
     let predicted_vol = if has_volatility_parent && predict_precision {
         let emv = expected_mean_vol.as_ref().unwrap();
-        let epv = expected_precision_vol.as_ref().unwrap();
         match &child_params.tonic_volatility {
             Some(tv) => ndarray::Zip::from(emv)
-                .and(epv)
                 .and(tv)
-                .map_collect(|&m, &pv, &w| guarded_volatility(w + m + 1.0 / (pv * 2.0), time_step)),
-            None => ndarray::Zip::from(emv)
-                .and(epv)
-                .map_collect(|&m, &pv| guarded_volatility(m + 1.0 / (pv * 2.0), time_step)),
+                .map_collect(|&m, &w| guarded_volatility(w + m, time_step)),
+            None => emv.mapv(|m| guarded_volatility(m, time_step)),
         }
     } else if let Some(tv) = &child_params.tonic_volatility {
         // Tonic-only diffusion: no volatility parent, but the value level still

@@ -110,8 +110,10 @@ class Network:
         mean_field_updates :
             If ``False`` (default), use the relaxed prediction and posterior updates,
             which lift the mean-field assumption on value-coupling edges via the
-            Schur-complement, Taylor and moment-generating-function terms of the
-            relaxed HGF (rHGF). If ``True``, use the mean-field updates from [1]_.
+            Schur-complement and Taylor terms of the relaxed HGF (rHGF). If ``True``,
+            use the mean-field updates from [1]_. Volatility coupling is mean-field
+            in both cases: a volatility parent enters the predicted volatility of
+            its children at its expected mean.
         precision_clipping_value :
             Binary state nodes clip their predicted mean to
             ``[precision_clipping_value, 1 - precision_clipping_value]`` so the implied

@@ -73,9 +73,6 @@ def test_continuous_posterior_updates():
     # node's posterior mean and the elapsed time, so ``time_step`` and the child's
     # previous variance must be set (as in the unbounded block below). Node 1 has no
     # value parent, so its conditional and marginal predicted precisions coincide.
-    # Under the relaxed prediction, the re-predicted volatility of node 1 includes the
-    # MGF term κ²/(2 π̂_2) = 0.5 of its volatility parent; without it, the posterior
-    # precision of node 2 would be 1.0022061.
     attributes, edges, _ = network.get_network()
     attributes[-1]["time_step"] = 1.0
     attributes[1]["temp"]["current_variance"] = 1.0
@@ -91,7 +88,7 @@ def test_continuous_posterior_updates():
         attributes=attributes, node_idx=2, edges=edges
     )
     assert jnp.isclose(new_attributes[2]["mean"], -0.00212589)
-    assert jnp.isclose(new_attributes[2]["precision"], 1.0038036)
+    assert jnp.isclose(new_attributes[2]["precision"], 1.0022061)
 
     # unbounded updates ----------------------------------------------------------------
     # ----------------------------------------------------------------------------------

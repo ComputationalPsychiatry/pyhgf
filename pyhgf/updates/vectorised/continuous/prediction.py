@@ -44,14 +44,13 @@ def vectorised_continuous_prediction(
     where the parent's prediction fully determines the child's expected mean).
 
     The two predicted precisions follow the relaxed HGF (rHGF) scheme of the
-    nodalised backend, with the volatility parent's moment-generating-function
-    term and the value parent's first-order Taylor term:
+    nodalised backend, with the value parent's first-order Taylor term; the
+    volatility parents enter at their predicted means:
 
     .. math::
 
         \Omega_a^{(k)} = t^{(k)} \exp\!\left( \omega_a
-            + \sum_j \left( \kappa_{a,j} \hat{\mu}_j
-            + \frac{\kappa_{a,j}^2}{2 \hat{\pi}_j} \right) \right), \qquad
+            + \sum_j \kappa_{a,j} \hat{\mu}_j \right), \qquad
         \bar{\pi}_a^{(k)} = \left( \frac{\lambda_a^2}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
             \right)^{-1},
 
@@ -110,9 +109,8 @@ def vectorised_continuous_prediction(
         If True, the layer is the clamped observation leaf, whose predicted
         precisions are the precision of its observation noise (see above).
     mean_field_updates :
-        If ``True``, use the mean-field prediction: the volatility parent's MGF
-        term :math:`\kappa^2 / (2 \hat{\pi})` and the value parent's Taylor variance
-        term are both dropped, so the conditional and the marginal predicted
+        If ``True``, use the mean-field prediction: the value parent's Taylor
+        variance term is dropped, so the conditional and the marginal predicted
         precision coincide, as in
         :func:`pyhgf.updates.prediction.continuous.predict_precision_mean_field`.
 
@@ -146,20 +144,13 @@ def vectorised_continuous_prediction(
         params.autoconnection_strength * child_state.mean + drift_scale * driftrate
     )
 
-    # 2. Total volatility, with the MGF term κ²/(2 π̂) that treats the
-    # volatility parent as a full Gaussian rather than a point estimate; the
-    # mean-field scheme keeps the point estimate and drops the term.
+    # 2. Total volatility: the volatility parents enter at their predicted means.
     total_volatility = params.tonic_volatility
     if volatility_parent_state is not None:
         assert volatility_weights is not None
         total_volatility = total_volatility + jnp.matmul(
             volatility_weights, volatility_parent_state.expected_mean
         )
-        if not mean_field_updates:
-            total_volatility = total_volatility + jnp.matmul(
-                volatility_weights**2,
-                1.0 / (2.0 * volatility_parent_state.expected_precision),
-            )
     predicted_volatility = time_step * jnp.exp(total_volatility)
     predicted_volatility = jnp.where(
         predicted_volatility > 1e-128, predicted_volatility, jnp.nan

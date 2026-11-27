@@ -133,9 +133,8 @@ def test_classic_three_level(volatility_updates):
 def test_mean_field_three_level(volatility_updates):
     """Mean-field parity on the classic 3-level continuous HGF.
 
-    Both backends run with ``mean_field_updates=True``: no MGF term in the log-
-    volatility exponent, no Taylor value-coupling variance, and canonical child
-    precisions in the posterior messages.
+    Both backends run with ``mean_field_updates=True``: no Taylor value-coupling
+    variance, and canonical child precisions in the posterior messages.
     """
     nod = (
         Network(volatility_updates=volatility_updates, mean_field_updates=True)
@@ -789,10 +788,9 @@ def test_ehgf_with_two_volatility_parents(mean_field_updates):
 
     The child has two volatility parents :math:`m = 0, 1`. For the edge to the parent
     :math:`m`, the child's volatility is re-predicted with this parent at its posterior
-    mean and the other parent at its predicted mean, plus, under the relaxed
-    prediction, the moment-generating-function terms
-    :math:`\sum_{m'} \kappa_{m'}^2 / (2 \hat{\pi}_{m'})` of both parents. The child's
-    conditional predicted precision sets the carried variance to :math:`\sigma = 0.5`.
+    mean and the other parent at its predicted mean, under the relaxed and the
+    mean-field updates. The child's conditional predicted precision sets the carried
+    variance to :math:`\sigma = 0.5`.
     """
     kappa = jnp.array([[1.0, 0.5]])
     tonic_volatility, carried_variance = -2.0, 0.5
@@ -804,8 +802,6 @@ def test_ehgf_with_two_volatility_parents(mean_field_updates):
         expected_precision=jnp.array([1.2, 1.6]),
     )
     log_volatility = tonic_volatility + kappa[0] @ parent.expected_mean
-    if not mean_field_updates:
-        log_volatility += jnp.sum(kappa[0] ** 2 / (2.0 * parent.expected_precision))
     child = VolatilityChild(
         state=_state(
             mean=0.2,
@@ -825,14 +821,12 @@ def test_ehgf_with_two_volatility_parents(mean_field_updates):
         parent, volatility_child=child, mean_field_updates=mean_field_updates
     )
 
-    mgf = jnp.sum(kappa[0] ** 2 / (2.0 * parent.expected_precision))
     increments = []
     for parent_idx, other_idx in ((0, 1), (1, 0)):
         volatility = jnp.exp(
             tonic_volatility
             + kappa[0, parent_idx] * updated.mean[parent_idx]
             + kappa[0, other_idx] * parent.expected_mean[other_idx]
-            + (0.0 if mean_field_updates else mgf)
         )
         expected_precision = 1.0 / (carried_variance + volatility)
         effective_precision = volatility * expected_precision
