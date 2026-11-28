@@ -359,9 +359,12 @@ const GAUSS_HERMITE_WEIGHTS: [f64; 10] = [
 /// probabilists' Gauss-Hermite rule, applied to $f$, to $(f - E[f])^2$ and to $f'$.
 /// Returns `(E[f], Var[f], E[f'])`. Mirrors `pyhgf.coupling.gauss_hermite_moments`
 /// with its default number of nodes.
+///
+/// `value_and_slope` returns $(f(x), f'(x))$ in one call, so that what the two share
+/// (the hyperbolic tangent, the exponential, the error function) is evaluated once
+/// per node.
 pub fn gauss_hermite_moments(
-    f: fn(f64) -> f64,
-    df: fn(f64) -> f64,
+    value_and_slope: impl Fn(f64) -> (f64, f64),
     mean: f64,
     variance: f64,
 ) -> (f64, f64, f64) {
@@ -379,11 +382,10 @@ pub fn gauss_hermite_moments(
         .enumerate()
     {
         for (j, sign) in [-1.0, 1.0].into_iter().enumerate() {
-            let x = mean + sign * sigma * node;
-            let value = f(x);
+            let (value, derivative) = value_and_slope(mean + sign * sigma * node);
             values[2 * i + j] = value;
             expected_value += weight * value;
-            slope += weight * df(x);
+            slope += weight * derivative;
         }
     }
     let mut expected_variance = 0.0;
@@ -475,7 +477,14 @@ pub fn sigmoid_d2(x: f64) -> f64 {
 /// Moments of sigmoid under a Gaussian, by quadrature (see
 /// [`gauss_hermite_moments`]).
 pub fn sigmoid_moments(mean: f64, variance: f64) -> (f64, f64, f64) {
-    gauss_hermite_moments(sigmoid, sigmoid_d1, mean, variance)
+    gauss_hermite_moments(
+        |x| {
+            let s = sigmoid(x);
+            (s, s * (1.0 - s))
+        },
+        mean,
+        variance,
+    )
 }
 /// [`CouplingFn`] constant for the sigmoid coupling function.
 pub const SIGMOID: CouplingFn = CouplingFn {
@@ -503,7 +512,14 @@ pub fn tanh_d2(x: f64) -> f64 {
 }
 /// Moments of tanh under a Gaussian, by quadrature (see [`gauss_hermite_moments`]).
 pub fn tanh_moments(mean: f64, variance: f64) -> (f64, f64, f64) {
-    gauss_hermite_moments(tanh, tanh_d1, mean, variance)
+    gauss_hermite_moments(
+        |x| {
+            let t = x.tanh();
+            (t, 1.0 - t.powi(2))
+        },
+        mean,
+        variance,
+    )
 }
 /// [`CouplingFn`] constant for the tanh coupling function.
 pub const TANH: CouplingFn = CouplingFn {
@@ -624,7 +640,15 @@ pub fn gelu_d2(x: f64) -> f64 {
 }
 /// Moments of GELU under a Gaussian, by quadrature (see [`gauss_hermite_moments`]).
 pub fn gelu_moments(mean: f64, variance: f64) -> (f64, f64, f64) {
-    gauss_hermite_moments(gelu, gelu_d1, mean, variance)
+    gauss_hermite_moments(
+        |x| {
+            let phi = 0.5 * erfc(-x / std::f64::consts::SQRT_2);
+            let pdf = (-(x * x) / 2.0).exp() / (2.0 * std::f64::consts::PI).sqrt();
+            (x * phi, phi + x * pdf)
+        },
+        mean,
+        variance,
+    )
 }
 /// [`CouplingFn`] constant for the GELU coupling function.
 pub const GELU: CouplingFn = CouplingFn {

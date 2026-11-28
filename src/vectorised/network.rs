@@ -13,7 +13,7 @@
 //! * [`DeepNet::predict_batch`] — a batched, read-only forward pass returning
 //!   the bottom layer's expected mean for every sample.
 
-use crate::math::sigmoid;
+use crate::math::{sigmoid, CouplingKind};
 use crate::updates::vectorised::learning::{weight_gradient_factors, WeightKind};
 use crate::updates::vectorised::{binary, categorical, softmax_inplace, volatile};
 use crate::vectorised::layer::{DeepNet, Layer, LayerKind};
@@ -689,28 +689,32 @@ impl DeepNet {
     ///
     /// With the exact coupling moments ([`Self::exact_moments`]), the expected mean
     /// of each layer takes the mean of the coupling function under the predicted
-    /// belief of its parent, so it depends on the predicted precisions: the pass
-    /// then runs the full prediction sweep at `time_step`, from the current
-    /// network state, in a scratch workspace. Use the time step of the training
-    /// steps to predict as they do.
+    /// belief of its parent, so it depends on the predicted precisions, and through
+    /// them on `time_step`. The pass then carries the predicted variance of each
+    /// layer next to its mean: 1/π + Ω + W² @ Var[g(x)], the prior variance of the
+    /// layer, its predicted volatility and the variance of the coupled parents,
+    /// which is what the prediction sweep computes, without the fields that only
+    /// the update sweep reads. Use the time step of the training steps to predict
+    /// as they do.
     pub fn predict_batch(&self, x: ArrayView2<Float>, time_step: Float) -> Matrix {
         let n = self.layers.len();
         if n == 1 {
             return x.to_owned(); // degenerate single-layer network (no weights)
         }
-        if self.exact_moments() {
-            return self.batch_forward(
-                &mut crate::vectorised::batched::BatchWorkspace::default(),
-                x,
-                time_step,
-            );
-        }
+        let exact_moments = self.exact_moments();
         // Work in a **features × samples** layout so every layer is a contiguous
         // `W @ A` gemm. In (samples × features) the forward would be `A @ Wᵀ`,
         // whose transposed right operand is non-contiguous and much slower for
         // the thin inner dimensions typical of HGF layers. This transposed
         // materialisation is the single input copy of the whole pass.
         let mut a = x.t().to_owned(); // (top_size, n_samples)
+                                      // Exact moments only: the predicted variance of every node of `a`, per
+                                      // sample. The predictors keep the predicted precision of the top layer.
+        let mut variance = Matrix::zeros((0, 0));
+        if exact_moments {
+            let top = &self.layers[n - 1].state.expected_precision;
+            variance = Matrix::from_shape_fn(a.raw_dim(), |(node, _)| 1.0 / top[node]);
+        }
         for i in (1..n).rev() {
             let parent = &self.layers[i];
             let child = &self.layers[i - 1];
@@ -722,11 +726,62 @@ impl DeepNet {
             let (psize, n_samples) = a.dim();
             let rows = psize + usize::from(parent.add_constant_input);
             let mut coupled = Matrix::from_elem((rows, n_samples), 1.0);
-            crate::math::with_coupling!(parent.coupling_fn, |f, _df, _d2f| {
-                ndarray::Zip::from(coupled.slice_mut(s![..psize, ..]))
+            if exact_moments {
+                // E[g] in `coupled` and Var[g] = A²σ² + R in `coupled_variance`
+                // (zero on the bias row), from the statistical linearisation that
+                // the prediction sweep takes. The moments are the cost of the pass,
+                // so they are evaluated in parallel once that pays for handing the
+                // work to the thread pool: from about 30 000 nodes × samples with a
+                // closed form, and from an eighth of that with the quadrature, which
+                // costs about eight times as much per node.
+                let coupling_fn = parent.coupling_fn;
+                let mut coupled_variance = Matrix::zeros((rows, n_samples));
+                let moments = |value: &mut Float, spread: &mut Float, &m: &Float, &v: &Float| {
+                    let (c, slope, residual) = coupling_fn.linearise_engine(m as f64, v as f64);
+                    *value = c as Float;
+                    *spread = (slope * slope * v as f64 + residual) as Float;
+                };
+                let nodes = ndarray::Zip::from(coupled.slice_mut(s![..psize, ..]))
+                    .and(coupled_variance.slice_mut(s![..psize, ..]))
                     .and(&a)
-                    .for_each(|c, &e| *c = f(e as f64) as Float);
-            });
+                    .and(&variance);
+                let closed_form = matches!(
+                    coupling_fn.kind,
+                    CouplingKind::Linear | CouplingKind::Relu | CouplingKind::LeakyRelu
+                );
+                if a.len() * if closed_form { 1 } else { 8 } >= 32_768 {
+                    nodes.par_for_each(moments);
+                } else {
+                    nodes.for_each(moments);
+                }
+                // Only a hidden child passes its variance on to the layer below.
+                if i > 1 {
+                    // 1/π + Ω per node of the child, the same for every sample, with
+                    // Ω the predicted volatility as in the prediction sweep.
+                    let tonic = child.params.tonic_volatility.as_ref();
+                    let prior_variance = Vector::from_shape_fn(child.n_nodes(), |node| {
+                        let volatility = if child.has_volatility_parent {
+                            let mean_vol = child.state.mean_vol.as_ref().expect("volatility mean");
+                            volatile::guarded_volatility(
+                                tonic.map_or(0.0, |tv| tv[node]) + mean_vol[node],
+                                time_step,
+                            )
+                        } else {
+                            tonic
+                                .map_or(0.0, |tv| volatile::guarded_volatility(tv[node], time_step))
+                        };
+                        1.0 / child.state.precision[node] + volatility
+                    });
+                    variance = w.mapv(|weight| weight * weight).dot(&coupled_variance);
+                    variance += &prior_variance.insert_axis(ndarray::Axis(1));
+                }
+            } else {
+                crate::math::with_coupling!(parent.coupling_fn, |f, _df, _d2f| {
+                    ndarray::Zip::from(coupled.slice_mut(s![..psize, ..]))
+                        .and(&a)
+                        .for_each(|c, &e| *c = f(e as f64) as Float);
+                });
+            }
 
             // (child, parent[+1]) @ (parent[+1], n_samples) = (child, n_samples).
             let mut child_a = w.dot(&coupled);
@@ -1394,5 +1449,74 @@ mod tests {
         assert_eq!(out.shape(), &[1, 3]);
         assert!((out.sum() - 1.0).abs() < 1e-10);
         assert!(out.iter().all(|&p| p > 0.0));
+    }
+
+    /// With the exact coupling moments, `predict_batch` returns the expected means
+    /// of the bottom layer of the full prediction sweep (`batch_forward`), for
+    /// layers with and without a volatility parent or a tonic volatility, below
+    /// and above the batch size at which the moments are evaluated in parallel.
+    #[test]
+    fn test_predict_exact_moments_matches_prediction_sweep() {
+        use crate::math::resolve_coupling_fn;
+        use crate::vectorised::batched::BatchWorkspace;
+
+        let hidden =
+            |size: usize, volatility_parent: bool, tonic_volatility: Option<Float>| LayerConfig {
+                coupling_fn: resolve_coupling_fn("tanh"),
+                volatility_parent,
+                tonic_volatility,
+                ..LayerConfig::new(size)
+            };
+        for bottom in [LayerKind::Volatile, LayerKind::Categorical] {
+            let configs = vec![
+                LayerConfig {
+                    kind: bottom,
+                    ..LayerConfig::new(3)
+                },
+                hidden(5, true, Some(-1.5)),
+                hidden(4, false, Some(-1.0)),
+                hidden(6, false, None),
+                hidden(8, true, None),
+            ];
+            let mut net = DeepNet::from_configs(&configs).unwrap();
+            net.exact_coupling_moments = true;
+            net.feedforward_uncertainty = true;
+            net.predict_precision = true;
+            assert!(net.exact_moments());
+            for (l, layer) in net.layers.iter_mut().enumerate() {
+                if let Some(weights) = layer.weights_in.as_mut() {
+                    let cols = weights.ncols();
+                    for ((i, j), w) in weights.indexed_iter_mut() {
+                        *w = 0.6 * ((1 + l + 3 * i * cols + 7 * j) as Float).sin();
+                    }
+                }
+                for (i, precision) in layer.state.precision.iter_mut().enumerate() {
+                    *precision = 0.5 + (i + l) as Float;
+                }
+            }
+
+            for n_samples in [3, 1200] {
+                let x = Matrix::from_shape_fn((n_samples, 8), |(i, j)| {
+                    1.5 * ((1 + i + 11 * j) as Float).cos()
+                });
+                let predict = |time_step| net.predict_batch(x.view(), time_step);
+                for time_step in [0.1, 1.0] {
+                    let sweep =
+                        net.batch_forward(&mut BatchWorkspace::default(), x.view(), time_step);
+                    let out = predict(time_step);
+                    assert_eq!(out.dim(), sweep.dim());
+                    for (a, b) in out.iter().zip(sweep.iter()) {
+                        assert!(
+                            (a - b).abs() <= REF_TOL * b.abs().max(1.0),
+                            "predict {a} vs prediction sweep {b}"
+                        );
+                    }
+                }
+                // The predicted variances, and through them the means, follow the
+                // time step.
+                let shift = (&predict(0.1) - &predict(1.0)).mapv(Float::abs);
+                assert!(shift.iter().cloned().fold(0.0, Float::max) > 1e-3);
+            }
+        }
     }
 }
