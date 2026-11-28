@@ -1,7 +1,7 @@
 # Author: Nicolas Legrand <nicolas.legrand@cas.au.dk>
 
 from functools import partial
-from typing import Callable
+from typing import Callable, Optional
 
 import jax.numpy as jnp
 from jax import Array, jit
@@ -136,9 +136,15 @@ def predict_mean(
     return expected_mean
 
 
-@partial(jit, static_argnames=("edges", "node_idx", "coupling_moments"))
+@partial(
+    jit, static_argnames=("edges", "node_idx", "coupling_moments", "excluded_parent")
+)
 def predict_value_coupling_variance(
-    attributes: dict, edges: Edges, node_idx: int, coupling_moments: str = "taylor"
+    attributes: dict,
+    edges: Edges,
+    node_idx: int,
+    coupling_moments: str = "taylor",
+    excluded_parent: Optional[int] = None,
 ) -> tuple[Array, Array]:
     r"""Compute the variance that the value parents add to the prediction of a node.
 
@@ -176,6 +182,11 @@ def predict_value_coupling_variance(
         Index of the node that is predicted.
     coupling_moments :
         ``"taylor"`` (default) or ``"exact"``, see above.
+    excluded_parent :
+        Index of a value parent to leave out of both sums. The posterior update of
+        this parent reads the variance that the other value parents add (see
+        :func:`pyhgf.updates.posterior.continuous.posterior_update_precision_continuous_node.precision_update`).
+        If ``None`` (default), every value parent is counted.
 
     Returns
     -------
@@ -209,6 +220,8 @@ def predict_value_coupling_variance(
             value_parents_idxs,
             attributes[node_idx]["value_coupling_parents"],
         ):
+            if value_parent_idx == excluded_parent:
+                continue
             child_position = edges[value_parent_idx].value_children.index(node_idx)
             coupling = resolve_coupling_fn(
                 edges[value_parent_idx].coupling_fn[child_position]

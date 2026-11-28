@@ -10,7 +10,10 @@ from jax.tree_util import Partial
 
 from pyhgf.coupling import resolve_coupling_fn
 from pyhgf.typing import Edges
-from pyhgf.updates.prediction.continuous import is_noise_child
+from pyhgf.updates.prediction.continuous import (
+    is_noise_child,
+    predict_value_coupling_variance,
+)
 
 # ----------------------------------------------------------------------------------
 # Shared building blocks
@@ -44,49 +47,93 @@ def _has_observations(attributes: dict, edges: Edges, node_idx: int) -> Array:
 
 
 def _relaxed_child_factors(
-    attributes: dict, edges: Edges, value_child_idx: int
+    attributes: dict,
+    edges: Edges,
+    value_child_idx: int,
+    parent_idx: int,
+    coupling_moments: str = "taylor",
 ) -> tuple[Array, Array]:
     r"""Child-precision factors of the posterior-step relaxation.
 
-    Returns ``(effective_precision, gain)``, the factors weighting the first-order
-    term :math:`\alpha^2 g'^2` and the second-order term :math:`\alpha g'' \delta_a`
-    of the value-coupling precision update:
+    Returns ``(effective_precision, gain)`` for the edge from the value parent
+    :math:`b` (``parent_idx``) to the value child :math:`a` (``value_child_idx``):
+    the factors weighting the first-order term :math:`\alpha^2 g'^2` and the
+    second-order term :math:`\alpha g'' \delta_a` of the value-coupling precision
+    update,
 
     .. math::
 
-        \pi^{\mathrm{eff}}_a = \frac{\bar{\pi}_a \, \pi_y}{\bar{\pi}_a + \pi_y},
+        \pi^{\mathrm{eff}}_{a|b} = \frac{\bar{\pi}_{a|b} \, \pi_y}{\bar{\pi}_{a|b} + \pi_y},
         \qquad
-        g_a = \frac{\bar{\pi}_a \, \pi_a}{\bar{\pi}_a + \pi_y},
+        g_{a|b} = \frac{\bar{\pi}_{a|b} \, \pi_a}{\bar{\pi}_{a|b} + \pi_y},
         \qquad
         \pi_y = \pi_a - \hat{\pi}_a.
 
-    The relaxed gain :math:`g_a` is the factor of the mean update, whose shift is
-    proportional to :math:`g_a \, \alpha \, g'(\mu_b) \, \delta_a`. The precision
-    increment is minus the derivative of this term with respect to :math:`\mu_b`:
-    differentiating :math:`g'` gives the second-order term, weighted by
-    :math:`g_a`; differentiating :math:`\delta_a` through the child's prediction
-    gives the first-order term, weighted by
-    :math:`g_a \, \pi_y / \pi_a = \pi^{\mathrm{eff}}_a`.
+    :math:`\pi_y` is the precision of the bottom-up evidence that reached :math:`a`,
+    and :math:`\bar{\pi}_{a|b}` is the predicted precision of :math:`x_a` given
+    :math:`x_b` alone, with every other value parent :math:`c` of :math:`a`
+    integrated over its predicted belief, as the prediction step integrates it:
 
-    The relaxation applies to Gaussian children (node types 2/6). The Schur
-    complement carries the *conditional* predicted precision :math:`\bar{\pi}_a`
-    (stored in ``temp``); using the marginal would double-count parent uncertainty.
-    A Gaussian *interior* child (one that has children of its own) uses the two
-    factors above. A Gaussian *leaf* is observed exactly: its stored ``precision`` is
-    the observation precision, not a posterior, so the update takes the fully
-    observed limit :math:`\pi_y \to \infty` of both factors,
-    :math:`\pi^{\mathrm{eff}}_a = g_a = \bar{\pi}_a`. For a leaf without a volatility
-    parent the prediction step sets :math:`\bar{\pi}_a = \hat{\pi}_a`, which gives the
-    canonical update. Non-Gaussian children (binary (type 1), categorical (5),
-    input/constant (0), exponential family (3), Dirichlet (4)) use the canonical
-    predicted precision :math:`\hat{\pi}_a` for both factors.
+    .. math::
+
+        \frac{1}{\bar{\pi}_{a|b}} = \frac{1}{\bar{\pi}_a}
+            + \sum_{c \in \mathrm{vapa}(a) \setminus \{b\}}
+            \frac{\left(t \, \alpha_{c,a} \, A_c\right)^2}{\hat{\pi}_c},
+
+    with :math:`\bar{\pi}_a` the conditional predicted precision of :math:`a`
+    (stored in ``temp``), which conditions on every value parent. The sum is the
+    slope variance of the prediction step
+    (:func:`pyhgf.updates.prediction.continuous.predict_value_coupling_variance`)
+    without the term of :math:`b`, so it takes the time step :math:`t` and the
+    slopes :math:`A_c` of the linearised coupling functions as the prediction does,
+    under both settings of ``coupling_moments``. With ``"exact"``, the variance of
+    the residuals of the linear functions of every parent, :math:`b` included, does
+    not depend on :math:`x_b` and is part of :math:`\bar{\pi}_a`. When :math:`b` is
+    the only value parent, :math:`\bar{\pi}_{a|b} = \bar{\pi}_a`.
+
+    The joint Gaussian of :math:`(x_a, x_b)` with this conditional has the marginal
+    predicted precision :math:`\hat{\pi}_a` for :math:`x_a`, the precision the child
+    was updated against, so the factors give the exact marginal posterior of
+    :math:`x_b` from the evidence of :math:`a` for linear coupling. The contributions
+    of several value children add up to the exact marginal posterior when no two
+    children of :math:`b` share another value parent; otherwise each edge leaves out
+    what the other children say about the shared parents, and the sum is an
+    approximation.
+
+    The gain :math:`g_{a|b}` is the factor of the mean update, whose shift is
+    proportional to :math:`g_{a|b} \, \alpha \, g'(\mu_b) \, \delta_a`. The
+    precision increment is minus the derivative of this term with respect to
+    :math:`\mu_b`: differentiating :math:`g'` gives the second-order term, weighted
+    by :math:`g_{a|b}`; differentiating :math:`\delta_a` through the child's
+    prediction gives the first-order term, weighted by
+    :math:`g_{a|b} \, \pi_y / \pi_a = \pi^{\mathrm{eff}}_{a|b}`.
+
+    The relaxation applies to Gaussian children (node types 2 and 6). A Gaussian
+    interior child (one that has children of its own) uses the two factors above. A
+    Gaussian leaf is observed exactly: its stored ``precision`` is the observation
+    precision, not a posterior, so the update takes the fully observed limit
+    :math:`\pi_y \to \infty` of both factors,
+    :math:`\pi^{\mathrm{eff}}_{a|b} = g_{a|b} = \bar{\pi}_{a|b}`. For a leaf with a
+    single value parent and no volatility parent, :math:`\bar{\pi}_{a|b} =
+    \hat{\pi}_a`, which gives the canonical update. Non-Gaussian children (binary
+    (type 1), categorical (5), input or constant (0), exponential family (3),
+    Dirichlet (4)) use the canonical predicted precision :math:`\hat{\pi}_a` for
+    both factors.
     """
     child_node_type = edges[value_child_idx].node_type
     child_expected_precision = attributes[value_child_idx]["expected_precision"]
     if child_node_type not in (2, 6):
         return child_expected_precision, child_expected_precision
 
-    child_cond = attributes[value_child_idx]["temp"]["conditional_expected_precision"]
+    # π̄_{a|b}: the predicted precision of x_a given x_b alone. The other value
+    # parents of a add the variance of the prediction step, Σ_{c ≠ b} (t α_c A_c)² / π̂_c.
+    other_parents_variance, _ = predict_value_coupling_variance(
+        attributes, edges, value_child_idx, coupling_moments, excluded_parent=parent_idx
+    )
+    child_cond = 1.0 / (
+        1.0 / attributes[value_child_idx]["temp"]["conditional_expected_precision"]
+        + other_parents_variance
+    )
     child_is_leaf = (
         edges[value_child_idx].value_children is None
         and edges[value_child_idx].volatility_children is None
@@ -103,11 +150,17 @@ def _relaxed_child_factors(
 
 
 def _mean_field_child_factors(
-    attributes: dict, edges: Edges, value_child_idx: int
+    attributes: dict,
+    edges: Edges,
+    value_child_idx: int,
+    parent_idx: int,
+    coupling_moments: str = "taylor",
 ) -> tuple[Array, Array]:
     r"""Child-precision factors under the mean-field update (no relaxation).
 
-    Both factors are the canonical predicted precision :math:`\hat{\pi}_a`.
+    Both factors are the canonical predicted precision :math:`\hat{\pi}_a`, whatever the
+    parent. ``parent_idx`` and ``coupling_moments`` are unused; the signature matches
+    :func:`_relaxed_child_factors`.
     """
     child_expected_precision = attributes[value_child_idx]["expected_precision"]
     return child_expected_precision, child_expected_precision
@@ -117,7 +170,7 @@ def _value_coupling_pwpe(
     attributes: dict,
     edges: Edges,
     node_idx: int,
-    child_factors_fn: Callable[[dict, Edges, int], tuple[Array, Array]],
+    child_factors_fn: Callable[[dict, Edges, int, int, str], tuple[Array, Array]],
     coupling_moments: str = "taylor",
 ) -> Array:
     r"""Precision-weighted prediction error from value-coupled children.
@@ -191,7 +244,7 @@ def _value_coupling_pwpe(
             )
 
         effective_child_precision, child_gain = child_factors_fn(
-            attributes, edges, value_child_idx
+            attributes, edges, value_child_idx, node_idx, coupling_moments
         )
 
         # cancel the prediction error if the child value was not observed
@@ -456,27 +509,29 @@ def precision_update(
 
     Applies the canonical value- and volatility-coupling posterior-precision updates
     (eq. 50 of [1]_), augmented by the posterior-step relaxation of the relaxed HGF
-    (rHGF) on each Gaussian-interior value child :math:`a`, which contributes
+    (rHGF) on each Gaussian interior value child :math:`a`, which contributes
 
     .. math::
 
-        \frac{\bar{\pi}_a}{\bar{\pi}_a + \pi_y} \left( \alpha^2 \, g'^2 \, \pi_y
+        \frac{\bar{\pi}_{a|b}}{\bar{\pi}_{a|b} + \pi_y} \left( \alpha^2 \, g'^2 \, \pi_y
             - \alpha \, g'' \, \pi_a \, \delta_a \right), \qquad
         \pi_y = \pi_a - \hat{\pi}_a,
 
-    where :math:`\bar{\pi}_a` is the child's *conditional* predicted precision
-    (stored as ``child.temp["conditional_expected_precision"]``) and
-    :math:`\hat{\pi}_a` its *marginal* predicted precision
-    (``child.expected_precision``). The first-order term carries the relaxed child
-    precision :math:`\bar{\pi}_a \pi_y / (\bar{\pi}_a + \pi_y)` and the second-order
-    term the relaxed gain :math:`\bar{\pi}_a \pi_a / (\bar{\pi}_a + \pi_y)` of the
-    mean update (see :func:`_relaxed_child_factors`). When
-    :math:`\hat{\pi}_a = \bar{\pi}_a` the relaxed gain equals :math:`\hat{\pi}_a` and
-    the second-order term is the canonical one. The Schur complement uses the
-    conditional; substituting the marginal would double-count parent uncertainty.
-    A Gaussian leaf takes the fully observed limit :math:`\pi_y \to \infty`, in which
-    both factors are :math:`\bar{\pi}_a`. Non-Gaussian children fall back to the
-    canonical predicted-precision factor :math:`\hat{\pi}_a` in both terms.
+    where :math:`\bar{\pi}_{a|b}` is the predicted precision of :math:`x_a` given
+    the updated parent :math:`x_b` alone: the child's conditional predicted precision
+    :math:`\bar{\pi}_a` (stored as ``child.temp["conditional_expected_precision"]``),
+    with the variance that the other value parents of :math:`a` add through the
+    slopes of their linearised coupling functions added to its variance (see
+    :func:`_relaxed_child_factors`). :math:`\hat{\pi}_a` is the
+    child's marginal predicted precision (``child.expected_precision``). The
+    first-order term carries the relaxed child precision
+    :math:`\bar{\pi}_{a|b} \pi_y / (\bar{\pi}_{a|b} + \pi_y)` and the second-order
+    term the relaxed gain :math:`\bar{\pi}_{a|b} \pi_a / (\bar{\pi}_{a|b} + \pi_y)`
+    of the mean update. For a child with a single value parent,
+    :math:`\bar{\pi}_{a|b} = \bar{\pi}_a`. A Gaussian leaf takes the fully observed
+    limit :math:`\pi_y \to \infty`, in which both factors are
+    :math:`\bar{\pi}_{a|b}`. Non-Gaussian children fall back to the canonical
+    predicted precision :math:`\hat{\pi}_a` in both terms.
 
     With ``coupling_moments="exact"``, the coupling function is replaced by its
     statistical linearisation under the predicted belief of the node, as in the
@@ -488,11 +543,13 @@ def precision_update(
 
     .. math::
 
-        \frac{\bar{\pi}_a \, \pi_y}{\bar{\pi}_a + \pi_y} \, (\alpha A)^2,
+        \frac{\bar{\pi}_{a|b} \, \pi_y}{\bar{\pi}_{a|b} + \pi_y} \, (\alpha A)^2,
 
     where the conditional predicted precision :math:`\bar{\pi}_a` of the child
-    includes the variance of the residual of the linear function. The prediction and
-    the update then use the same joint Gaussian of the node and its child.
+    includes the variance of the residuals of the linear functions, and the other
+    value parents of the child enter :math:`\bar{\pi}_{a|b}` through their mean
+    slopes. The prediction and the update then use the same joint Gaussian of the
+    node and its child.
 
     Parameters
     ----------
