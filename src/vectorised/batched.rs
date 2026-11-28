@@ -252,27 +252,22 @@ fn batched_volatile_prediction(
         &parent.expected_mean,
         parent_layer.coupling_fn,
         parent_layer.add_constant_input,
-        if exact_moments {
-            Some(&parent.expected_precision)
-        } else {
-            None
-        },
+        exact_moments.then_some(&parent.expected_precision),
     );
     let mut ppv = Matrix::zeros((p, n_samples));
     let mut residual = None;
     if exact_moments {
         let mut residual_factor = Matrix::zeros((p, n_samples));
-        let moments = parent_layer.coupling_fn.moments;
+        let coupling_fn = parent_layer.coupling_fn;
         Zip::from(ppv.slice_mut(s![..n_parent, ..]))
             .and(residual_factor.slice_mut(s![..n_parent, ..]))
             .and(&parent.expected_mean)
             .and(&parent.expected_precision)
             .for_each(|o, r, &mu, &ep| {
                 let precision = ep as f64;
-                let (_, coupling_variance, slope) = moments(mu as f64, 1.0 / precision);
+                let (_, slope, residual) = coupling_fn.linearise(mu as f64, 1.0 / precision);
                 *o = (slope * slope / precision) as Float;
-                // Floored at zero against rounding.
-                *r = (coupling_variance - slope * slope / precision).max(0.0) as Float;
+                *r = residual as Float;
             });
         residual = Some(residual_factor);
     } else {
@@ -415,11 +410,7 @@ fn batched_binary_prediction(
         &parent.expected_mean,
         parent_layer.coupling_fn,
         parent_layer.add_constant_input,
-        if exact_moments {
-            Some(&parent.expected_precision)
-        } else {
-            None
-        },
+        exact_moments.then_some(&parent.expected_precision),
     );
     let mut logit = weights.dot(&coupled);
     logit.mapv_inplace(|x| {
@@ -444,11 +435,7 @@ fn batched_categorical_prediction(
         &parent.expected_mean,
         parent_layer.coupling_fn,
         parent_layer.add_constant_input,
-        if exact_moments {
-            Some(&parent.expected_precision)
-        } else {
-            None
-        },
+        exact_moments.then_some(&parent.expected_precision),
     );
     let mut logits = weights.dot(&coupled);
     for col in logits.columns_mut() {

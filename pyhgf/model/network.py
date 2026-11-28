@@ -12,6 +12,7 @@ from jax.lax import scan, switch
 from jax.tree_util import Partial, tree_map
 from jax.typing import ArrayLike
 
+from pyhgf.coupling import check_coupling_moments
 from pyhgf.model import (
     add_binary_state,
     add_categorical_state,
@@ -154,18 +155,7 @@ class Network:
           Mathys, C. (2026). The generalized hierarchical Gaussian filter.
           doi:10.7554/elife.110174.1
         """
-        if coupling_moments not in ("taylor", "exact"):
-            raise ValueError(
-                f"Invalid coupling_moments {coupling_moments!r}. "
-                "Choose from 'taylor' or 'exact'."
-            )
-        if coupling_moments == "exact" and mean_field_updates:
-            raise ValueError(
-                "coupling_moments='exact' is incompatible with "
-                "mean_field_updates=True: the mean-field updates treat value parents "
-                "as point estimates, so there is no belief to take the moments of "
-                "the coupling functions under."
-            )
+        check_coupling_moments(coupling_moments, mean_field_updates)
         self.edges: Edges = ()
         self.n_nodes: int = 0  # number of nodes in the network
         self.node_trajectories: dict = {}

@@ -6,7 +6,7 @@
 //! a batched, read-only forward sweep and `DeepNetwork::fit` runs prediction +
 //! update + weight learning sequentially over the samples.
 
-use crate::math::parse_coupling_fn;
+use crate::math::{parse_coupling_fn, parse_coupling_moments};
 use crate::updates::vectorised::learning::WeightKind;
 use crate::vectorised::batched::BatchWorkspace;
 use crate::vectorised::layer::{
@@ -269,15 +269,8 @@ impl DeepNetwork {
                  {precision_clipping_value}."
             )));
         }
-        let exact_coupling_moments = match coupling_moments {
-            "taylor" => false,
-            "exact" => true,
-            other => {
-                return Err(PyValueError::new_err(format!(
-                    "Invalid coupling_moments '{other}'. Choose from 'taylor' or 'exact'."
-                )))
-            }
-        };
+        let exact_coupling_moments =
+            parse_coupling_moments(coupling_moments).map_err(PyValueError::new_err)?;
         if exact_coupling_moments && !(feedforward_uncertainty && predict_precision) {
             return Err(PyValueError::new_err(
                 "coupling_moments='exact' requires feedforward_uncertainty=True and \

@@ -280,6 +280,57 @@ class Coupling:
             return self.closed_form_moments(mean, variance)
         return gauss_hermite_moments(self.f, self.df, mean, variance, self.n_points)
 
+    def linearise(
+        self, mean: ArrayLike, variance: ArrayLike, coupling_moments: str = "taylor"
+    ) -> tuple[Array, Array, Array]:
+        r"""Replace the coupling function by a linear function of its argument.
+
+        For :math:`x \sim \mathcal{N}(\mu, \sigma^2)`, the coupling function is
+        replaced by
+
+        .. math::
+
+            g(x) \approx c + A \, (x - \mu) + e, \qquad \mathrm{Var}[e] = R,
+
+        with a residual :math:`e` that is independent of :math:`x`. With
+        ``coupling_moments="taylor"``, this is the first-order Taylor expansion at
+        the mean: :math:`c = g(\mu)`, :math:`A = g'(\mu)` and :math:`R = 0`. With
+        ``coupling_moments="exact"``, it is the linear function that is the closest
+        to :math:`g` in mean squared error under the Gaussian (statistical
+        linearisation), from the moments of :meth:`moments`:
+        :math:`c = \mathbb{E}[g(x)]`, :math:`A = \mathbb{E}[g'(x)]` and
+        :math:`R = \mathrm{Var}[g(x)] - A^2 \sigma^2`.
+
+        Parameters
+        ----------
+        mean :
+            The mean :math:`\mu` of the Gaussian.
+        variance :
+            The variance :math:`\sigma^2` of the Gaussian, with the shape of
+            ``mean``. Not read with ``coupling_moments="taylor"``.
+        coupling_moments :
+            ``"taylor"`` (default) or ``"exact"``.
+
+        Returns
+        -------
+        value :
+            The value :math:`c` of the linear function at the mean.
+        slope :
+            The slope :math:`A` of the linear function.
+        residual_variance :
+            The variance :math:`R` of the residual, floored at zero against
+            rounding.
+        """
+        if coupling_moments == "exact":
+            value, coupling_variance, slope = self.moments(mean, variance)
+            return (
+                value,
+                slope,
+                jnp.maximum(coupling_variance - slope**2 * variance, 0.0),
+            )
+        value = self.f(mean)
+        return value, self.df(mean), jnp.zeros_like(value)
+
     @classmethod
     def from_callable(cls, fn: Callable, n_points: int = 20) -> "Coupling":
         r"""Wrap a function in a coupling with derivatives from automatic differentiation.
@@ -427,6 +478,37 @@ FROM_CALLABLE_CACHE.update({
     (jax.nn.tanh, 20): TANH,
     (jax.nn.sigmoid, 20): SIGMOID,
 })
+
+
+def check_coupling_moments(coupling_moments: str, mean_field_updates: bool) -> None:
+    """Check the ``coupling_moments`` argument of a network.
+
+    Parameters
+    ----------
+    coupling_moments :
+        ``"taylor"`` or ``"exact"``.
+    mean_field_updates :
+        Whether the network uses the mean-field updates.
+
+    Raises
+    ------
+    ValueError
+        If ``coupling_moments`` is not ``"taylor"`` or ``"exact"``, or if it is
+        ``"exact"`` with the mean-field updates, which treat the value parents as
+        point estimates.
+    """
+    if coupling_moments not in ("taylor", "exact"):
+        raise ValueError(
+            f"Invalid coupling_moments {coupling_moments!r}. "
+            "Choose from 'taylor' or 'exact'."
+        )
+    if coupling_moments == "exact" and mean_field_updates:
+        raise ValueError(
+            "coupling_moments='exact' is incompatible with "
+            "mean_field_updates=True: the mean-field updates treat value parents "
+            "as point estimates, so there is no belief to take the moments of "
+            "the coupling functions under."
+        )
 
 
 def resolve_coupling_fn(

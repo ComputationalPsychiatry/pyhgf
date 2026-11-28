@@ -253,18 +253,18 @@ def vectorised_layer_prediction(
     # convention as the binary prediction, the weight-learning step, the
     # per-node backend, and the Rust backend (constant-state nodes are forced
     # to identity coupling).
-    coupling = Coupling.from_callable(coupling_fn)
     exact_moments = (
         coupling_moments == "exact" and predict_precision and feedforward_uncertainty
     )
-    if exact_moments:
-        # Moments of g under each parent's predicted belief N(μ̂_b, 1/π̂_b): the mean
-        # E[g], the variance Var[g] and the mean slope A = E[g'].
-        coupled_parents, coupling_variance, slope = coupling.moments(
-            parent_state.expected_mean, 1.0 / parent_state.expected_precision
-        )
-    else:
-        coupled_parents = coupling(parent_state.expected_mean)
+    # Linear stand-in of g around each parent's expected mean: its value, its slope
+    # and the variance of its residual. The first-order Taylor expansion gives g(μ̂_b),
+    # g'(μ̂_b) and no residual; the exact moments give E[g], E[g'] and the residual
+    # variance under the parent's predicted belief N(μ̂_b, 1/π̂_b).
+    coupled_parents, g_prime, residual = Coupling.from_callable(coupling_fn).linearise(
+        parent_state.expected_mean,
+        1.0 / parent_state.expected_precision,
+        "exact" if exact_moments else "taylor",
+    )
     if parent_has_constant:
         coupled_parents = jnp.concatenate([coupled_parents, jnp.ones(1)])
 
@@ -294,16 +294,9 @@ def vectorised_layer_prediction(
         else:
             parent_precision = parent_state.expected_precision
             if exact_moments:
-                g_prime = slope
-                # Floored at zero against rounding.
-                residual = jnp.maximum(
-                    coupling_variance - slope**2 / parent_precision, 0.0
-                )
                 if parent_has_constant:
                     residual = jnp.concatenate([residual, jnp.zeros(1)])
                 residual_variance = jnp.matmul(weights**2, residual)
-            else:
-                g_prime = coupling.df(parent_state.expected_mean)
             if parent_has_constant:
                 # The constant node never varies: zero derivative, infinite precision.
                 parent_precision = jnp.concatenate([

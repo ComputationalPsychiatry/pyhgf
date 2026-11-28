@@ -159,14 +159,12 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
             let alpha = couplings.get(i).copied().unwrap_or(1.0);
             let (parent_value, g_prime) = match network.attributes.fn_ptrs[parent_idx].coupling_fn {
                 Some(cf) if exact_moments => {
-                    // Moments of g under the parent's predicted belief: the mean
-                    // E[g], the variance Var[g] and the mean slope A = E[g'].
-                    let (expected_value, coupling_variance, slope) =
-                        (cf.moments)(parent_expected_mean, 1.0 / parent_expected_precision);
-                    // Floored at zero against rounding.
-                    residual_variance += alpha
-                        * alpha
-                        * (coupling_variance - slope * slope / parent_expected_precision).max(0.0);
+                    // Statistical linearisation of g under the parent's predicted
+                    // belief: the mean E[g], the mean slope A = E[g'] and the variance
+                    // of the residual.
+                    let (expected_value, slope, residual) =
+                        cf.linearise(parent_expected_mean, 1.0 / parent_expected_precision);
+                    residual_variance += alpha * alpha * residual;
                     (expected_value, slope)
                 }
                 Some(cf) => ((cf.f)(parent_expected_mean), (cf.df)(parent_expected_mean)),

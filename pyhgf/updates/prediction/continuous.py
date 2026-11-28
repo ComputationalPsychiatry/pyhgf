@@ -119,13 +119,12 @@ def predict_mean(
             )
             if coupling is None:
                 parent_value = attributes[value_parent_idx]["expected_mean"]
-            elif coupling_moments == "exact":
-                parent_value, _, _ = coupling.moments(
+            else:
+                parent_value, _, _ = coupling.linearise(
                     attributes[value_parent_idx]["expected_mean"],
                     1.0 / attributes[value_parent_idx]["expected_precision"],
+                    coupling_moments,
                 )
-            else:
-                parent_value = coupling(attributes[value_parent_idx]["expected_mean"])
 
             driftrate += alpha * parent_value
 
@@ -143,17 +142,16 @@ def predict_value_coupling_variance(
 ) -> tuple[Array, Array]:
     r"""Compute the variance that the value parents add to the prediction of a node.
 
-    Each value parent :math:`b` of the node :math:`a` is replaced by a linear function
+    Each value parent :math:`b` of the node :math:`a` enters through a linear function
     of its value around its expected mean, with a slope :math:`A_b` and a residual of
-    variance :math:`R_b` that is independent of the parent:
-
-    .. math::
-
-        g(x_b) \approx c_b + A_b \, (x_b - \hat{\mu}_b) + e_b, \qquad
-        \mathrm{Var}[e_b] = R_b.
-
-    The belief :math:`x_b \sim \mathcal{N}(\hat{\mu}_b, 1/\hat{\pi}_b)` of the parent
-    adds the two variances
+    variance :math:`R_b` (:meth:`pyhgf.coupling.Coupling.linearise`): the first-order
+    Taylor expansion of its coupling function with ``coupling_moments="taylor"``
+    (:math:`A_b = g'(\hat{\mu}_b)`, :math:`R_b = 0`), or its statistical linearisation
+    under the predicted belief of the parent with ``coupling_moments="exact"``
+    (section II-A of [1]_; :math:`A_b = \mathbb{E}[g'(x_b)]`,
+    :math:`R_b = \mathrm{Var}[g(x_b)] - A_b^2 / \hat{\pi}_b`). The belief
+    :math:`x_b \sim \mathcal{N}(\hat{\mu}_b, 1/\hat{\pi}_b)` of the parent adds the two
+    variances
 
     .. math::
 
@@ -162,24 +160,10 @@ def predict_value_coupling_variance(
         V^{\mathrm{res}}_a = \sum_b (t_a \alpha_{b,a})^2 R_b,
 
     to the prediction of the node, with :math:`t_a` the time step for a state node,
-    whose drift the time step scales, and 1 for an input node.
-
-    With ``coupling_moments="taylor"``, the linear function is the first-order Taylor
-    expansion of the coupling function at the expected mean of the parent:
-    :math:`A_b = g'(\hat{\mu}_b)` and :math:`R_b = 0`. With
-    ``coupling_moments="exact"``, it is the linear function that is the closest to the
-    coupling function in mean squared error under the belief of the parent
-    (statistical linearisation, section II-A of [1]_):
-
-    .. math::
-
-        A_b = \mathbb{E}[g'(x_b)], \qquad
-        R_b = \mathrm{Var}[g(x_b)] - \frac{A_b^2}{\hat{\pi}_b},
-
-    so that the two variances sum to :math:`\sum_b (t_a \alpha_{b,a})^2
-    \mathrm{Var}[g(x_b)]`, the variance of the drift under the beliefs of the parents.
-    The moments are those of :meth:`pyhgf.coupling.Coupling.moments`. A linear coupling
-    has :math:`A_b = 1` and :math:`R_b = 0` in both cases.
+    whose drift the time step scales, and 1 for an input node. With ``"exact"``, they
+    sum to :math:`\sum_b (t_a \alpha_{b,a})^2 \mathrm{Var}[g(x_b)]`, the variance of
+    the drift under the beliefs of the parents. A linear coupling has
+    :math:`A_b = 1` and :math:`R_b = 0` in both cases.
 
     Parameters
     ----------
@@ -233,15 +217,11 @@ def predict_value_coupling_variance(
             pi_b = attributes[value_parent_idx]["expected_precision"]
             if coupling is None:
                 slope = jnp.ones_like(mu_b)
-            elif coupling_moments == "exact":
-                _, coupling_variance, slope = coupling.moments(mu_b, 1.0 / pi_b)
-                # Variance of the residual of the linear function, floored at zero
-                # against rounding.
-                residual_variance += (time_scale * alpha) ** 2 * jnp.maximum(
-                    coupling_variance - slope**2 / pi_b, 0.0
-                )
             else:
-                slope = coupling.df(mu_b)
+                _, slope, residual = coupling.linearise(
+                    mu_b, 1.0 / pi_b, coupling_moments
+                )
+                residual_variance += (time_scale * alpha) ** 2 * residual
 
             slope_variance += (time_scale * alpha * slope) ** 2 / pi_b
 
@@ -517,7 +497,11 @@ def continuous_node_prediction(
        doi:10.7554/elife.110174.1
     """
     return _store_prediction(
-        attributes, edges, node_idx, predict_precision, coupling_moments
+        attributes,
+        edges,
+        node_idx,
+        partial(predict_precision, coupling_moments=coupling_moments),
+        coupling_moments,
     )
 
 
@@ -624,8 +608,8 @@ def _store_prediction(
     the effective precision is :math:`\gamma_u = 1`, as for the noise child of [1]_
     (Eq. 73). Other nodes take the predicted precisions of ``precision_fn``.
 
-    With ``coupling_moments="exact"``, ``precision_fn`` and :func:`predict_mean` take
-    this argument, and the variance of the residuals of the linearised coupling
+    With ``coupling_moments="exact"``, :func:`predict_mean` takes this argument
+    (``precision_fn`` is already bound to it), and the variance of the residuals of the linearised coupling
     functions (:func:`predict_value_coupling_variance`) is added to the variance of
     the observation noise of an input node, and to the known variance that the
     volatility updates of the parents of a state node read (``current_variance``).
@@ -640,7 +624,6 @@ def _store_prediction(
     is_input_node = edge.value_children is None and edge.volatility_children is None
 
     exact_moments = coupling_moments == "exact"
-    moments_kwargs = {"coupling_moments": coupling_moments} if exact_moments else {}
     if exact_moments:
         _, residual_variance = predict_value_coupling_variance(
             attributes, edges, node_idx, coupling_moments
@@ -660,7 +643,7 @@ def _store_prediction(
         effective_precision = jnp.zeros_like(expected_precision)
     else:
         expected_precision, conditional_expected_precision, effective_precision = (
-            precision_fn(attributes, edges, node_idx, **moments_kwargs)
+            precision_fn(attributes, edges, node_idx)
         )
 
     # Carried variance, which the eHGF and unbounded volatility updates re-predict
@@ -671,7 +654,7 @@ def _store_prediction(
     ) / attributes[node_idx]["precision"]
     if exact_moments and not is_input_node:
         current_variance = current_variance + residual_variance
-    expected_mean = predict_mean(attributes, edges, node_idx, **moments_kwargs)
+    expected_mean = predict_mean(attributes, edges, node_idx, coupling_moments)
     attributes[node_idx]["temp"]["current_variance"] = current_variance
     attributes[node_idx]["expected_mean"] = expected_mean
     attributes[node_idx]["expected_precision"] = expected_precision

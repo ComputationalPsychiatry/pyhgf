@@ -74,13 +74,11 @@ def vectorised_categorical_prediction(
     """
     # Apply coupling to the parent activations only; the constant bias node is
     # always wired in linearly (g(1) = 1) regardless of coupling_fn.
-    coupling = Coupling.from_callable(coupling_fn)
-    if coupling_moments == "exact":
-        coupled_parents, _, _ = coupling.moments(
-            parent_state.expected_mean, 1.0 / parent_state.expected_precision
-        )
-    else:
-        coupled_parents = coupling(parent_state.expected_mean)
+    coupled_parents, _, _ = Coupling.from_callable(coupling_fn).linearise(
+        parent_state.expected_mean,
+        1.0 / parent_state.expected_precision,
+        coupling_moments,
+    )
     if parent_has_constant:
         coupled_parents = jnp.concatenate([coupled_parents, jnp.ones(1)])
     logits = jnp.matmul(weights, coupled_parents)

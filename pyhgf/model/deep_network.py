@@ -22,7 +22,12 @@ import numpy as np
 import optax
 import pandas as pd
 
-from pyhgf.coupling import IDENTITY, Coupling, resolve_coupling_fn
+from pyhgf.coupling import (
+    IDENTITY,
+    Coupling,
+    check_coupling_moments,
+    resolve_coupling_fn,
+)
 from pyhgf.model.builder import LayerConfig
 from pyhgf.typing.vectorised import (
     VOLATILITY_STATE_FIELDS,
@@ -322,18 +327,7 @@ class DeepNetwork:
             that their value parents propagate, so a network with such layers also
             requires ``feedforward_uncertainty=True`` and ``predict_precision=True``.
         """
-        if coupling_moments not in ("taylor", "exact"):
-            raise ValueError(
-                f"Invalid coupling_moments {coupling_moments!r}. "
-                "Choose from 'taylor' or 'exact'."
-            )
-        if coupling_moments == "exact" and mean_field_updates:
-            raise ValueError(
-                "coupling_moments='exact' is incompatible with "
-                "mean_field_updates=True: the mean-field updates treat value parents "
-                "as point estimates, so there is no belief to take the moments of "
-                "the coupling functions under."
-            )
+        check_coupling_moments(coupling_moments, mean_field_updates)
         if mean_field_updates and feedforward_uncertainty:
             raise ValueError(
                 "mean_field_updates=True is incompatible with "

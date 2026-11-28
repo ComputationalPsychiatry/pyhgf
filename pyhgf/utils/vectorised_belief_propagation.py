@@ -1189,13 +1189,11 @@ def _input_prediction_error(network: VectorisedNetwork) -> jnp.ndarray:
     # Slope of the coupling function, as in the interior posterior mean update: its
     # derivative at the expected mean or, with the exact moments, its mean slope
     # under the top layer's predicted belief.
-    coupling = Coupling.from_callable(top.coupling_fn)
-    if _volatile_coupling_moments(network) == "exact":
-        _, _, coupling_prime = coupling.moments(
-            top.state.expected_mean, 1.0 / top.state.expected_precision
-        )
-    else:
-        coupling_prime = coupling.df(top.state.expected_mean)
+    _, coupling_prime, _ = Coupling.from_callable(top.coupling_fn).linearise(
+        top.state.expected_mean,
+        1.0 / top.state.expected_precision,
+        _volatile_coupling_moments(network),
+    )
     return (
         jnp.matmul(weights.T, gain * child_state.value_prediction_error)
         * coupling_prime
@@ -2158,9 +2156,8 @@ def _continuous_update_sweep(
        doi:10.7554/elife.110174.1
     """
     elements = list(network.layers)
-    exact_moments = (
-        network.coupling_moments == "exact" and not network.mean_field_updates
-    )
+    # The mean-field updates do not read the coupling moments.
+    moments = "taylor" if network.mean_field_updates else network.coupling_moments
 
     # Clamp the observations and compute the leaf value prediction error. A
     # volatility parent of the leaf reads its noise prediction error instead of a
@@ -2196,28 +2193,24 @@ def _continuous_update_sweep(
                 # Noise parent: the noise prediction error of the observation layer
                 # reads the posterior of its value parent, updated before this layer.
                 vp = value_parent_of[elem.volatility_child_idx]
-                noise_kwargs: dict = {}
-                if exact_moments:
+                noise_precision = None
+                if moments == "exact":
                     # The predicted precision of the observation layer also counts
                     # the residual of the linearised coupling function: the noise
                     # prediction error reads the precision of the observation noise
                     # alone, exp(-(ω + κ μ̂)).
                     assert child_elem.params.tonic_volatility is not None
-                    noise_kwargs = {
-                        "coupling_moments": "exact",
-                        "noise_precision": jnp.exp(
-                            -child_elem.params.tonic_volatility
-                            - jnp.matmul(
-                                elem.volatility_weights, elem.state.expected_mean
-                            )
-                        ),
-                    }
+                    noise_precision = jnp.exp(
+                        -child_elem.params.tonic_volatility
+                        - jnp.matmul(elem.volatility_weights, elem.state.expected_mean)
+                    )
                 noise_state = vectorised_continuous_noise_prediction_error(
                     child_elem.state,
                     value_parent_state=None if vp is None else elements[vp].state,
                     weights=None if vp is None else elements[vp].weights_mean,
                     coupling_fn=None if vp is None else elements[vp].coupling_fn,
-                    **noise_kwargs,
+                    coupling_moments=moments,
+                    noise_precision=noise_precision,
                 )
                 child_elem = dataclasses.replace(child_elem, state=noise_state)
                 elements[elem.volatility_child_idx] = child_elem

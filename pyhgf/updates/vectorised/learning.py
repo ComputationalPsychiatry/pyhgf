@@ -548,13 +548,11 @@ def evidence_pullback(
     # amplifying the message instead of attenuating it.
     floored = jnp.maximum(child_evidence, 0.0)
     softened = floored / (1.0 + child_process_noise * floored)
-    coupling = Coupling.from_callable(coupling_fn)
-    if coupling_moments == "exact":
-        _, _, coupling_prime = coupling.moments(
-            parent_state.expected_mean, 1.0 / parent_state.expected_precision
-        )
-    else:
-        coupling_prime = coupling.df(parent_state.expected_mean)
+    _, coupling_prime, _ = Coupling.from_callable(coupling_fn).linearise(
+        parent_state.expected_mean,
+        1.0 / parent_state.expected_precision,
+        coupling_moments,
+    )
     pulled = jnp.matmul(weights.T**2, softened) * coupling_prime**2
     return jnp.where(jnp.isfinite(pulled), jnp.maximum(pulled, 0.0), 0.0)
 

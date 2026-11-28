@@ -754,15 +754,8 @@ impl Network {
         precision_clipping_value: f64,
         coupling_moments: &str,
     ) -> PyResult<Self> {
-        let exact_coupling_moments = match coupling_moments {
-            "taylor" => false,
-            "exact" => true,
-            other => {
-                return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                    "Invalid coupling_moments '{other}'. Choose from 'taylor' or 'exact'."
-                )))
-            }
-        };
+        let exact_coupling_moments = crate::math::parse_coupling_moments(coupling_moments)
+            .map_err(pyo3::exceptions::PyValueError::new_err)?;
         if exact_coupling_moments && mean_field_updates {
             return Err(pyo3::exceptions::PyValueError::new_err(
                 "coupling_moments='exact' is incompatible with mean_field_updates=True: \

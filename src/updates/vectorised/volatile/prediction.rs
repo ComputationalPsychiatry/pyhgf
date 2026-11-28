@@ -87,12 +87,11 @@ pub fn layer_prediction(
     if exact_moments {
         for j in 0..n_parent {
             let precision = parent.expected_precision[j] as f64;
-            let (expected_value, coupling_variance, slope) =
-                (coupling_fn.moments)(parent.expected_mean[j] as f64, 1.0 / precision);
+            let (expected_value, slope, residual_j) =
+                coupling_fn.linearise(parent.expected_mean[j] as f64, 1.0 / precision);
             coupled[j] = expected_value as Float;
             ppv[j] = (slope * slope / precision) as Float;
-            // Floored at zero against rounding.
-            residual[j] = (coupling_variance - slope * slope / precision).max(0.0) as Float;
+            residual[j] = residual_j as Float;
         }
     } else {
         with_coupling!(coupling_fn, |f, df, _d2f| {

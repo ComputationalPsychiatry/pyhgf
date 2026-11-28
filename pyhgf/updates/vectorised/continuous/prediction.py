@@ -159,16 +159,17 @@ def vectorised_continuous_prediction(
     )
     if value_parent_state is not None:
         assert weights is not None and coupling_fn is not None
-        coupling = Coupling.from_callable(coupling_fn)
-        if exact_moments:
-            # Moments of g under the parent's predicted belief N(μ̂_b, 1/π̂_b): the
-            # mean E[g], the variance Var[g] and the mean slope A = E[g'].
-            coupled_parents, coupling_variance, slope = coupling.moments(
-                value_parent_state.expected_mean,
-                1.0 / value_parent_state.expected_precision,
-            )
-        else:
-            coupled_parents = coupling(value_parent_state.expected_mean)
+        # Linear stand-in of g around the parent's expected mean: its value, its
+        # slope A_b and the variance of its residual. The first-order Taylor expansion
+        # gives g(μ̂_b), g'(μ̂_b) and no residual; the exact moments give E[g], E[g']
+        # and the residual variance under the predicted belief N(μ̂_b, 1/π̂_b).
+        coupled_parents, g_prime, residual = Coupling.from_callable(
+            coupling_fn
+        ).linearise(
+            value_parent_state.expected_mean,
+            1.0 / value_parent_state.expected_precision,
+            "exact" if exact_moments else "taylor",
+        )
         driftrate = driftrate + jnp.matmul(weights, coupled_parents)
     expected_mean = (
         params.autoconnection_strength * child_state.mean + drift_scale * driftrate
@@ -186,28 +187,15 @@ def vectorised_continuous_prediction(
         predicted_volatility > 1e-128, predicted_volatility, jnp.nan
     )
 
-    # 3. Value-coupling variance: Σ_b (t · W_ab · A_b)² / π̂_b, with the slope A_b
-    # of the linearised coupling function: g'(μ̂_b) (first-order Taylor expansion)
-    # or, with the exact moments, E[g'(x_b)], which leaves the residual variance
-    # Σ_b (t · W_ab)² · (Var[g_b] − A_b² / π̂_b). Absent under mean-field, where value
-    # parents enter at their means alone.
+    # 3. Value-coupling variance: Σ_b (t · W_ab · A_b)² / π̂_b, and with the exact
+    # moments the residual variance Σ_b (t · W_ab)² · R_b. Absent under mean-field,
+    # where value parents enter at their means alone.
     value_coupling_variance = jnp.zeros_like(child_state.precision)
     residual_variance = jnp.zeros_like(child_state.precision)
     if value_parent_state is not None and not mean_field_updates:
-        assert weights is not None and coupling_fn is not None
+        assert weights is not None
         if exact_moments:
-            g_prime = slope
-            residual_variance = (drift_scale**2) * jnp.matmul(
-                weights**2,
-                # Floored at zero against rounding.
-                jnp.maximum(
-                    coupling_variance
-                    - slope**2 / value_parent_state.expected_precision,
-                    0.0,
-                ),
-            )
-        else:
-            g_prime = coupling.df(value_parent_state.expected_mean)
+            residual_variance = (drift_scale**2) * jnp.matmul(weights**2, residual)
         value_coupling_variance = (drift_scale**2) * jnp.matmul(
             weights**2, g_prime**2 / value_parent_state.expected_precision
         )

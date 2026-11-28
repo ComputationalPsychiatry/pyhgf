@@ -134,16 +134,13 @@ def vectorised_posterior_update_precision_value_level(
        Mathys, C. (2026). The generalized hierarchical Gaussian filter.
        doi:10.7554/elife.110174.1
     """
-    coupling = Coupling.from_callable(coupling_fn)
-    if coupling_moments == "exact" and not mean_field_updates:
-        # Statistical linearisation: the mean slope E[g'] under the layer's predicted
-        # belief.
-        _, _, coupling_prime = coupling.moments(
-            layer.expected_mean, 1.0 / layer.expected_precision
-        )
-    else:
-        # Coupling derivatives at parent expected means
-        coupling_prime = coupling.df(layer.expected_mean)
+    # Slope of the coupling function at the parent expected means: its derivative
+    # or, with the exact moments, its mean slope under the predicted belief.
+    _, coupling_prime, _ = Coupling.from_callable(coupling_fn).linearise(
+        layer.expected_mean,
+        1.0 / layer.expected_precision,
+        "taylor" if mean_field_updates else coupling_moments,
+    )
 
     # Effective child precision under the posterior-step relaxation:
     #     π̄_a · π_y / (π̄_a + π_y),    π_y = π_a − π̂_a.
@@ -251,15 +248,13 @@ def vectorised_posterior_update_mean_value_level(
     jnp.ndarray
         Posterior mean for each node in the parent layer.
     """
-    coupling = Coupling.from_callable(coupling_fn)
-    if coupling_moments == "exact" and not mean_field_updates:
-        # Mean slope E[g'] under the layer's predicted belief
-        _, _, coupling_prime = coupling.moments(
-            layer.expected_mean, 1.0 / layer.expected_precision
-        )
-    else:
-        # Coupling derivatives at parent expected means
-        coupling_prime = coupling.df(layer.expected_mean)
+    # Slope of the coupling function at the parent expected means: its derivative
+    # or, with the exact moments, its mean slope under the predicted belief.
+    _, coupling_prime, _ = Coupling.from_callable(coupling_fn).linearise(
+        layer.expected_mean,
+        1.0 / layer.expected_precision,
+        "taylor" if mean_field_updates else coupling_moments,
+    )
 
     # Precision-weighted PE from children. From the joint Gaussian posterior over
     # (x_a, x_b), the per-child contribution is

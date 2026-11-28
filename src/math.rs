@@ -57,6 +57,20 @@ pub fn parse_coupling_fn(name: &str) -> Result<&'static CouplingFn, String> {
     }
 }
 
+/// Parse the `coupling_moments` argument of a network: `Ok(false)` for `"taylor"`
+/// (first-order Taylor expansion of the coupling functions) and `Ok(true)` for
+/// `"exact"` (their moments under the belief of the parent), erroring on any other
+/// name. Used at the Python boundary, as [`parse_coupling_fn`].
+pub fn parse_coupling_moments(name: &str) -> Result<bool, String> {
+    match name {
+        "taylor" => Ok(false),
+        "exact" => Ok(true),
+        other => Err(format!(
+            "Invalid coupling_moments '{other}'. Choose from 'taylor' or 'exact'."
+        )),
+    }
+}
+
 /// A coupling (activation) function together with its first and second derivatives
 /// and its moments under a Gaussian.
 ///
@@ -89,6 +103,24 @@ pub struct CouplingFn {
     /// and the mean slope $E[f'(x)] = \mathrm{Cov}[x, f(x)] / \sigma^2$. Mirrors
     /// `pyhgf.coupling.Coupling.moments`.
     pub moments: fn(f64, f64) -> (f64, f64, f64),
+}
+
+impl CouplingFn {
+    /// Statistical linearisation of the function under $x \sim \mathcal{N}(\mu,
+    /// \sigma^2)$: the linear function $c + A (x - \mu)$ closest to $f$ in mean
+    /// squared error, with a residual of variance $R$. Returns `(c, A, R)` with
+    /// $c = E[f(x)]$, $A = E[f'(x)]$ and $R = \mathrm{Var}[f(x)] - A^2 \sigma^2$,
+    /// floored at zero against rounding. Mirrors `pyhgf.coupling.Coupling.linearise`
+    /// with `coupling_moments="exact"`.
+    #[inline]
+    pub fn linearise(&self, mean: f64, variance: f64) -> (f64, f64, f64) {
+        let (value, coupling_variance, slope) = (self.moments)(mean, variance);
+        (
+            value,
+            slope,
+            (coupling_variance - slope * slope * variance).max(0.0),
+        )
+    }
 }
 
 /// Tag identifying one of the named coupling functions.
@@ -223,8 +255,13 @@ pub fn rectifier_moments(mean: f64, variance: f64, negative_slope: f64) -> (f64,
     // The clipping of z gives the limits of a point belief without forming 0 · ∞.
     let sigma = variance.max(f64::MIN_POSITIVE).sqrt();
     let z = (mean / sigma).clamp(-40.0, 40.0);
-    let cdf = normal_cdf(z);
-    let survival = normal_cdf(-z);
+    // Φ(z) and Φ(−z) from one evaluation of the tail beyond |z|.
+    let tail = normal_cdf(-z.abs());
+    let (cdf, survival) = if z >= 0.0 {
+        (1.0 - tail, tail)
+    } else {
+        (tail, 1.0 - tail)
+    };
     let pdf = (-0.5 * z * z).exp() / (2.0 * std::f64::consts::PI).sqrt();
 
     let slope = negative_slope + (1.0 - negative_slope) * cdf;
