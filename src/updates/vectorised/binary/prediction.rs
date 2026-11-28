@@ -10,6 +10,8 @@ use crate::vectorised::mat::{Float, Matrix};
 /// away from 0/1, with the Bernoulli variance stored as `expected_precision`.
 ///
 /// Mirrors `vectorised_binary_prediction`.
+/// With `exact_moments`, `g(parent)` is the mean E[g(x)] of the coupling function
+/// under the predicted belief N(μ̂, 1/π̂) of each parent node.
 pub fn binary_prediction(
     child: &mut LayerState,
     parent: &LayerState,
@@ -17,10 +19,16 @@ pub fn binary_prediction(
     coupling_fn: &CouplingFn,
     parent_has_constant: bool,
     precision_clipping_value: Float,
+    exact_moments: bool,
 ) {
-    let mut coupled_parents = with_coupling!(coupling_fn, |f, _df, _d2f| parent
-        .expected_mean
-        .mapv(|v| f(v as f64) as Float));
+    let mut coupled_parents = if exact_moments {
+        // Mean E[g] cached by the prediction sweep for this step.
+        parent.linear_value.clone()
+    } else {
+        with_coupling!(coupling_fn, |f, _df, _d2f| parent
+            .expected_mean
+            .mapv(|v| f(v as f64) as Float))
+    };
     if parent_has_constant {
         coupled_parents = push(&coupled_parents, 1.0);
     }

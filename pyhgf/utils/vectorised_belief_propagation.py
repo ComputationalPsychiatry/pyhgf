@@ -13,6 +13,7 @@ import jax
 import jax.numpy as jnp
 import optax
 
+from pyhgf.coupling import Coupling
 from pyhgf.typing.vectorised import (
     VOLATILITY_STATE_FIELDS as _VOL_STATE_FIELDS,
 )
@@ -118,6 +119,7 @@ def _predict_layer_from_parent(
     precision_clipping_value: float,
     predict_precision: bool = True,
     feedforward_uncertainty: bool = False,
+    coupling_moments: str = "taylor",
 ):
     """Predict a single ``Layer`` child from a parent view."""
     if child.kind == "binary":
@@ -128,6 +130,7 @@ def _predict_layer_from_parent(
             coupling_fn=parent_coupling_fn,
             parent_has_constant=parent_has_constant,
             precision_clipping_value=precision_clipping_value,
+            coupling_moments=coupling_moments,
         )
     elif child.kind == "categorical":
         new_state = vectorised_categorical_prediction(
@@ -136,6 +139,7 @@ def _predict_layer_from_parent(
             weights=parent_weights,
             coupling_fn=parent_coupling_fn,
             parent_has_constant=parent_has_constant,
+            coupling_moments=coupling_moments,
         )
     else:
         new_state = vectorised_layer_prediction(
@@ -150,6 +154,7 @@ def _predict_layer_from_parent(
             is_input_layer=child.is_input_layer,
             predict_precision=predict_precision,
             feedforward_uncertainty=feedforward_uncertainty,
+            coupling_moments=coupling_moments,
         )
     return dataclasses.replace(child, state=new_state)
 
@@ -164,6 +169,7 @@ def _predict_stack_from_parent(
     time_step: float,
     predict_precision: bool = True,
     feedforward_uncertainty: bool = False,
+    coupling_moments: str = "taylor",
 ):
     """Top-down sweep over a ``LayerStack``.
 
@@ -188,6 +194,7 @@ def _predict_stack_from_parent(
         is_input_layer=False,
         predict_precision=predict_precision,
         feedforward_uncertainty=feedforward_uncertainty,
+        coupling_moments=coupling_moments,
     )
 
     # xs: per-iteration data for predicting slices N-2 ... 0 from the slice above.
@@ -214,6 +221,7 @@ def _predict_stack_from_parent(
             is_input_layer=False,
             predict_precision=predict_precision,
             feedforward_uncertainty=feedforward_uncertainty,
+            coupling_moments=coupling_moments,
         )
         return new_child_state, new_child_state
 
@@ -242,6 +250,7 @@ def _topdown_predict(
     precision_clipping_value: float,
     predict_precision: bool = True,
     feedforward_uncertainty: bool = False,
+    coupling_moments: str = "taylor",
 ):
     """Predict ``child_elem`` from ``parent_elem``.
 
@@ -261,6 +270,7 @@ def _topdown_predict(
             time_step=time_step,
             predict_precision=predict_precision,
             feedforward_uncertainty=feedforward_uncertainty,
+            coupling_moments=coupling_moments,
         )
     return _predict_layer_from_parent(
         child_elem,
@@ -272,6 +282,7 @@ def _topdown_predict(
         precision_clipping_value=precision_clipping_value,
         predict_precision=predict_precision,
         feedforward_uncertainty=feedforward_uncertainty,
+        coupling_moments=coupling_moments,
     )
 
 
@@ -320,6 +331,7 @@ def _posterior_pe_layer(
     max_posterior_precision: float,
     time_step: float = 1.0,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
     feedforward_uncertainty: bool = False,
 ):
     """Single-layer posterior update + prediction error.
@@ -336,6 +348,7 @@ def _posterior_pe_layer(
         max_posterior_precision=max_posterior_precision,
         child_is_input_layer=child_is_input_layer,
         mean_field_updates=mean_field_updates,
+        coupling_moments=coupling_moments,
     )
     if parent.kind == "binary":
         new_state = vectorised_binary_prediction_error(layer=new_state)
@@ -359,6 +372,7 @@ def _top_precision_only(
     *,
     max_posterior_precision: float,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
 ):
     r"""Update the top layer's precision from the layer below, leaving its mean clamped.
 
@@ -398,6 +412,7 @@ def _top_precision_only(
             coupling_fn=parent.coupling_fn,
             child_is_input_layer=child_is_input_layer,
             mean_field_updates=mean_field_updates,
+            coupling_moments=coupling_moments,
         ),
         parent.state.expected_precision,
         max_posterior_precision,
@@ -448,6 +463,7 @@ def _posterior_pe_stack(
     max_posterior_precision: float,
     time_step: float = 1.0,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
     feedforward_uncertainty: bool = False,
 ):
     r"""Bottom-up sweep over a ``LayerStack``.
@@ -488,6 +504,7 @@ def _posterior_pe_stack(
             max_posterior_precision=max_posterior_precision,
             child_is_input_layer=is_leaf_child,
             mean_field_updates=mean_field_updates,
+            coupling_moments=coupling_moments,
         )
         return vectorised_layer_prediction_error(
             layer=new_state,
@@ -544,6 +561,7 @@ def _bottomup_posterior_pe(
     max_posterior_precision: float,
     time_step: float = 1.0,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
     feedforward_uncertainty: bool = False,
 ):
     """Posterior update + prediction error for ``parent_elem`` from ``child_elem``."""
@@ -557,6 +575,7 @@ def _bottomup_posterior_pe(
             max_posterior_precision=max_posterior_precision,
             time_step=time_step,
             mean_field_updates=mean_field_updates,
+            coupling_moments=coupling_moments,
             feedforward_uncertainty=feedforward_uncertainty,
         )
     return _posterior_pe_layer(
@@ -567,6 +586,7 @@ def _bottomup_posterior_pe(
         max_posterior_precision=max_posterior_precision,
         time_step=time_step,
         mean_field_updates=mean_field_updates,
+        coupling_moments=coupling_moments,
         feedforward_uncertainty=feedforward_uncertainty,
     )
 
@@ -577,12 +597,17 @@ def _bottomup_posterior_pe(
 
 
 def _layer_weight_op(
-    parent: Layer, child_elem, learning_kind: str, child_evidence=None
+    parent: Layer,
+    child_elem,
+    learning_kind: str,
+    child_evidence=None,
+    coupling_moments: str = "taylor",
 ):
     """Learning factors for a ``Layer`` parent and its child.
 
     *child_evidence* is passed only by the evidence walk; ``None`` leaves
     ``learning_weights_vectorised`` to recover the evidence from the cache.
+    *coupling_moments* selects the parent-side factor, as in the sweeps.
     """
     child_state, child_kind, _ = _child_view(child_elem)
     return learning_weights_vectorised(
@@ -593,10 +618,17 @@ def _layer_weight_op(
         parent_has_constant=parent.add_constant_input,
         child_kind=child_kind,
         child_evidence=child_evidence,
+        coupling_moments=coupling_moments,
     )
 
 
-def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str, evidence=None):
+def _stack_weight_op(
+    stack: LayerStack,
+    child_elem,
+    learning_kind: str,
+    evidence=None,
+    coupling_moments: str = "taylor",
+):
     """Learning factors for every slice of a ``LayerStack``, and the evidence above it.
 
     The child of slice 0 is the layer below the stack (``child_elem``); the child of
@@ -632,6 +664,7 @@ def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str, evidence
             weights=slice_weights,
             coupling_fn=stack.coupling_fn,
             parent_has_constant=stack.add_constant_input,
+            coupling_moments=coupling_moments,
         )
         noise_here = slice_state.effective_precision / jnp.maximum(
             slice_state.expected_precision, _EPS
@@ -669,6 +702,7 @@ def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str, evidence
             parent_has_constant=stack.add_constant_input,
             child_kind=kind,
             child_evidence=child_evidence if walking else None,
+            coupling_moments=coupling_moments,
         )
 
     # Boundary: slice 0 from the external child, with the child's own kind.
@@ -692,11 +726,17 @@ def _stack_weight_op(stack: LayerStack, child_elem, learning_kind: str, evidence
     return (factors, evidence_out) if walking else factors
 
 
-def _weight_op(parent_elem, child_elem, learning_kind: str):
+def _weight_op(
+    parent_elem, child_elem, learning_kind: str, coupling_moments: str = "taylor"
+):
     """Dispatch the learning factors on ``Layer`` vs ``LayerStack``."""
     if isinstance(parent_elem, LayerStack):
-        return _stack_weight_op(parent_elem, child_elem, learning_kind)
-    return _layer_weight_op(parent_elem, child_elem, learning_kind)
+        return _stack_weight_op(
+            parent_elem, child_elem, learning_kind, coupling_moments=coupling_moments
+        )
+    return _layer_weight_op(
+        parent_elem, child_elem, learning_kind, coupling_moments=coupling_moments
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -938,6 +978,25 @@ def run_scan(
     return jax.lax.scan(_scan_body, init_carry, inputs)
 
 
+def _volatile_coupling_moments(network: VectorisedNetwork) -> str:
+    """Return the coupling moments that the sweeps of a volatile network read.
+
+    The moments of a coupling function are taken under the uncertainty that a value
+    parent propagates to its children. ``network.coupling_moments`` therefore applies
+    only with ``feedforward_uncertainty`` and ``predict_precision``, under the relaxed
+    updates; otherwise the sweeps linearise the coupling functions at the expected means
+    (``"taylor"``). The prediction and the update sweeps read the same value, so that
+    both use the same linearisation.
+    """
+    if (
+        network.feedforward_uncertainty
+        and network.predict_precision
+        and not network.mean_field_updates
+    ):
+        return network.coupling_moments
+    return "taylor"
+
+
 def _prediction_sweep(
     network: VectorisedNetwork, x: jnp.ndarray, *, time_step: float = 1.0
 ) -> VectorisedNetwork:
@@ -969,6 +1028,7 @@ def _prediction_sweep(
             precision_clipping_value=network.precision_clipping_value,
             predict_precision=network.predict_precision,
             feedforward_uncertainty=network.feedforward_uncertainty,
+            coupling_moments=_volatile_coupling_moments(network),
         )
 
     return dataclasses.replace(network, layers=tuple(elements))
@@ -1014,6 +1074,7 @@ def _update_sweep(
             max_posterior_precision=network.max_posterior_precision,
             time_step=time_step,
             mean_field_updates=network.mean_field_updates,
+            coupling_moments=_volatile_coupling_moments(network),
             feedforward_uncertainty=network.feedforward_uncertainty,
         )
 
@@ -1026,6 +1087,7 @@ def _update_sweep(
             child_is_input_layer,
             max_posterior_precision=network.max_posterior_precision,
             mean_field_updates=network.mean_field_updates,
+            coupling_moments=_volatile_coupling_moments(network),
         )
 
     return dataclasses.replace(network, layers=tuple(elements))
@@ -1124,7 +1186,14 @@ def _input_prediction_error(network: VectorisedNetwork) -> jnp.ndarray:
             / (child_state.conditional_expected_precision + pi_y)
         )
 
-    coupling_prime = jax.vmap(jax.grad(top.coupling_fn))(top.state.expected_mean)
+    # Slope of the coupling function, as in the interior posterior mean update: its
+    # derivative at the expected mean or, with the exact moments, its mean slope
+    # under the top layer's predicted belief.
+    _, coupling_prime, _ = Coupling.from_callable(top.coupling_fn).linearise(
+        top.state.expected_mean,
+        1.0 / top.state.expected_precision,
+        _volatile_coupling_moments(network),
+    )
     return (
         jnp.matmul(weights.T, gain * child_state.value_prediction_error)
         * coupling_prime
@@ -1169,11 +1238,17 @@ def _weight_quantities(network: VectorisedNetwork, learning_kind: str) -> tuple:
     which loses every significant digit once a layer's precision has accumulated.
 
     The other learning kinds never read the importance factor, so they skip the walk.
+
+    With the exact coupling moments (see :func:`_volatile_coupling_moments`), the
+    parent-side factor of a non-linear coupling function is its mean under the
+    parent's predicted belief, and the evidence walk takes its mean slope, so that
+    the weight update reads the linearisation that the sweeps used.
     """
     elements = network.layers
+    coupling_moments = _volatile_coupling_moments(network)
     if learning_kind != "synaptic_uncertainty":
         return (None,) + tuple(
-            _weight_op(elements[i], elements[i - 1], learning_kind)
+            _weight_op(elements[i], elements[i - 1], learning_kind, coupling_moments)
             for i in range(1, len(elements))
         )
 
@@ -1185,12 +1260,14 @@ def _weight_quantities(network: VectorisedNetwork, learning_kind: str) -> tuple:
         parent = elements[i]
         if isinstance(parent, LayerStack):
             stack_factors, evidence = _stack_weight_op(
-                parent, elements[i - 1], learning_kind, evidence
+                parent, elements[i - 1], learning_kind, evidence, coupling_moments
             )
             factors.append(stack_factors)
             continue
         factors.append(
-            _layer_weight_op(parent, elements[i - 1], learning_kind, evidence)
+            _layer_weight_op(
+                parent, elements[i - 1], learning_kind, evidence, coupling_moments
+            )
         )
         if i + 1 < len(elements):
             # The evidence is softened by the process noise of the layer it leaves,
@@ -1205,6 +1282,7 @@ def _weight_quantities(network: VectorisedNetwork, learning_kind: str) -> tuple:
                 weights=parent.weights_mean,
                 coupling_fn=parent.coupling_fn,
                 parent_has_constant=parent.add_constant_input,
+                coupling_moments=coupling_moments,
             )
     return tuple(factors)
 
@@ -1459,10 +1537,29 @@ def carry_precisions(network: VectorisedNetwork) -> VectorisedNetwork:
     marginal predicted precision coincide and the posterior precision is carried
     unchanged. Without ``carry_precision``, every volatile layer goes back to its
     prior precision ``params.prior_precision``. Other layer kinds are left unchanged.
+
+    With the exact coupling moments (see :func:`_volatile_coupling_moments`), the
+    value parents add a second variance to the prediction of a layer: the variance
+    :math:`V^{\mathrm{res}}_a` of the residuals of their linearised coupling
+    functions (``residual_variance``), which the prediction counts in the
+    conditional predicted variance :math:`1/\bar{\pi}_a`. The next prediction adds it
+    afresh too, so the layer carries the evidence on top of its predicted precision
+    without this variance,
+
+    .. math::
+
+        \pi_{y,a} + \left( \frac{1}{\bar{\pi}_a} - V^{\mathrm{res}}_a
+            \right)^{-1},
+
+    with the variance in parentheses floored at the inverse of
+    ``network.max_posterior_precision`` against rounding. The observation layer is
+    left as it is: its precision is the precision of its observation noise, which
+    is not carried.
     """
     if network.carry_precision and not network.feedforward_uncertainty:
         return network
 
+    exact_moments = _volatile_coupling_moments(network) == "exact"
     new_elements = []
     for elem in network.layers:
         if elem.kind != "volatile":
@@ -1470,8 +1567,21 @@ def carry_precisions(network: VectorisedNetwork) -> VectorisedNetwork:
             continue
         state = elem.state
         if network.carry_precision:
+            conditional = state.conditional_expected_precision
+            is_input_layer = isinstance(elem, Layer) and elem.is_input_layer
+            if (
+                exact_moments
+                and not is_input_layer
+                and state.residual_variance is not None
+            ):
+                # Predicted precision of the layer without the residual variance of
+                # the linearised coupling functions of its value parents.
+                conditional = 1.0 / jnp.maximum(
+                    1.0 / conditional - state.residual_variance,
+                    1.0 / network.max_posterior_precision,
+                )
             precision = state.precision + jnp.maximum(
-                state.conditional_expected_precision - state.expected_precision, 0.0
+                conditional - state.expected_precision, 0.0
             )
         else:
             precision = elem.params.prior_precision
@@ -1783,7 +1893,9 @@ def _contract_factors(factors, weights: jnp.ndarray) -> Optional[jnp.ndarray]:
 
 
 @eqx.filter_jit
-def prediction_pass(network: VectorisedNetwork, x: jnp.ndarray) -> jnp.ndarray:
+def prediction_pass(
+    network: VectorisedNetwork, x: jnp.ndarray, time_step: float = 1.0
+) -> jnp.ndarray:
     """Forward-only sweep through the network.
 
     Sets the predictors on the top element and runs the top-down prediction sweep —
@@ -1797,17 +1909,26 @@ def prediction_pass(network: VectorisedNetwork, x: jnp.ndarray) -> jnp.ndarray:
         The current vectorised network state.
     x :
         The predictors set on the top element.
+    time_step :
+        The time step of the prediction sweep. The predicted precisions depend on
+        it, and so do the predicted means under ``coupling_moments="exact"``, which
+        take the moments of the coupling functions under the predicted beliefs: use
+        the time step of the training steps to predict as they do.
 
     Returns
     -------
     expected_mean :
         The bottom element's ``expected_mean`` after the forward sweep.
     """
-    return _prediction_sweep(network, x).layers[0].state.expected_mean
+    return (
+        _prediction_sweep(network, x, time_step=time_step).layers[0].state.expected_mean
+    )
 
 
 @eqx.filter_jit
-def batched_prediction_pass(network: VectorisedNetwork, x: jnp.ndarray) -> jnp.ndarray:
+def batched_prediction_pass(
+    network: VectorisedNetwork, x: jnp.ndarray, time_step: float = 1.0
+) -> jnp.ndarray:
     """Forward-only sweep for a batch of samples, compiled once and reused.
 
     The batched equivalent of :func:`prediction_pass`: every row of ``x`` is
@@ -1821,6 +1942,11 @@ def batched_prediction_pass(network: VectorisedNetwork, x: jnp.ndarray) -> jnp.n
         The current vectorised network state.
     x :
         Predictors, shape ``(batch, n_input_features)``.
+    time_step :
+        The time step of the prediction sweep. The predicted precisions depend on
+        it, and so do the predicted means under ``coupling_moments="exact"``, which
+        take the moments of the coupling functions under the predicted beliefs: use
+        the time step of the training steps to predict as they do.
 
     Returns
     -------
@@ -1829,12 +1955,18 @@ def batched_prediction_pass(network: VectorisedNetwork, x: jnp.ndarray) -> jnp.n
         ``(batch, n_output_features)``.
     """
     return jax.vmap(
-        lambda xi: _prediction_sweep(network, xi).layers[0].state.expected_mean
+        lambda xi: (
+            _prediction_sweep(network, xi, time_step=time_step)
+            .layers[0]
+            .state.expected_mean
+        )
     )(x)
 
 
 @eqx.filter_jit
-def batched_prediction_states(network: VectorisedNetwork, x: jnp.ndarray) -> tuple:
+def batched_prediction_states(
+    network: VectorisedNetwork, x: jnp.ndarray, time_step: float = 1.0
+) -> tuple:
     """Batched forward sweep returning the per-sample swept states.
 
     Like :func:`batched_prediction_pass`, but keeps what the sweep computed:
@@ -1856,6 +1988,11 @@ def batched_prediction_states(network: VectorisedNetwork, x: jnp.ndarray) -> tup
         The current vectorised network state.
     x :
         Predictors, shape ``(batch, n_input_features)``.
+    time_step :
+        The time step of the prediction sweep. The predicted precisions depend on
+        it, and so do the predicted means under ``coupling_moments="exact"``, which
+        take the moments of the coupling functions under the predicted beliefs: use
+        the time step of the training steps to predict as they do.
 
     Returns
     -------
@@ -1865,7 +2002,10 @@ def batched_prediction_states(network: VectorisedNetwork, x: jnp.ndarray) -> tup
     """
 
     def one(xi):
-        return tuple(elem.state for elem in _prediction_sweep(network, xi).layers)
+        return tuple(
+            elem.state
+            for elem in _prediction_sweep(network, xi, time_step=time_step).layers
+        )
 
     return jax.vmap(one)(x)
 
@@ -1947,6 +2087,7 @@ def _continuous_prediction_sweep(
             ),
             is_input_layer=elem.is_input_layer,
             mean_field_updates=network.mean_field_updates,
+            coupling_moments=network.coupling_moments,
         )
         elements[i] = dataclasses.replace(elem, state=new_state)
 
@@ -2015,6 +2156,8 @@ def _continuous_update_sweep(
        doi:10.7554/elife.110174.1
     """
     elements = list(network.layers)
+    # The mean-field updates do not read the coupling moments.
+    moments = "taylor" if network.mean_field_updates else network.coupling_moments
 
     # Clamp the observations and compute the leaf value prediction error. A
     # volatility parent of the leaf reads its noise prediction error instead of a
@@ -2050,11 +2193,24 @@ def _continuous_update_sweep(
                 # Noise parent: the noise prediction error of the observation layer
                 # reads the posterior of its value parent, updated before this layer.
                 vp = value_parent_of[elem.volatility_child_idx]
+                noise_precision = None
+                if moments == "exact":
+                    # The predicted precision of the observation layer also counts
+                    # the residual of the linearised coupling function: the noise
+                    # prediction error reads the precision of the observation noise
+                    # alone, exp(-(ω + κ μ̂)).
+                    assert child_elem.params.tonic_volatility is not None
+                    noise_precision = jnp.exp(
+                        -child_elem.params.tonic_volatility
+                        - jnp.matmul(elem.volatility_weights, elem.state.expected_mean)
+                    )
                 noise_state = vectorised_continuous_noise_prediction_error(
                     child_elem.state,
                     value_parent_state=None if vp is None else elements[vp].state,
                     weights=None if vp is None else elements[vp].weights_mean,
                     coupling_fn=None if vp is None else elements[vp].coupling_fn,
+                    coupling_moments=moments,
+                    noise_precision=noise_precision,
                 )
                 child_elem = dataclasses.replace(child_elem, state=noise_state)
                 elements[elem.volatility_child_idx] = child_elem
@@ -2077,6 +2233,7 @@ def _continuous_update_sweep(
             time_step=time_step,
             max_posterior_precision=network.max_posterior_precision,
             mean_field_updates=network.mean_field_updates,
+            coupling_moments=network.coupling_moments,
         )
 
         # Prediction errors are only needed when a parent above will read them.

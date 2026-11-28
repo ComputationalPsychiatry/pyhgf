@@ -19,6 +19,11 @@ use ndarray::s;
 /// That term takes either sign and can cancel the first-order one, after which
 /// the mean step, the message divided by the precision, grows as 1/π̂_b. The
 /// nodalised backend keeps the term.
+///
+/// With `exact_moments`, the coupling function is replaced by its statistical
+/// linearisation under the parent's predicted belief N(μ̂_b, 1/π̂_b), as in the
+/// prediction step: g' is the mean slope E[g'(x_b)].
+#[allow(clippy::too_many_arguments)]
 pub fn layer_posterior_update(
     parent: &mut LayerState,
     child: &LayerState,
@@ -27,6 +32,7 @@ pub fn layer_posterior_update(
     parent_has_constant: bool,
     max_posterior_precision: Float,
     child_is_input_layer: bool,
+    exact_moments: bool,
 ) {
     // Bias column stripped via a view (no matrix clone).
     let ncols = weights.ncols();
@@ -36,9 +42,14 @@ pub fn layer_posterior_update(
         weights.view()
     };
 
-    let coupling_prime = with_coupling!(coupling_fn, |_f, df, _d2f| parent
-        .expected_mean
-        .mapv(|v| df(v as f64) as Float));
+    let coupling_prime = if exact_moments {
+        // Mean slope cached by the prediction sweep for this step.
+        parent.linear_slope.clone()
+    } else {
+        with_coupling!(coupling_fn, |_f, df, _d2f| parent
+            .expected_mean
+            .mapv(|v| df(v as f64) as Float))
+    };
 
     // The two weight contractions, `(W²)ᵀ @ eff` and `Wᵀ @ (gain∘δ)`, are computed
     // in a single row-major pass over `w`, with the per-child effective precision
@@ -123,7 +134,8 @@ mod tests {
             linear(),
             false,
             1e10,
-            true, // child is a leaf
+            true,  // child is a leaf
+            false, // exact_moments
         );
         // Posterior mean must move in the direction of the (transposed) error.
         assert!(parent.mean[0] > 0.0);
@@ -155,6 +167,7 @@ mod tests {
             false,
             1e10,
             false, // interior children
+            false, // exact_moments
         );
 
         let t = 0.3_f64.tanh();

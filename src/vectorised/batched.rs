@@ -37,6 +37,17 @@ pub struct BatchedLayerState {
     pub conditional_expected_precision: Matrix,
     pub effective_precision: Matrix,
     pub value_prediction_error: Matrix,
+    /// Residual variance of the linearised coupling functions (see
+    /// [`LayerState::residual_variance`]); written by the prediction sweep with the
+    /// exact coupling moments, zero otherwise.
+    pub residual_variance: Matrix,
+    /// Statistical linearisation of the layer's coupling function under its predicted
+    /// belief, per sample: the mean, the mean slope and the residual variance (see
+    /// [`LayerState::linear_value`]). Empty until [`Self::cache_linearisation`] sizes
+    /// them, which only the exact coupling moments call.
+    pub linear_value: Matrix,
+    pub linear_slope: Matrix,
+    pub linear_residual: Matrix,
     pub mean_vol: Option<Matrix>,
     pub precision_vol: Option<Matrix>,
     pub expected_mean_vol: Option<Matrix>,
@@ -73,6 +84,10 @@ impl BatchedLayerState {
             conditional_expected_precision: z(),
             effective_precision: z(),
             value_prediction_error: z(),
+            residual_variance: z(),
+            linear_value: Matrix::zeros((0, 0)),
+            linear_slope: Matrix::zeros((0, 0)),
+            linear_residual: Matrix::zeros((0, 0)),
             mean_vol: state.mean_vol.as_ref().map(|v| tile(v, n_samples)),
             precision_vol: state.precision_vol.as_ref().map(|v| tile(v, n_samples)),
             expected_mean_vol: state.expected_mean_vol.as_ref().map(|_| z()),
@@ -82,6 +97,29 @@ impl BatchedLayerState {
 
     fn n_samples(&self) -> usize {
         self.mean.ncols()
+    }
+
+    /// Evaluate the statistical linearisation of `coupling_fn` under the predicted
+    /// belief of every node and sample into the `linear_*` fields, once per
+    /// prediction sweep: the batched twin of [`LayerState::cache_linearisation`].
+    fn cache_linearisation(&mut self, coupling_fn: &crate::math::CouplingFn) {
+        let dim = self.expected_mean.raw_dim();
+        if self.linear_value.raw_dim() != dim {
+            self.linear_value = Matrix::zeros(dim);
+            self.linear_slope = Matrix::zeros(dim);
+            self.linear_residual = Matrix::zeros(dim);
+        }
+        Zip::from(&mut self.linear_value)
+            .and(&mut self.linear_slope)
+            .and(&mut self.linear_residual)
+            .and(&self.expected_mean)
+            .and(&self.expected_precision)
+            .for_each(|value, slope, residual, &m, &p| {
+                let (v, s, r) = coupling_fn.linearise_engine(m as f64, 1.0 / p as f64);
+                *value = v as Float;
+                *slope = s as Float;
+                *residual = r as Float;
+            });
     }
 
     /// True when this buffer already has the shape [`Self::from_template`]
@@ -157,19 +195,27 @@ pub(crate) fn reset_chunk(
 /// trailing bias row of ones, shape `(n_parent[+1], n_samples)`. Every entry
 /// is written exactly once (activation rows by the coupling pass, the bias
 /// row by a fill), so the zeroed allocation is never touched twice.
+///
+/// With `exact_value` (the parent's cached `linear_value`), the activation is the
+/// mean `E[g(x)]` of the coupling function under the parent's predicted belief
+/// `N(μ̂, 1/π̂)`, the exact coupling moments.
 fn coupled_activations(
     parent_field: &Matrix,
     coupling_fn: &'static crate::math::CouplingFn,
     parent_has_constant: bool,
+    exact_value: Option<&Matrix>,
 ) -> Matrix {
     let (n_parent, n_samples) = parent_field.dim();
     let rows = n_parent + usize::from(parent_has_constant);
     let mut coupled = Matrix::zeros((rows, n_samples));
-    crate::math::with_coupling!(coupling_fn, |f, _df, _d2f| {
-        Zip::from(coupled.slice_mut(s![..n_parent, ..]))
-            .and(parent_field)
-            .for_each(|c, &m| *c = f(m as f64) as Float);
-    });
+    match exact_value {
+        Some(value) => coupled.slice_mut(s![..n_parent, ..]).assign(value),
+        None => crate::math::with_coupling!(coupling_fn, |f, _df, _d2f| {
+            Zip::from(coupled.slice_mut(s![..n_parent, ..]))
+                .and(parent_field)
+                .for_each(|c, &m| *c = f(m as f64) as Float);
+        }),
+    }
     if parent_has_constant {
         coupled.row_mut(n_parent).fill(1.0);
     }
@@ -187,6 +233,7 @@ fn batched_volatile_prediction(
     parent_layer: &Layer,
     time_step: Float,
     feedforward_uncertainty: bool,
+    exact_moments: bool,
 ) {
     let params = &child_layer.params;
     let (n, n_samples) = child.mean.dim();
@@ -226,21 +273,41 @@ fn batched_volatile_prediction(
     // factor g'(μ̂)² / π̂_parent (the bias row stays 0 there). No time step: it
     // propagates parent uncertainty through the `W @ g(μ)` mean computed just below,
     // which carries no drift scaling. See the single-sample path for the full note.
+    //
+    // With the exact moments, g is replaced by its statistical linearisation under
+    // each parent's predicted belief N(μ̂, 1/π̂): the activation is E[g], the slope
+    // is A = E[g'], and the residual of the linear function has the variance
+    // Var[g] − A²/π̂, kept per parent in `residual`.
     let coupled = coupled_activations(
         &parent.expected_mean,
         parent_layer.coupling_fn,
         parent_layer.add_constant_input,
+        exact_moments.then_some(&parent.linear_value),
     );
     let mut ppv = Matrix::zeros((p, n_samples));
-    crate::math::with_coupling!(parent_layer.coupling_fn, |_f, df, _d2f| {
+    let mut residual = None;
+    if exact_moments {
+        // Slope and residual variance cached by the sweep for this step.
+        let mut residual_factor = Matrix::zeros((p, n_samples));
         Zip::from(ppv.slice_mut(s![..n_parent, ..]))
-            .and(&parent.expected_mean)
+            .and(&parent.linear_slope)
             .and(&parent.expected_precision)
-            .for_each(|o, &mu, &ep| {
-                let num = df(mu as f64) as Float;
-                *o = (num * num) / ep;
-            });
-    });
+            .for_each(|o, &slope, &ep| *o = slope * slope / ep);
+        residual_factor
+            .slice_mut(s![..n_parent, ..])
+            .assign(&parent.linear_residual);
+        residual = Some(residual_factor);
+    } else {
+        crate::math::with_coupling!(parent_layer.coupling_fn, |_f, df, _d2f| {
+            Zip::from(ppv.slice_mut(s![..n_parent, ..]))
+                .and(&parent.expected_mean)
+                .and(&parent.expected_precision)
+                .for_each(|o, &mu, &ep| {
+                    let num = df(mu as f64) as Float;
+                    *o = (num * num) / ep;
+                });
+        });
+    }
 
     // Mean prediction: one gemm over the whole batch.
     child.expected_mean = weights.dot(&coupled);
@@ -248,13 +315,15 @@ fn batched_volatile_prediction(
     // Taylor value-coupling variance: W² @ ppv, one gemm. Without
     // `feedforward_uncertainty` the value parents propagate nothing, so the term is
     // zero and the marginal predicted precision collapses onto the conditional one.
-    let value_coupling_variance = if feedforward_uncertainty {
+    // With the exact moments, the residual variance of the linearised coupling
+    // function is W² @ residual, a second gemm.
+    let (value_coupling_variance, residual_variance) = if feedforward_uncertainty {
         let w2 = weights.mapv(|w| w * w);
-        w2.dot(&ppv)
+        (w2.dot(&ppv), residual.map(|r| w2.dot(&r)))
     } else {
         // Shaped like the product, (n, n_samples), not like ppv, which is
         // (n_parent + bias, n_samples).
-        Matrix::zeros((n, n_samples))
+        (Matrix::zeros((n, n_samples)), None)
     };
 
     // Conditional (π̄), marginal (π̂), and effective (γ) predicted precisions,
@@ -321,6 +390,37 @@ fn batched_volatile_prediction(
                     .for_each(|c, e, ef, &pr, &v| precision_triple(c, e, ef, pr, pv, v));
             });
     }
+
+    // Exact moments: the residual of the linearised coupling function does not
+    // depend on the parents' values, so its variance adds to the conditional
+    // predicted variance (and to the variance of the observation noise of an input
+    // layer). π̄ = 1/(1/π̄₀ + r), π̂ = 1/(1/π̄ + v), and γ = Ω·π̂ is rescaled by the
+    // ratio of the new to the old π̂.
+    if let Some(residual_variance) = residual_variance {
+        // Stored for the precision carried to the next sample, which leaves it out.
+        child.residual_variance.assign(&residual_variance);
+        if child_layer.is_input_layer {
+            Zip::from(&mut child.conditional_expected_precision)
+                .and(&mut child.expected_precision)
+                .and(&residual_variance)
+                .for_each(|c, e, &r| {
+                    *c = 1.0 / (1.0 / *c + r);
+                    *e = *c;
+                });
+        } else {
+            Zip::from(&mut child.conditional_expected_precision)
+                .and(&mut child.expected_precision)
+                .and(&mut child.effective_precision)
+                .and(&residual_variance)
+                .and(&value_coupling_variance)
+                .for_each(|c, e, ef, &r, &v| {
+                    let previous = *e;
+                    *c = 1.0 / (1.0 / *c + r);
+                    *e = 1.0 / (1.0 / *c + v);
+                    *ef *= *e / previous;
+                });
+        }
+    }
 }
 
 /// Predict a binary leaf layer for the whole batch, mirroring the per-sample
@@ -331,11 +431,13 @@ fn batched_binary_prediction(
     weights: &Matrix,
     parent_layer: &Layer,
     precision_clipping_value: Float,
+    exact_moments: bool,
 ) {
     let coupled = coupled_activations(
         &parent.expected_mean,
         parent_layer.coupling_fn,
         parent_layer.add_constant_input,
+        exact_moments.then_some(&parent.linear_value),
     );
     let mut logit = weights.dot(&coupled);
     logit.mapv_inplace(|x| {
@@ -354,11 +456,13 @@ fn batched_categorical_prediction(
     parent: &BatchedLayerState,
     weights: &Matrix,
     parent_layer: &Layer,
+    exact_moments: bool,
 ) {
     let coupled = coupled_activations(
         &parent.expected_mean,
         parent_layer.coupling_fn,
         parent_layer.add_constant_input,
+        exact_moments.then_some(&parent.linear_value),
     );
     let mut logits = weights.dot(&coupled);
     for col in logits.columns_mut() {
@@ -535,6 +639,7 @@ fn batched_posterior_update(
     parent_layer: &Layer,
     max_posterior_precision: Float,
     child_is_input_layer: bool,
+    exact_moments: bool,
 ) {
     let ncols = weights.ncols();
     let w = if parent_layer.add_constant_input {
@@ -566,11 +671,17 @@ fn batched_posterior_update(
     }
 
     let mut coupling_prime = Matrix::zeros(parent.expected_mean.raw_dim());
-    crate::math::with_coupling!(parent_layer.coupling_fn, |_f, df, _d2f| {
-        Zip::from(&mut coupling_prime)
-            .and(&parent.expected_mean)
-            .for_each(|p, &m| *p = df(m as f64) as Float);
-    });
+    if exact_moments {
+        // Statistical linearisation: the mean slope E[g'] under the parent's
+        // predicted belief, cached by the prediction sweep.
+        coupling_prime.assign(&parent.linear_slope);
+    } else {
+        crate::math::with_coupling!(parent_layer.coupling_fn, |_f, df, _d2f| {
+            Zip::from(&mut coupling_prime)
+                .and(&parent.expected_mean)
+                .for_each(|p, &m| *p = df(m as f64) as Float);
+        });
+    }
 
     // Precision: clip(π̂_b + pc1·g'²), first-order in the coupling function as in
     // `layer_posterior_update`.
@@ -613,9 +724,15 @@ pub fn batched_prediction_sweep(
     for i in (1..n).rev() {
         let (lower, upper) = states.split_at_mut(i);
         let child = &mut lower[i - 1];
-        let parent = &upper[0];
         let child_layer = &net.layers[i - 1];
         let parent_layer = &net.layers[i];
+        if net.exact_moments() {
+            // One evaluation of the moments per layer and sweep: the prediction of
+            // the child, the posterior update of this layer and the weight gradient
+            // all read it.
+            upper[0].cache_linearisation(parent_layer.coupling_fn);
+        }
+        let parent = &upper[0];
         let weights = parent_layer
             .weights_in
             .as_ref()
@@ -629,6 +746,7 @@ pub fn batched_prediction_sweep(
                 parent_layer,
                 time_step,
                 net.feedforward_uncertainty,
+                net.exact_moments(),
             ),
             LayerKind::Binary => batched_binary_prediction(
                 child,
@@ -636,10 +754,15 @@ pub fn batched_prediction_sweep(
                 weights,
                 parent_layer,
                 net.precision_clipping_value,
+                net.exact_moments(),
             ),
-            LayerKind::Categorical => {
-                batched_categorical_prediction(child, parent, weights, parent_layer)
-            }
+            LayerKind::Categorical => batched_categorical_prediction(
+                child,
+                parent,
+                weights,
+                parent_layer,
+                net.exact_moments(),
+            ),
         }
     }
 }
@@ -680,6 +803,7 @@ pub fn batched_update_sweep(
             parent_layer,
             max_pp,
             net.layers[i - 1].is_input_layer,
+            net.exact_moments(),
         );
         batched_prediction_error(parent, parent_layer, vol, time_step, max_pp, ffu);
     }
@@ -716,11 +840,19 @@ pub fn batched_input_prediction_error(net: &DeepNet, states: &[BatchedLayerState
         });
     let mut routed = w.t().dot(&message);
     if top_layer.coupling_fn.kind != crate::math::CouplingKind::Linear {
-        crate::math::with_coupling!(top_layer.coupling_fn, |_f, df, _d2f| {
+        if net.exact_moments() {
+            // Mean slope E[g'] under the top layer's predicted belief, as in the
+            // interior posterior mean update, cached by the prediction sweep.
             Zip::from(&mut routed)
-                .and(&states[n - 1].expected_mean)
-                .for_each(|r, &m| *r *= df(m as f64) as Float);
-        });
+                .and(&states[n - 1].linear_slope)
+                .for_each(|r, &slope| *r *= slope);
+        } else {
+            crate::math::with_coupling!(top_layer.coupling_fn, |_f, df, _d2f| {
+                Zip::from(&mut routed)
+                    .and(&states[n - 1].expected_mean)
+                    .for_each(|r, &m| *r *= df(m as f64) as Float);
+            });
+        }
     }
     routed
 }
@@ -746,7 +878,10 @@ pub fn batched_mean_weight_gradients(
         let n_samples = child.n_samples();
 
         // Child-side factor u = -((mean − μ̂) [∘ π]) and parent-side factor
-        // v = g(parent posterior mean) with a bias row of ones, each built
+        // v = g(parent posterior mean) (or, with the exact coupling moments and a
+        // non-linear coupling, the mean of g under the parent's predicted belief)
+        // with a bias row of ones,
+        // each built
         // sanitized (non-finite entries zeroed) in a single pass. The residual
         // is recomputed, as in `weight_gradient_factors`: a binary layer's
         // `value_prediction_error` is scaled by 1/π̂ for its parent's posterior.
@@ -760,11 +895,22 @@ pub fn batched_mean_weight_gradients(
         let n_parent = parent.mean.nrows();
         let rows = n_parent + usize::from(parent_layer.add_constant_input);
         let mut v = Matrix::zeros((rows, n_samples));
-        crate::math::with_coupling!(parent_layer.coupling_fn, |f, _df, _d2f| {
+        if net.exact_moments() && parent_layer.coupling_fn.kind != crate::math::CouplingKind::Linear
+        {
+            // Exact coupling moments, non-linear coupling: the parent-side factor
+            // is the mean E[g(x)] under the parent's predicted belief, the
+            // activation that the child's prediction read. The linear coupling
+            // keeps the posterior mean.
             Zip::from(v.slice_mut(s![..n_parent, ..]))
-                .and(&parent.mean)
-                .for_each(|c, &m| *c = sanitize(f(m as f64) as Float));
-        });
+                .and(&parent.linear_value)
+                .for_each(|c, &value| *c = sanitize(value));
+        } else {
+            crate::math::with_coupling!(parent_layer.coupling_fn, |f, _df, _d2f| {
+                Zip::from(v.slice_mut(s![..n_parent, ..]))
+                    .and(&parent.mean)
+                    .for_each(|c, &m| *c = sanitize(f(m as f64) as Float));
+            });
+        }
         if parent_layer.add_constant_input {
             v.row_mut(n_parent).fill(1.0);
         }
@@ -797,16 +943,21 @@ pub fn batched_precision_increments(
         .map(|((state, template), layer)| {
             let carried = if layer.kind == LayerKind::Volatile {
                 let mut carried = state.precision.clone();
+                let with_residual = net.carried_residual(layer);
                 Zip::from(carried.rows_mut())
                     .and(state.conditional_expected_precision.rows())
                     .and(state.expected_precision.rows())
+                    .and(state.residual_variance.rows())
                     .and(&layer.params.prior_precision)
-                    .for_each(|mut row, crow, erow, &prior| {
+                    .for_each(|mut row, crow, erow, rrow, &prior| {
                         Zip::from(&mut row)
                             .and(&crow)
                             .and(&erow)
-                            .for_each(|p, &c, &e| {
-                                *p = net.carried_precision(*p, c, e).unwrap_or(prior);
+                            .and(&rrow)
+                            .for_each(|p, &c, &e, &r| {
+                                *p = net
+                                    .carried_precision(*p, c, e, with_residual.then_some(r))
+                                    .unwrap_or(prior);
                             });
                     });
                 carried

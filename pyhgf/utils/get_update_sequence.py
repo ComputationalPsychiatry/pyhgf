@@ -45,6 +45,7 @@ def get_update_sequence(
     network: "Network",
     volatility_updates: str,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
 ) -> UpdateSequence:
     """Generate an update sequence from the network's structure.
 
@@ -70,6 +71,14 @@ def get_update_sequence(
         alternative to the original definition in that it starts by updating the
         mean and then the precision of the parent node, which generally reduces the
         errors associated with impossible parameter space and improves sampling.
+    mean_field_updates :
+        If ``False`` (default), continuous nodes use the relaxed prediction and
+        posterior updates. If ``True``, they use the mean-field updates.
+    coupling_moments :
+        How the relaxed updates of continuous nodes take the uncertainty of a value
+        parent through its coupling function: ``"taylor"`` (default) or ``"exact"``,
+        see :py:class:`pyhgf.model.network.Network`. The mean-field updates do not
+        read it.
 
     Returns
     -------
@@ -84,6 +93,13 @@ def get_update_sequence(
        Mathys, C. (2026). The generalized hierarchical Gaussian filter.
        doi:10.7554/elife.110174.1
     """
+    # the relaxed updates of continuous nodes take the coupling moments
+    moments_kwargs = (
+        {"coupling_moments": coupling_moments}
+        if coupling_moments != "taylor" and not mean_field_updates
+        else {}
+    )
+
     # initialise the update and prediction sequences
     update_sequence: list = []
     prediction_sequence: list = []
@@ -139,12 +155,14 @@ def get_update_sequence(
                 if network.edges[idx].node_type == 1:
                     prediction_sequence.append((idx, binary_state_node_prediction))
                 elif network.edges[idx].node_type == 2:
-                    prediction_sequence.append((
-                        idx,
+                    prediction_fn = (
                         continuous_node_prediction_mean_field
                         if mean_field_updates
-                        else continuous_node_prediction,
-                    ))
+                        else continuous_node_prediction
+                    )
+                    if moments_kwargs:
+                        prediction_fn = Partial(prediction_fn, **moments_kwargs)
+                    prediction_sequence.append((idx, prediction_fn))
                 elif network.edges[idx].node_type == 4:
                     prediction_sequence.append((idx, dirichlet_node_prediction))
 
@@ -231,7 +249,7 @@ def get_update_sequence(
                         # the unbounded update also weights value children, if any,
                         # with the relaxed or the mean-field value-coupling updates
                         update_kwargs["mean_field_updates"] = mean_field_updates
-                    update_fn = Partial(update_fn, **update_kwargs)
+                    update_fn = Partial(update_fn, **update_kwargs, **moments_kwargs)
 
                 elif network.edges[idx].node_type == 4:
                     update_fn = None
@@ -248,7 +266,12 @@ def get_update_sequence(
                 i not in nodes_without_posterior_update for i in value_parents
             ]):
                 no_update = False
-                update_sequence.append((idx, continuous_node_noise_prediction_error))
+                update_sequence.append((
+                    idx,
+                    Partial(continuous_node_noise_prediction_error, **moments_kwargs)
+                    if moments_kwargs
+                    else continuous_node_noise_prediction_error,
+                ))
                 nodes_without_noise_prediction_error.remove(idx)
 
         # for all nodes that should apply prediction error------------------------------

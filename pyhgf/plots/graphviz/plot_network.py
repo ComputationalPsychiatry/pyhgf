@@ -212,8 +212,8 @@ def plot_deep_network(
         child_true_idx = num_layers - 1 - (i + 1)
         fn = deep_network.coupling_fns[child_true_idx]
         fn_name = getattr(fn, "__name__", None) or type(fn).__name__
-        # Replace the anonymous identity with a readable label
-        if fn_name == "<lambda>":
+        # Label the identity coupling, named or anonymous, as linear
+        if fn_name in ("<lambda>", "identity"):
             fn_name = "linear"
         graphviz_structure.edge(layer_names[i], layer_names[i + 1], xlabel=fn_name)
 

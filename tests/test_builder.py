@@ -95,14 +95,16 @@ class TestResolveCouplingFn:
     """Test coupling function name resolution."""
 
     def test_resolve_coupling_fn_from_string_gelu(self):
-        """Resolve 'gelu' string to jax.nn.gelu."""
+        """Resolve 'gelu' string to the coupling wrapping jax.nn.gelu."""
         fn = resolve_coupling_fn("gelu")
-        assert fn is jax.nn.gelu
+        assert fn.f is jax.nn.gelu
+        assert fn is resolve_coupling_fn(jax.nn.gelu)
 
     def test_resolve_coupling_fn_from_string_relu(self):
-        """Resolve 'relu' string to jax.nn.relu."""
+        """Resolve 'relu' string to the coupling wrapping jax.nn.relu."""
         fn = resolve_coupling_fn("relu")
-        assert fn is jax.nn.relu
+        assert fn.f is jax.nn.relu
+        assert fn is resolve_coupling_fn(jax.nn.relu)
 
     def test_resolve_coupling_fn_from_string_identity(self):
         """Resolve 'identity' string to identity function."""
@@ -118,11 +120,26 @@ class TestResolveCouplingFn:
         with pytest.raises(ValueError, match="Unknown coupling function"):
             resolve_coupling_fn("unknown_fn")
 
-    def test_resolve_coupling_fn_from_callable_returns_it(self):
-        """Callable is returned as-is."""
+    def test_resolve_coupling_fn_from_callable_wraps_it(self):
+        """Callable is wrapped in a coupling, the same one at every call."""
         fn = lambda x: x * 2
         result = resolve_coupling_fn(fn)
-        assert result is fn
+        assert result.f is fn
+        assert result is resolve_coupling_fn(fn)
+
+    def test_networks_built_from_a_name_share_their_coupling(self):
+        """Two networks built from one name hold the same coupling object."""
+        first = DeepNetwork(coupling_fn="identity").add_layer(2).add_layer(3)
+        second = DeepNetwork().add_layer(2).add_layer(3)
+        assert first.state.layers[1].coupling_fn is second.state.layers[1].coupling_fn
+        from_configs = DeepNetwork.from_configs([
+            LayerConfig(size=2),
+            LayerConfig(size=3),
+        ])
+        assert (
+            from_configs.state.layers[1].coupling_fn
+            is first.state.layers[1].coupling_fn
+        )
 
     def test_resolve_coupling_fn_from_none_returns_none(self):
         """None returns None."""

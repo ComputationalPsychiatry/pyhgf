@@ -60,15 +60,25 @@ pub fn predict_noise_precision(network: &Network, node_idx: usize) -> f64 {
 /// noise precision of [`predict_noise_precision`] with noise parents, in which case the
 /// effective precision is 1 (Eq. 73 of Weber et al., 2026). Other nodes are left as
 /// they are.
-fn store_input_prediction(network: &mut Network, node_idx: usize) {
+///
+/// `residual_variance` is the variance of the residuals of the linearised coupling
+/// functions of the value parents, which the exact coupling moments add to the
+/// variance of the observation noise: both predicted precisions are then
+/// 1 / (1/π_u + residual variance). `None` leaves the precision of the observation
+/// noise as it is.
+fn store_input_prediction(network: &mut Network, node_idx: usize, residual_variance: Option<f64>) {
     let edges = &network.edges[node_idx];
     if edges.value_children.is_some() || edges.volatility_children.is_some() {
         return;
     }
-    let (precision, effective_precision) = if edges.volatility_parents.is_some() {
+    let (noise_precision, effective_precision) = if edges.volatility_parents.is_some() {
         (predict_noise_precision(network, node_idx), 1.0)
     } else {
         (network.attributes.states[node_idx].precision, 0.0)
+    };
+    let precision = match residual_variance {
+        Some(residual_variance) => 1.0 / (1.0 / noise_precision + residual_variance),
+        None => noise_precision,
     };
     let state = &mut network.attributes.states[node_idx];
     state.expected_precision = precision;
@@ -100,6 +110,22 @@ fn store_input_prediction(network: &mut Network, node_idx: usize) {
 /// autoregression, so the value-coupling term is unscaled. At λ = 1 this is canonical.
 /// An input node takes the precision of its observation noise instead, from its noise
 /// parents if it has any (see `store_input_prediction`).
+///
+/// With the exact coupling moments (`network.exact_coupling_moments`), the coupling
+/// function of each value parent is replaced by its statistical linearisation under
+/// the predicted belief x_b ~ N(μ̂_b, 1/π̂_b) of the parent instead of its first-order
+/// Taylor expansion. With A_b = E[g'(x_b)] the mean slope and
+/// R_b = Var[g(x_b)] − A_b²/π̂_b the variance of the residual of the linear function:
+///
+/// * μ̂ = λ · μ + Δt · (ρ + Σ_b α · E[g(x_b)]),
+/// * π̄ = 1 / (λ²/π + Ω + Σ_b (Δt · α)² R_b),
+/// * π̂ = 1 / (1/π̄ + Σ_b (Δt · α · A_b)² / π̂_b),
+///
+/// so that the marginal predicted variance carries Σ_b (Δt · α)² Var[g(x_b)]. The
+/// residual variance is also added to the carried variance that the volatility
+/// updates read, and to the variance of the observation noise of an input node
+/// (without the time step). Mirrors `predict_value_coupling_variance` in the JAX
+/// backend.
 pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, time_step: f64) {
     // Copy own scalar state (f64 is Copy — no borrow held)
     let mean = network.attributes.states[node_idx].mean;
@@ -116,8 +142,12 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
     //    (= `parent.expected_precision`). The constant-bias parent has infinite
     //    precision and contributes zero.
     // -------------------------------------------------------
+    let exact_moments = network.exact_coupling_moments;
     let mut driftrate = tonic_drift;
     let mut value_coupling_variance = 0.0_f64;
+    // Σ_b α² R_b: variance of the residuals of the linearised coupling functions,
+    // before the time step. Zero without the exact coupling moments.
+    let mut residual_variance = 0.0_f64;
 
     if let Some(ref vp_idxs) = network.edges[node_idx].value_parents {
         let couplings = &network.attributes.vectors[node_idx].value_coupling_parents;
@@ -128,13 +158,22 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
                 network.attributes.states[parent_idx].expected_precision;
             let alpha = couplings.get(i).copied().unwrap_or(1.0);
             let (parent_value, g_prime) = match network.attributes.fn_ptrs[parent_idx].coupling_fn {
+                Some(cf) if exact_moments => {
+                    // Statistical linearisation of g under the parent's predicted
+                    // belief: the mean E[g], the mean slope A = E[g'] and the variance
+                    // of the residual.
+                    let (expected_value, slope, residual) =
+                        cf.linearise(parent_expected_mean, 1.0 / parent_expected_precision);
+                    residual_variance += alpha * alpha * residual;
+                    (expected_value, slope)
+                }
                 Some(cf) => ((cf.f)(parent_expected_mean), (cf.df)(parent_expected_mean)),
                 None => (parent_expected_mean, 1.0),
             };
             driftrate += alpha * parent_value;
-            // First-order Taylor expansion of g around μ̂_b yields a
-            // (Δt · α · g'(μ̂_b))² / π̂_b contribution to the marginal
-            // predictive variance of x_a. Vanishes as π̂_b → ∞.
+            // Linearising g around μ̂_b with the slope A_b (g'(μ̂_b), or E[g'(x_b)]
+            // with the exact moments) yields a (Δt · α · A_b)² / π̂_b contribution to
+            // the marginal predictive variance of x_a. Vanishes as π̂_b → ∞.
             let coeff = time_step * alpha * g_prime;
             value_coupling_variance += coeff * coeff / parent_expected_precision;
         }
@@ -173,12 +212,14 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
     // Conditional predicted precision π̄_a: carried variance + volatility only,
     // WITHOUT the parent-uncertainty value-coupling term. The parent's posterior-step
     // Schur complement acts on this; the marginal would double-count parent uncertainty.
-    let conditional_expected_precision =
-        1.0 / floor_predicted_variance(carried_variance + predicted_volatility);
-    let expected_precision = 1.0
-        / floor_predicted_variance(
-            carried_variance + predicted_volatility + value_coupling_variance,
-        );
+    // With the exact moments, the residual of the linearised coupling functions does
+    // not depend on the parents' values and adds to the conditional variance (the
+    // time step scales the drift of a state node, hence Δt² here).
+    let state_residual_variance = time_step * time_step * residual_variance;
+    let conditional_variance = carried_variance + predicted_volatility + state_residual_variance;
+    let conditional_expected_precision = 1.0 / floor_predicted_variance(conditional_variance);
+    let expected_precision =
+        1.0 / floor_predicted_variance(conditional_variance + value_coupling_variance);
     // Effective precision γ — only the volatility-driven part enters γ, since
     // γ is consumed by the volatility-coupling posterior update.
     let effective_precision = predicted_volatility * expected_precision;
@@ -188,15 +229,26 @@ pub fn prediction_continuous_state_node(network: &mut Network, node_idx: usize, 
     // -------------------------------------------------------
     let state = &mut network.attributes.states[node_idx];
     // Store carried variance for the volatility-coupling posteriors (unbounded,
-    // eHGF), which re-predict from it — same quantity the prediction step uses.
-    state.current_variance = carried_variance;
+    // eHGF), which re-predict from it — same quantity the prediction step uses. With
+    // the exact moments, the residual variance is known variance too.
+    state.current_variance = carried_variance + state_residual_variance;
     state.expected_mean = expected_mean;
     state.effective_precision = effective_precision;
     state.expected_precision = expected_precision;
     state.conditional_expected_precision = conditional_expected_precision;
 
-    // An input node takes the precision of its observation noise instead.
-    store_input_prediction(network, node_idx);
+    // An input node takes the precision of its observation noise instead. With the
+    // exact moments, the residual variance adds to the variance of that noise (an
+    // input node is generated by its value parents: no time step).
+    store_input_prediction(
+        network,
+        node_idx,
+        if exact_moments {
+            Some(residual_variance)
+        } else {
+            None
+        },
+    );
 }
 
 /// Mean-field prediction step for a continuous state node.
@@ -259,7 +311,7 @@ pub fn prediction_continuous_state_node_mean_field(
     state.conditional_expected_precision = expected_precision;
 
     // An input node takes the precision of its observation noise instead.
-    store_input_prediction(network, node_idx);
+    store_input_prediction(network, node_idx, None);
 }
 
 #[cfg(test)]

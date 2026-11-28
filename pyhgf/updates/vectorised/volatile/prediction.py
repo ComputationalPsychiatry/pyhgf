@@ -7,8 +7,9 @@ import dataclasses
 from typing import Callable, Optional
 
 import jax.numpy as jnp
-from jax import Array, grad, vmap
+from jax import Array
 
+from pyhgf.coupling import Coupling
 from pyhgf.typing.vectorised import LayerParams, LayerState
 from pyhgf.updates.prediction.continuous import MIN_PREDICTED_VARIANCE
 
@@ -102,6 +103,7 @@ def vectorised_layer_prediction(
     is_input_layer: bool = False,
     predict_precision: bool = True,
     feedforward_uncertainty: bool = False,
+    coupling_moments: str = "taylor",
 ) -> LayerState:
     r"""Predict expected mean/precision for all nodes in a volatile-node layer.
 
@@ -127,6 +129,30 @@ def vectorised_layer_prediction(
     (``parent_state.expected_precision``), so that every parent passes its full
     marginal predictive variance on to its children. The volatility level enters
     :math:`\Omega_a^{(k)}` at its expected mean.
+
+    With ``coupling_moments="exact"``, the coupling function is replaced by its
+    statistical linearisation under the predicted belief
+    :math:`x_b \sim \mathcal{N}(\hat{\mu}_b, 1/\hat{\pi}_b)` of each value parent, as
+    in :func:`pyhgf.updates.prediction.continuous.predict_value_coupling_variance`.
+    With :math:`A_b = \mathbb{E}[g'(x_b)]` the mean slope and
+    :math:`R_b = \mathrm{Var}[g(x_b)] - A_b^2 / \hat{\pi}_b` the variance of the
+    residual of the linear function (:meth:`pyhgf.coupling.Coupling.moments`):
+
+    .. math::
+
+        \hat{\mu}_a^{(k)} = \sum_b \alpha_b \, \mathbb{E}[g(x_b)], \qquad
+        \frac{1}{\bar{\pi}_a^{(k)}} = \frac{1}{\pi_a^{(k-1)}} + \Omega_a^{(k)}
+            + \sum_b \alpha_b^2 R_b, \qquad
+        \frac{1}{\hat{\pi}_a^{(k)}} = \frac{1}{\bar{\pi}_a^{(k)}}
+            + \sum_b \frac{(\alpha_b A_b)^2}{\hat{\pi}_b}.
+
+    The marginal predicted variance then carries
+    :math:`\sum_b \alpha_b^2 \mathrm{Var}[g(x_b)]`. An input layer, which keeps its
+    prior precision :math:`\pi_a`, takes
+    :math:`1 / (1/\pi_a + \sum_b \alpha_b^2 R_b)` for both predicted precisions.
+    The residual variance :math:`\sum_b \alpha_b^2 R_b` is stored in
+    ``residual_variance``, so that the precision carried to the next sample can leave
+    it out.
 
     Parameters
     ----------
@@ -167,6 +193,12 @@ def vectorised_layer_prediction(
         so the marginal and the conditional predicted precision coincide and the only
         uncertainty entering the layer is its own volatility parent's. With ``True``
         the parent's uncertainty bleeds through as the law of total variance requires.
+    coupling_moments :
+        ``"taylor"`` (default) linearises the coupling function at the expected means
+        of the value parents. ``"exact"`` uses its moments under the predicted
+        beliefs of the value parents. Only read with ``feedforward_uncertainty`` and
+        ``predict_precision``, since the moments are taken under the uncertainty that
+        the value parents propagate.
     predict_precision :
         Whether the prediction step advances the precisions at all. With ``False``
         both predicted precisions are held at the layer's prior precision, the
@@ -221,7 +253,18 @@ def vectorised_layer_prediction(
     # convention as the binary prediction, the weight-learning step, the
     # per-node backend, and the Rust backend (constant-state nodes are forced
     # to identity coupling).
-    coupled_parents = coupling_fn(parent_state.expected_mean)
+    exact_moments = (
+        coupling_moments == "exact" and predict_precision and feedforward_uncertainty
+    )
+    # Linear stand-in of g around each parent's expected mean: its value, its slope
+    # and the variance of its residual. The first-order Taylor expansion gives g(μ̂_b),
+    # g'(μ̂_b) and no residual; the exact moments give E[g], E[g'] and the residual
+    # variance under the parent's predicted belief N(μ̂_b, 1/π̂_b).
+    coupled_parents, g_prime, residual = Coupling.from_callable(coupling_fn).linearise(
+        parent_state.expected_mean,
+        1.0 / parent_state.expected_precision,
+        "exact" if exact_moments else "taylor",
+    )
     if parent_has_constant:
         coupled_parents = jnp.concatenate([coupled_parents, jnp.ones(1)])
 
@@ -229,12 +272,18 @@ def vectorised_layer_prediction(
     # not bias the next prediction. time_step does not enter the mean here.
     expected_mean = jnp.matmul(weights, coupled_parents)
 
+    # Variance of the residuals of the linearised coupling function, which only the
+    # exact moments leave: Σ_j W[i, j]² · (Var[g_j] − A_j² / π̂_j).
+    residual_variance = jnp.zeros_like(child_state.precision)
+
     if predict_precision:
-        # Taylor value-coupling term. Linearising g at μ̂_b and marginalising
-        # over each parent's Gaussian yields, per child node i, the additional variance
-        #     Σ_j (W[i, j] · g'(μ̂_j))² / π̂_j,
+        # Value-coupling term. Linearising g around μ̂_b and marginalising over each
+        # parent's Gaussian yields, per child node i, the additional variance
+        #     Σ_j (W[i, j] · A_j)² / π̂_j,
         # using the parent's marginal predicted precision π̂_j (= `expected_precision`).
-        # The constant-bias parent (if any) has infinite precision and contributes zero.
+        # The slope A_j is g'(μ̂_j) (first-order Taylor expansion) or, with the exact
+        # moments, E[g'(x_j)]. The constant-bias parent (if any) has infinite
+        # precision and contributes zero.
         if not feedforward_uncertainty:
             # No uncertainty is propagated by the value parents: the child's predicted
             # precision comes from its own prior and its own volatility parent alone,
@@ -244,7 +293,10 @@ def vectorised_layer_prediction(
             value_coupling_variance = jnp.zeros_like(child_state.precision)
         else:
             parent_precision = parent_state.expected_precision
-            g_prime = vmap(grad(coupling_fn))(parent_state.expected_mean)
+            if exact_moments:
+                if parent_has_constant:
+                    residual = jnp.concatenate([residual, jnp.zeros(1)])
+                residual_variance = jnp.matmul(weights**2, residual)
             if parent_has_constant:
                 # The constant node never varies: zero derivative, infinite precision.
                 parent_precision = jnp.concatenate([
@@ -264,9 +316,14 @@ def vectorised_layer_prediction(
         # trials, so carried_variance = λ²/π = 1/π. Split from the mean's λ = 0.
         carried_variance = 1.0 / child_state.precision
         # Conditional π̄_a: carried variance + volatility, no parent bleed-through
-        # (the parent's Schur complement acts on this; π̂_a would double-count).
+        # (the parent's Schur complement acts on this; π̂_a would double-count). With
+        # the exact moments, the residual of the linearised coupling function does
+        # not depend on the parent's value and adds to the conditional variance.
+        conditional_variance = carried_variance + predicted_volatility
+        if exact_moments:
+            conditional_variance = conditional_variance + residual_variance
         conditional_expected_precision = 1.0 / jnp.maximum(
-            carried_variance + predicted_volatility, MIN_PREDICTED_VARIANCE
+            conditional_variance, MIN_PREDICTED_VARIANCE
         )
 
         # Marginal π̂_a: add the law-of-total-variance parent bleed-through.
@@ -294,7 +351,11 @@ def vectorised_layer_prediction(
     # there is no parent-uncertainty bleed-through to apply.
     if is_input_layer:
         expected_precision = child_state.precision
-        conditional_expected_precision = child_state.precision
+        if exact_moments:
+            # The residual of the linearised coupling function adds to the variance
+            # of the observation noise.
+            expected_precision = 1.0 / (1.0 / child_state.precision + residual_variance)
+        conditional_expected_precision = expected_precision
         effective_precision = jnp.zeros_like(effective_precision)
 
     return dataclasses.replace(
@@ -306,6 +367,7 @@ def vectorised_layer_prediction(
         expected_mean_vol=expected_mean_vol,
         expected_precision_vol=expected_precision_vol,
         effective_precision_vol=effective_precision_vol,
+        residual_variance=residual_variance,
     )
 
 

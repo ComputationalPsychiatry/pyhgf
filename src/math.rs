@@ -57,7 +57,22 @@ pub fn parse_coupling_fn(name: &str) -> Result<&'static CouplingFn, String> {
     }
 }
 
-/// A coupling (activation) function together with its first and second derivatives.
+/// Parse the `coupling_moments` argument of a network: `Ok(false)` for `"taylor"`
+/// (first-order Taylor expansion of the coupling functions) and `Ok(true)` for
+/// `"exact"` (their moments under the belief of the parent), erroring on any other
+/// name. Used at the Python boundary, as [`parse_coupling_fn`].
+pub fn parse_coupling_moments(name: &str) -> Result<bool, String> {
+    match name {
+        "taylor" => Ok(false),
+        "exact" => Ok(true),
+        other => Err(format!(
+            "Invalid coupling_moments '{other}'. Choose from 'taylor' or 'exact'."
+        )),
+    }
+}
+
+/// A coupling (activation) function together with its first and second derivatives
+/// and its moments under a Gaussian.
 ///
 /// Use the module-level constants ([`LINEAR`], [`RELU`], [`SIGMOID`], [`TANH`],
 /// [`LEAKY_RELU`], [`GELU`]) to obtain a `&'static CouplingFn`, or call
@@ -69,6 +84,7 @@ pub fn parse_coupling_fn(name: &str) -> Result<&'static CouplingFn, String> {
 /// let y     = (c.f)(x);
 /// let dy    = (c.df)(x);
 /// let d2y   = (c.d2f)(x);
+/// let (mean, variance, slope) = (c.moments)(mu, sigma2);
 /// ```
 #[derive(Debug, Clone, Copy)]
 pub struct CouplingFn {
@@ -82,6 +98,54 @@ pub struct CouplingFn {
     pub df: fn(f64) -> f64,
     /// The second derivative $f''(x)$.
     pub d2f: fn(f64) -> f64,
+    /// The moments of $f(x)$ for $x \sim \mathcal{N}(\mu, \sigma^2)$, as a function
+    /// of $(\mu, \sigma^2)$: the mean $E[f(x)]$, the variance $\mathrm{Var}[f(x)]$
+    /// and the mean slope $E[f'(x)] = \mathrm{Cov}[x, f(x)] / \sigma^2$. Mirrors
+    /// `pyhgf.coupling.Coupling.moments`.
+    pub moments: fn(f64, f64) -> (f64, f64, f64),
+}
+
+impl CouplingFn {
+    /// Statistical linearisation of the function under $x \sim \mathcal{N}(\mu,
+    /// \sigma^2)$: the linear function $c + A (x - \mu)$ closest to $f$ in mean
+    /// squared error, with a residual of variance $R$. Returns `(c, A, R)` with
+    /// $c = E[f(x)]$, $A = E[f'(x)]$ and $R = \mathrm{Var}[f(x)] - A^2 \sigma^2$,
+    /// floored at zero against rounding. Mirrors `pyhgf.coupling.Coupling.linearise`
+    /// with `coupling_moments="exact"`.
+    #[inline]
+    pub fn linearise(&self, mean: f64, variance: f64) -> (f64, f64, f64) {
+        let (value, coupling_variance, slope) = (self.moments)(mean, variance);
+        (
+            value,
+            slope,
+            (coupling_variance - slope * slope * variance).max(0.0),
+        )
+    }
+
+    /// [`Self::linearise`] for the vectorised engine. In single precision (the
+    /// default engine), the rectified linear units take the distribution function of
+    /// the normal distribution from a rational approximation of absolute error below
+    /// $10^{-7}$ ([`normal_tail_single`]), which is below the resolution of the
+    /// engine and several times cheaper than [`normal_cdf`]. With the `f64` feature
+    /// this is [`Self::linearise`].
+    #[inline]
+    pub fn linearise_engine(&self, mean: f64, variance: f64) -> (f64, f64, f64) {
+        #[cfg(not(feature = "f64"))]
+        let (value, coupling_variance, slope) = match self.kind {
+            CouplingKind::Relu => rectifier_moments_with(mean, variance, 0.0, normal_tail_single),
+            CouplingKind::LeakyRelu => {
+                rectifier_moments_with(mean, variance, 0.01, normal_tail_single)
+            }
+            _ => (self.moments)(mean, variance),
+        };
+        #[cfg(feature = "f64")]
+        let (value, coupling_variance, slope) = (self.moments)(mean, variance);
+        (
+            value,
+            slope,
+            (coupling_variance - slope * slope * variance).max(0.0),
+        )
+    }
 }
 
 /// Tag identifying one of the named coupling functions.
@@ -154,6 +218,186 @@ macro_rules! with_coupling {
 }
 pub(crate) use with_coupling;
 
+// ── Gaussian moments of coupling functions ───────────────────────────────────
+
+/// Distribution function of the standard normal distribution, $\Phi(z)$.
+///
+/// $\Phi(z) = \tfrac12 \mathrm{erfc}(-z / \sqrt{2})$, with the complementary error
+/// function computed from the series
+/// $\mathrm{erf}(a) = \tfrac{2}{\sqrt{\pi}} e^{-a^2} \sum_n 2^n a^{2n+1} / (2n+1)!!$
+/// for $a < 3$ and from its continued fraction for $a \ge 3$. The absolute error is
+/// below $2 \times 10^{-15}$, and the relative error of the tail is below
+/// $10^{-13}$ for $|z| \ge 3 \sqrt{2}$.
+pub fn normal_cdf(z: f64) -> f64 {
+    let a = z.abs() / std::f64::consts::SQRT_2;
+    let erfc = if a < 3.0 {
+        // Series of erf, whose terms are all positive.
+        let mut term = a;
+        let mut sum = a;
+        for n in 1..200 {
+            term *= 2.0 * a * a / (2.0 * n as f64 + 1.0);
+            sum += term;
+            if term <= 1e-17 * sum {
+                break;
+            }
+        }
+        1.0 - std::f64::consts::FRAC_2_SQRT_PI * (-a * a).exp() * sum
+    } else {
+        // Continued fraction of erfc, evaluated from its 40th term.
+        let mut fraction = a;
+        for k in (1..=40).rev() {
+            fraction = a + 0.5 * k as f64 / fraction;
+        }
+        (-a * a).exp() / (std::f64::consts::PI.sqrt() * fraction)
+    };
+    if z >= 0.0 {
+        1.0 - 0.5 * erfc
+    } else {
+        0.5 * erfc
+    }
+}
+
+/// Moments of a leaky rectified linear unit under a Gaussian, in closed form.
+///
+/// For $x \sim \mathcal{N}(\mu, \sigma^2)$ and $g(x) = \max(x, 0) + s \min(x, 0)$,
+/// with $z = \mu / \sigma$:
+///
+/// ```text
+/// E[g]   = s μ + (1 − s) σ (φ(z) + z Φ(z)),
+/// E[g']  = s + (1 − s) Φ(z),
+/// Var[g] = σ² (s² + 2 s (1 − s) Φ(z) + (1 − s)² r(z)),
+/// r(z)   = z² Φ(z) Φ(−z) + Φ(z) + z φ(z) (Φ(−z) − Φ(z)) − φ(z)².
+/// ```
+///
+/// Returns `(E[g], Var[g], E[g'])`. The negative slope `s = 0` gives the rectified
+/// linear unit and `s = 1` the identity. Mirrors `pyhgf.coupling.leaky_relu_moments`.
+pub fn rectifier_moments(mean: f64, variance: f64, negative_slope: f64) -> (f64, f64, f64) {
+    rectifier_moments_with(mean, variance, negative_slope, |a| normal_cdf(-a))
+}
+
+/// Mass of the standard normal distribution beyond `a >= 0`, $\Phi(-a)$, from the
+/// rational approximation of the complementary error function used by [`gelu`]
+/// (absolute error below $10^{-7}$). For the single precision engine.
+#[cfg_attr(feature = "f64", allow(dead_code))]
+#[inline]
+fn normal_tail_single(a: f64) -> f64 {
+    0.5 * erfc(a / std::f64::consts::SQRT_2)
+}
+
+/// [`rectifier_moments`] with the mass beyond `|z|`, $\Phi(-|z|)$, given by `tail`.
+#[inline]
+fn rectifier_moments_with(
+    mean: f64,
+    variance: f64,
+    negative_slope: f64,
+    tail: impl Fn(f64) -> f64,
+) -> (f64, f64, f64) {
+    let variance = if variance.is_nan() {
+        f64::NAN
+    } else {
+        variance.max(0.0)
+    };
+    // The clipping of z gives the limits of a point belief without forming 0 · ∞.
+    let sigma = variance.max(f64::MIN_POSITIVE).sqrt();
+    let z = (mean / sigma).clamp(-40.0, 40.0);
+    // Φ(z) and Φ(−z) from one evaluation of the tail beyond |z|.
+    let tail = tail(z.abs());
+    let (cdf, survival) = if z >= 0.0 {
+        (1.0 - tail, tail)
+    } else {
+        (tail, 1.0 - tail)
+    };
+    let pdf = (-0.5 * z * z).exp() / (2.0 * std::f64::consts::PI).sqrt();
+
+    let slope = negative_slope + (1.0 - negative_slope) * cdf;
+    let expected_value =
+        negative_slope * mean + (1.0 - negative_slope) * (mean * cdf + sigma * pdf);
+    // Variance of the rectified linear unit for a unit variance, written without the
+    // cancellation of E[g²] − E[g]².
+    let relu_variance = z * z * cdf * survival + cdf + z * pdf * (survival - cdf) - pdf * pdf;
+    let expected_variance = variance
+        * (negative_slope * negative_slope
+            + 2.0 * negative_slope * (1.0 - negative_slope) * cdf
+            + (1.0 - negative_slope) * (1.0 - negative_slope) * relu_variance);
+    (expected_value, expected_variance.max(0.0), slope)
+}
+
+/// Positive nodes of the 20-point probabilists' Gauss-Hermite rule. The rule is
+/// symmetric: the other 10 nodes are their opposites.
+const GAUSS_HERMITE_NODES: [f64; 10] = [
+    0.346964157081356,
+    1.042945348802751,
+    1.7452473208141268,
+    2.458663611172368,
+    3.1890148165533896,
+    3.9439673506573163,
+    4.734581334046055,
+    5.5787388058932015,
+    6.510590157013654,
+    7.619048541679758,
+];
+
+/// Weights of the nodes of [`GAUSS_HERMITE_NODES`] (and of their opposites),
+/// normalised so that the 20 weights sum to 1.
+const GAUSS_HERMITE_WEIGHTS: [f64; 10] = [
+    0.2607930634495548,
+    0.16173933398400003,
+    0.06150637206397696,
+    0.013997837447100996,
+    0.0018301031310804924,
+    0.00012882627996192942,
+    4.4021210902308646e-06,
+    6.127490259982928e-08,
+    2.4820623623151797e-10,
+    1.2578006724379264e-13,
+];
+
+/// Moments of a function under a Gaussian, by 20-point Gauss-Hermite quadrature.
+///
+/// For $x \sim \mathcal{N}(\mu, \sigma^2)$, $E[h(x)] \approx \sum_i w_i
+/// h(\mu + \sigma \xi_i)$ with the nodes $\xi_i$ and weights $w_i$ of the
+/// probabilists' Gauss-Hermite rule, applied to $f$, to $(f - E[f])^2$ and to $f'$.
+/// Returns `(E[f], Var[f], E[f'])`. Mirrors `pyhgf.coupling.gauss_hermite_moments`
+/// with its default number of nodes.
+///
+/// `value_and_slope` returns $(f(x), f'(x))$ in one call, so that what the two share
+/// (the hyperbolic tangent, the exponential, the error function) is evaluated once
+/// per node.
+pub fn gauss_hermite_moments(
+    value_and_slope: impl Fn(f64) -> (f64, f64),
+    mean: f64,
+    variance: f64,
+) -> (f64, f64, f64) {
+    let sigma = if variance.is_nan() {
+        f64::NAN
+    } else {
+        variance.max(f64::MIN_POSITIVE).sqrt()
+    };
+    let mut values = [0.0_f64; 20];
+    let mut expected_value = 0.0;
+    let mut slope = 0.0;
+    for (i, (&node, &weight)) in GAUSS_HERMITE_NODES
+        .iter()
+        .zip(GAUSS_HERMITE_WEIGHTS.iter())
+        .enumerate()
+    {
+        for (j, sign) in [-1.0, 1.0].into_iter().enumerate() {
+            let (value, derivative) = value_and_slope(mean + sign * sigma * node);
+            values[2 * i + j] = value;
+            expected_value += weight * value;
+            slope += weight * derivative;
+        }
+    }
+    let mut expected_variance = 0.0;
+    for (i, &weight) in GAUSS_HERMITE_WEIGHTS.iter().enumerate() {
+        for j in 0..2 {
+            let deviation = values[2 * i + j] - expected_value;
+            expected_variance += weight * deviation * deviation;
+        }
+    }
+    (expected_value, expected_variance, slope)
+}
+
 // ── Coupling functions ────────────────────────────────────────────────────────
 
 // ─── Linear ──────────────────────────────────────────────────────────────────
@@ -170,12 +414,17 @@ pub fn linear_d1(_x: f64) -> f64 {
 pub fn linear_d2(_x: f64) -> f64 {
     0.0
 }
+/// Moments of linear under a Gaussian: $(\mu, \sigma^2, 1)$.
+pub fn linear_moments(mean: f64, variance: f64) -> (f64, f64, f64) {
+    (mean, variance, 1.0)
+}
 /// [`CouplingFn`] constant for the linear (identity) coupling function.
 pub const LINEAR: CouplingFn = CouplingFn {
     kind: CouplingKind::Linear,
     f: linear,
     df: linear_d1,
     d2f: linear_d2,
+    moments: linear_moments,
 };
 
 // ─── ReLU ────────────────────────────────────────────────────────────────────
@@ -196,12 +445,17 @@ pub fn relu_d1(x: f64) -> f64 {
 pub fn relu_d2(_x: f64) -> f64 {
     0.0
 }
+/// Moments of ReLU under a Gaussian, in closed form (see [`rectifier_moments`]).
+pub fn relu_moments(mean: f64, variance: f64) -> (f64, f64, f64) {
+    rectifier_moments(mean, variance, 0.0)
+}
 /// [`CouplingFn`] constant for the ReLU coupling function.
 pub const RELU: CouplingFn = CouplingFn {
     kind: CouplingKind::Relu,
     f: relu,
     df: relu_d1,
     d2f: relu_d2,
+    moments: relu_moments,
 };
 
 // ─── Sigmoid ─────────────────────────────────────────────────────────────────
@@ -220,12 +474,25 @@ pub fn sigmoid_d2(x: f64) -> f64 {
     let s = sigmoid(x);
     s * (1.0 - s) * (1.0 - 2.0 * s)
 }
+/// Moments of sigmoid under a Gaussian, by quadrature (see
+/// [`gauss_hermite_moments`]).
+pub fn sigmoid_moments(mean: f64, variance: f64) -> (f64, f64, f64) {
+    gauss_hermite_moments(
+        |x| {
+            let s = sigmoid(x);
+            (s, s * (1.0 - s))
+        },
+        mean,
+        variance,
+    )
+}
 /// [`CouplingFn`] constant for the sigmoid coupling function.
 pub const SIGMOID: CouplingFn = CouplingFn {
     kind: CouplingKind::Sigmoid,
     f: sigmoid,
     df: sigmoid_d1,
     d2f: sigmoid_d2,
+    moments: sigmoid_moments,
 };
 
 // ─── Tanh ─────────────────────────────────────────────────────────────────────
@@ -243,12 +510,24 @@ pub fn tanh_d2(x: f64) -> f64 {
     let t = x.tanh();
     -2.0 * t * (1.0 - t * t)
 }
+/// Moments of tanh under a Gaussian, by quadrature (see [`gauss_hermite_moments`]).
+pub fn tanh_moments(mean: f64, variance: f64) -> (f64, f64, f64) {
+    gauss_hermite_moments(
+        |x| {
+            let t = x.tanh();
+            (t, 1.0 - t.powi(2))
+        },
+        mean,
+        variance,
+    )
+}
 /// [`CouplingFn`] constant for the tanh coupling function.
 pub const TANH: CouplingFn = CouplingFn {
     kind: CouplingKind::Tanh,
     f: tanh,
     df: tanh_d1,
     d2f: tanh_d2,
+    moments: tanh_moments,
 };
 
 // ─── Leaky ReLU ──────────────────────────────────────────────────────────────
@@ -273,12 +552,18 @@ pub fn leaky_relu_d1(x: f64) -> f64 {
 pub fn leaky_relu_d2(_x: f64) -> f64 {
     0.0
 }
+/// Moments of Leaky ReLU under a Gaussian, in closed form (see
+/// [`rectifier_moments`]).
+pub fn leaky_relu_moments(mean: f64, variance: f64) -> (f64, f64, f64) {
+    rectifier_moments(mean, variance, 0.01)
+}
 /// [`CouplingFn`] constant for the Leaky ReLU coupling function.
 pub const LEAKY_RELU: CouplingFn = CouplingFn {
     kind: CouplingKind::LeakyRelu,
     f: leaky_relu,
     df: leaky_relu_d1,
     d2f: leaky_relu_d2,
+    moments: leaky_relu_moments,
 };
 
 // ─── PReLU ───────────────────────────────────────────────────────────────────
@@ -353,12 +638,25 @@ pub fn gelu_d2(x: f64) -> f64 {
     let pdf = (-(x * x) / 2.0).exp() / (2.0 * std::f64::consts::PI).sqrt();
     pdf * (2.0 - x * x)
 }
+/// Moments of GELU under a Gaussian, by quadrature (see [`gauss_hermite_moments`]).
+pub fn gelu_moments(mean: f64, variance: f64) -> (f64, f64, f64) {
+    gauss_hermite_moments(
+        |x| {
+            let phi = 0.5 * erfc(-x / std::f64::consts::SQRT_2);
+            let pdf = (-(x * x) / 2.0).exp() / (2.0 * std::f64::consts::PI).sqrt();
+            (x * phi, phi + x * pdf)
+        },
+        mean,
+        variance,
+    )
+}
 /// [`CouplingFn`] constant for the GELU coupling function.
 pub const GELU: CouplingFn = CouplingFn {
     kind: CouplingKind::Gelu,
     f: gelu,
     df: gelu_d1,
     d2f: gelu_d2,
+    moments: gelu_moments,
 };
 
 // ─── Resolver ────────────────────────────────────────────────────────────────
@@ -746,6 +1044,133 @@ mod tests {
             expected,
             gelu(1.0)
         );
+    }
+
+    // ── Gaussian moments ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_normal_cdf_known_values() {
+        // Reference values of the standard normal distribution function, on both
+        // sides of the switch between the series and the continued fraction.
+        for (z, expected) in [
+            (-6.5, 4.016_000_583_859_087_4e-11),
+            (-1.3, 0.096_800_484_585_610_36),
+            (0.0, 0.5),
+            (0.4, 0.655_421_741_610_324_2),
+            (2.2, 0.986_096_552_486_501_4),
+            (5.0, 0.999_999_713_348_428_1),
+        ] {
+            let actual = normal_cdf(z);
+            assert!(
+                (actual - expected).abs() < 1e-14 + 1e-12 * expected,
+                "normal_cdf({z}): expected {expected:e}, got {actual:e}"
+            );
+        }
+        assert!(normal_cdf(f64::NAN).is_nan());
+    }
+
+    #[test]
+    fn test_coupling_moments_match_the_jax_backend() {
+        // (coupling, mean, variance, [E[g], Var[g], E[g']]) from
+        // `pyhgf.coupling.Coupling.moments` in double precision.
+        let cases: [(&CouplingFn, f64, f64, [f64; 3]); 5] = [
+            (&LINEAR, 0.3, 2.0, [0.3, 2.0, 1.0]),
+            (
+                &RELU,
+                -0.75,
+                1.0,
+                [
+                    0.131_166_917_872_153_3,
+                    0.111_047_403_628_673_03,
+                    0.226_627_352_376_868_2,
+                ],
+            ),
+            (
+                &LEAKY_RELU,
+                0.4,
+                2.25,
+                [
+                    0.815_369_496_231_326_8,
+                    1.024_629_156_703_726,
+                    0.609_085_718_640_615_1,
+                ],
+            ),
+            (
+                &TANH,
+                0.3,
+                0.64,
+                [
+                    0.203_113_845_084_327_3,
+                    0.297_448_860_437_458_2,
+                    0.661_295_905_497_601_8,
+                ],
+            ),
+            (
+                &SIGMOID,
+                -1.0,
+                1.0,
+                [
+                    0.303_265_329_874_443_8,
+                    0.033_352_090_185_591_25,
+                    0.177_943_379_384_997_35,
+                ],
+            ),
+        ];
+        for (coupling, mean, variance, expected) in cases {
+            let (expected_value, expected_variance, slope) = (coupling.moments)(mean, variance);
+            for (actual, expected) in [expected_value, expected_variance, slope]
+                .into_iter()
+                .zip(expected)
+            {
+                assert!(
+                    (actual - expected).abs() < 1e-12,
+                    "{:?} moments at ({mean}, {variance}): expected {expected}, got {actual}",
+                    coupling.kind
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_engine_linearisation_matches_the_precise_one() {
+        // The vectorised engine takes the distribution function of the rectified
+        // linear units from a rational approximation: its linearisation stays
+        // within the resolution of single precision of the precise one.
+        for coupling in [&RELU, &LEAKY_RELU, &TANH] {
+            for (mean, variance) in [
+                (-2.0, 0.5),
+                (-0.75, 1.0),
+                (0.0, 1.0),
+                (0.4, 2.25),
+                (3.0, 0.3),
+            ] {
+                let precise = coupling.linearise(mean, variance);
+                let engine = coupling.linearise_engine(mean, variance);
+                for (a, b) in [precise.0, precise.1, precise.2]
+                    .into_iter()
+                    .zip([engine.0, engine.1, engine.2])
+                {
+                    assert!(
+                        (a - b).abs() < 2e-6,
+                        "{:?} at ({mean}, {variance}): precise {a}, engine {b}",
+                        coupling.kind
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_coupling_moments_of_a_point_belief() {
+        // With a variance of 0, the moments are g(μ), 0 and g'(μ).
+        for coupling in [&LINEAR, &RELU, &LEAKY_RELU, &TANH, &SIGMOID, &GELU] {
+            for mean in [-1.5, 0.4, 2.0] {
+                let (expected_value, expected_variance, slope) = (coupling.moments)(mean, 0.0);
+                assert_close(expected_value, (coupling.f)(mean), "point belief mean");
+                assert_close(expected_variance, 0.0, "point belief variance");
+                assert_close(slope, (coupling.df)(mean), "point belief slope");
+            }
+        }
     }
 
     #[test]

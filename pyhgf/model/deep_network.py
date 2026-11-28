@@ -22,7 +22,13 @@ import numpy as np
 import optax
 import pandas as pd
 
-from pyhgf.model.builder import LayerConfig, resolve_coupling_fn
+from pyhgf.coupling import (
+    IDENTITY,
+    Coupling,
+    check_coupling_moments,
+    resolve_coupling_fn,
+)
+from pyhgf.model.builder import LayerConfig
 from pyhgf.typing.vectorised import (
     VOLATILITY_STATE_FIELDS,
     Layer,
@@ -129,6 +135,9 @@ class DeepNetwork:
         If ``False`` (default), use the relaxed prediction and posterior updates. If
         ``True``, use the original mean-field updates, matching the ``Network``
         class.
+    coupling_moments :
+        How the relaxed updates take the uncertainty of a value parent through its
+        coupling function: ``"taylor"`` (default) or ``"exact"``.
 
     Examples
     --------
@@ -177,7 +186,7 @@ class DeepNetwork:
 
     def __init__(
         self,
-        coupling_fn: Callable = lambda x: x,
+        coupling_fn: Callable | str = "identity",
         volatility_updates: str = "unbounded",
         max_posterior_precision: float = 1e10,
         precision_clipping_value: float = 1e-6,
@@ -187,15 +196,19 @@ class DeepNetwork:
         tonic_volatility: bool = False,
         mean_field_updates: bool = False,
         carry_precision: bool = True,
+        coupling_moments: str = "taylor",
     ):
         r"""Initialise a VectorisedDeepNetwork.
 
         Parameters
         ----------
         coupling_fn :
-            Coupling function applied between layers. Default is linear (identity),
-            matching the Rust backend and the Network class. This function is
-            applied to parent means before the weighted sum to predict child means.
+            Coupling function applied between layers: a function, the name of a
+            coupling function, or a :class:`pyhgf.coupling.Coupling` (see
+            :func:`pyhgf.coupling.resolve_coupling_fn`). Default is linear
+            (identity), matching the Rust backend and the Network class. This
+            function is applied to parent means before the weighted sum to predict
+            child means.
         volatility_updates :
             The type of volatility-level posterior update. Can be ``"unbounded"``
             (default), ``"eHGF"`` or ``"standard"``. Matches the Network
@@ -263,7 +276,12 @@ class DeepNetwork:
             the evidence :math:`\pi_{y,a} = \pi_a - \hat{\pi}_a` it received on
             top of its conditional predicted precision. The variance its value
             parents added to this sample's prediction is left out, since the next
-            prediction adds it afresh. Without ``feedforward_uncertainty`` the two
+            prediction adds it afresh. With ``coupling_moments="exact"`` this
+            includes the variance of the residuals of the linearised coupling
+            functions, which the prediction counts in the conditional predicted
+            variance (see
+            :func:`~pyhgf.utils.vectorised_belief_propagation.carry_precisions`).
+            Without ``feedforward_uncertainty`` the two
             predicted precisions coincide and the layer carries its posterior
             precision. ``add_layer``'s ``volatility_parent`` then defaults to
             ``True``. With ``False`` a volatile layer starts every sample from its
@@ -273,7 +291,43 @@ class DeepNetwork:
             across samples for a volatility parent to modulate, so
             ``volatility_parent`` defaults to ``False`` and passing ``True`` raises
             a ``ValueError``.
+        coupling_moments :
+            How the relaxed updates take the uncertainty of a value parent :math:`b`
+            through a non-linear coupling function :math:`g`. With ``"taylor"``
+            (default), the coupling function is replaced by its first-order Taylor
+            expansion at the expected mean of the parent: the child is predicted
+            from :math:`g(\hat{\mu}_b)`, the parent adds the variance
+            :math:`g'(\hat{\mu}_b)^2 / \hat{\pi}_b` to this prediction, and its
+            posterior update uses :math:`g'` (and :math:`g''` for continuous
+            layers, whose precision update is second-order). With ``"exact"``, the
+            coupling function is replaced by its statistical linearisation under the
+            predicted belief :math:`x_b \sim \mathcal{N}(\hat{\mu}_b, 1/\hat{\pi}_b)` of
+            the parent: the child is predicted from :math:`\mathbb{E}[g(x_b)]`, the
+            parent adds the variance :math:`\mathrm{Var}[g(x_b)]` to this prediction,
+            and its posterior update uses the mean slope
+            :math:`\mathbb{E}[g'(x_b)]` (see
+            :func:`pyhgf.updates.vectorised.volatile.prediction.vectorised_layer_prediction`).
+            The moments are in closed form for the identity, the rectified linear
+            unit and the leaky rectified linear unit, and computed by Gauss-Hermite
+            quadrature for the other coupling functions (see
+            :class:`pyhgf.coupling.Coupling`). With ``"exact"``, the weight update
+            of a non-linear coupling function multiplies the prediction error of the
+            child by :math:`\mathbb{E}[g(x_b)]`, the activation the prediction read,
+            instead of :math:`g(\mu_b)` at the posterior mean of the parent, and
+            ``learning_kind="synaptic_uncertainty"`` carries the evidence with the
+            mean slope (see
+            :func:`pyhgf.updates.vectorised.learning.learning_weights_vectorised`).
+            The identity coupling keeps the weight update of ``"taylor"``, so a
+            linear network learns the same weights under both settings. The
+            predicted means then depend on the predicted precisions, and so on the
+            time step: pass the ``time_step`` of the training steps to
+            :meth:`predict`. ``"exact"`` requires the relaxed updates: combining it
+            with ``mean_field_updates=True`` raises a ``ValueError``. Volatile,
+            binary and categorical layers take the moments under the uncertainty
+            that their value parents propagate, so a network with such layers also
+            requires ``feedforward_uncertainty=True`` and ``predict_precision=True``.
         """
+        check_coupling_moments(coupling_moments, mean_field_updates)
         if mean_field_updates and feedforward_uncertainty:
             raise ValueError(
                 "mean_field_updates=True is incompatible with "
@@ -281,7 +335,8 @@ class DeepNetwork:
                 "value parents as point estimates, so there is no value-coupling "
                 "variance to propagate."
             )
-        self.coupling_fn = coupling_fn
+        self.coupling_fn: Coupling = resolve_coupling_fn(coupling_fn) or IDENTITY
+        self.coupling_moments = coupling_moments
         self.volatility_updates = volatility_updates
         self.max_posterior_precision = float(max_posterior_precision)
         self.precision_clipping_value = float(precision_clipping_value)
@@ -301,7 +356,7 @@ class DeepNetwork:
         self.layer_overrides: list[dict[str, float]] = []
         self.add_constant_inputs: list[bool] = []
         self.fully_connected: list[bool] = []
-        self.coupling_fns: list[Callable] = []  # per-layer coupling functions
+        self.coupling_fns: list[Coupling] = []  # per-layer coupling functions
         self.volatility_parents: list[bool] = []
         # Continuous-layer topology: for each layer, the index of the layer it
         # is the value / volatility parent of (``None`` when it has no such
@@ -406,7 +461,7 @@ class DeepNetwork:
 
         # Create the network with the resolved coupling function
         net = cls(
-            coupling_fn=net_coupling_fn or (lambda x: x),
+            coupling_fn=net_coupling_fn or "identity",
             volatility_updates=volatility_updates,
             max_posterior_precision=max_posterior_precision,
             precision_clipping_value=precision_clipping_value,
@@ -530,7 +585,7 @@ class DeepNetwork:
         kind: str = "volatile",
         add_constant_input: Optional[bool] = None,
         fully_connected: bool = True,
-        coupling_fn: Optional[Callable] = None,
+        coupling_fn: Optional[Callable | str] = None,
         volatility_parent: Optional[bool] = None,
         value_children: Optional[int] = None,
         volatility_children: Optional[int] = None,
@@ -575,8 +630,10 @@ class DeepNetwork:
             the same size and ``add_constant_input=False``. Weight learning and
             :meth:`weight_initialisation` leave the off-diagonal weights at zero.
         coupling_fn :
-            Coupling function for this layer. If None, uses the network-level coupling
-            function.
+            Coupling function for this layer: a function, the name of a coupling
+            function, or a :class:`pyhgf.coupling.Coupling` (see
+            :func:`pyhgf.coupling.resolve_coupling_fn`). If None, uses the
+            network-level coupling function.
         volatility_parent :
             If True, this layer has an implied internal volatility parent:
             mean_vol and precision_vol are predicted and updated each step. If False,
@@ -790,9 +847,7 @@ class DeepNetwork:
         self.layer_overrides.append(dict(kwargs))
         self.add_constant_inputs.append(add_constant_input)
         self.fully_connected.append(fully_connected)
-        self.coupling_fns.append(
-            coupling_fn if coupling_fn is not None else self.coupling_fn
-        )
+        self.coupling_fns.append(resolve_coupling_fn(coupling_fn) or self.coupling_fn)
         self.volatility_parents.append(volatility_parent)
         self.value_children.append(value_child)
         self.volatility_children.append(volatility_child)
@@ -968,6 +1023,16 @@ class DeepNetwork:
         if self._is_continuous:
             return self._init_continuous_state()
 
+        if self.coupling_moments == "exact" and not (
+            self.feedforward_uncertainty and self.predict_precision
+        ):
+            raise ValueError(
+                "coupling_moments='exact' requires feedforward_uncertainty=True and "
+                "predict_precision=True for volatile, binary and categorical layers: "
+                "the moments of the coupling functions are taken under the "
+                "uncertainty that the value parents propagate to their children."
+            )
+
         layers: list[Layer] = []
 
         for i, size in enumerate(self.layer_sizes):
@@ -1056,6 +1121,7 @@ class DeepNetwork:
             feedforward_uncertainty=self.feedforward_uncertainty,
             carry_precision=self.carry_precision,
             mean_field_updates=self.mean_field_updates,
+            coupling_moments=self.coupling_moments,
         )
 
     def _fan_in_matrix(
@@ -1167,6 +1233,7 @@ class DeepNetwork:
             predict_precision=self.predict_precision,
             feedforward_uncertainty=self.feedforward_uncertainty,
             mean_field_updates=self.mean_field_updates,
+            coupling_moments=self.coupling_moments,
         )
 
     def install_weight_belief(
@@ -1734,6 +1801,7 @@ class DeepNetwork:
     def predict(
         self,
         x: Union[np.ndarray, jnp.ndarray],
+        time_step: float = 1.0,
     ) -> jnp.ndarray:
         """Forward pass without learning.
 
@@ -1741,6 +1809,13 @@ class DeepNetwork:
         ----------
         x :
             Input data, shape (n_samples, n_input_features) or (n_input_features,).
+        time_step :
+            The time step of the prediction sweep. The predicted precisions depend
+            on it, and so do the predicted means under ``coupling_moments="exact"``,
+            which take the moments of the coupling functions under the predicted
+            beliefs. Pass the ``time_step`` given to :meth:`fit` to predict as the
+            training steps do. With ``coupling_moments="taylor"`` the predictions do
+            not depend on it.
 
         Returns
         -------
@@ -1755,8 +1830,8 @@ class DeepNetwork:
 
         # Handle single sample vs batch.
         if x.ndim == 1:
-            return prediction_pass(self.state, x)
-        return batched_prediction_pass(self.state, x)
+            return prediction_pass(self.state, x, float(time_step))
+        return batched_prediction_pass(self.state, x, float(time_step))
 
     def prediction(self, x: Union[np.ndarray, jnp.ndarray]) -> "DeepNetwork":
         """Run the top-down prediction sweep only.
@@ -1884,7 +1959,7 @@ class DeepNetwork:
         return input_prediction_error(self.state)
 
     def predict_states(
-        self, x: Union[np.ndarray, jnp.ndarray]
+        self, x: Union[np.ndarray, jnp.ndarray], time_step: float = 1.0
     ) -> tuple[jnp.ndarray, tuple]:
         """Batched forward pass that also returns the per-sample swept states.
 
@@ -1898,6 +1973,9 @@ class DeepNetwork:
         ----------
         x :
             Predictors, shape ``(batch, n_input_features)``.
+        time_step :
+            The time step of the prediction sweep, as in :meth:`predict`. Pass the
+            ``time_step`` given to :meth:`batch_update`.
 
         Returns
         -------
@@ -1911,7 +1989,7 @@ class DeepNetwork:
         if self.state is None:
             raise ValueError("Add at least one layer before calling predict_states.")
         self._carry()
-        states = batched_prediction_states(self.state, jnp.asarray(x))
+        states = batched_prediction_states(self.state, jnp.asarray(x), float(time_step))
         return states[0].expected_mean, states
 
     def batch_update(

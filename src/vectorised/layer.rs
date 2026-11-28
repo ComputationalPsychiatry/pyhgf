@@ -121,6 +121,24 @@ pub struct LayerState {
     pub effective_precision_vol: Option<Vector>,
     /// Volatility prediction error.
     pub volatility_prediction_error: Option<Vector>,
+    /// Variance of the residuals of the linearised coupling functions of the value
+    /// parents, which the prediction counts in the conditional predicted variance
+    /// 1/π̄ with the exact coupling moments. Zero otherwise. The precision that a
+    /// layer carries to the next sample leaves it out (see
+    /// [`DeepNet::carried_precision`]).
+    pub residual_variance: Vector,
+    /// Statistical linearisation of the coupling function of the layer under its
+    /// predicted belief N(μ̂, 1/π̂): the mean E[g(x)]. The three `linear_*` fields
+    /// are written once per prediction sweep by [`Self::cache_linearisation`], with
+    /// the exact coupling moments, and read by the prediction of the child layer,
+    /// the posterior update of the layer, the weight gradient and the input
+    /// prediction error, so that the moments are evaluated once per sweep.
+    pub linear_value: Vector,
+    /// Mean slope E[g'(x)] of the coupling function (see `linear_value`).
+    pub linear_slope: Vector,
+    /// Variance of the residual of the linearised coupling function,
+    /// Var[g(x)] − E[g'(x)]²/π̂ (see `linear_value`).
+    pub linear_residual: Vector,
 }
 
 impl LayerState {
@@ -152,7 +170,31 @@ impl LayerState {
             expected_precision_vol: vol(1.0),
             effective_precision_vol: vol(0.0),
             volatility_prediction_error: vol(0.0),
+            residual_variance: zeros(),
+            linear_value: zeros(),
+            linear_slope: zeros(),
+            linear_residual: zeros(),
         }
+    }
+
+    /// Evaluate the statistical linearisation of `coupling_fn` under the predicted
+    /// belief of every node of the layer, N(μ̂, 1/π̂), into the `linear_*` fields.
+    /// Called on a parent layer by the prediction sweep with the exact coupling
+    /// moments, before its child is predicted; the belief does not change until the
+    /// next prediction sweep, so the update sweep and the weight gradient read the
+    /// same values.
+    pub fn cache_linearisation(&mut self, coupling_fn: &crate::math::CouplingFn) {
+        ndarray::Zip::from(&mut self.linear_value)
+            .and(&mut self.linear_slope)
+            .and(&mut self.linear_residual)
+            .and(&self.expected_mean)
+            .and(&self.expected_precision)
+            .for_each(|value, slope, residual, &m, &p| {
+                let (v, s, r) = coupling_fn.linearise_engine(m as f64, 1.0 / p as f64);
+                *value = v as Float;
+                *slope = s as Float;
+                *residual = r as Float;
+            });
     }
 
     /// Number of nodes in the layer.
@@ -191,6 +233,7 @@ impl LayerState {
             "expected_precision_vol" => set_vol(&mut self.expected_precision_vol, full()),
             "effective_precision_vol" => set_vol(&mut self.effective_precision_vol, full()),
             "volatility_prediction_error" => set_vol(&mut self.volatility_prediction_error, full()),
+            "residual_variance" => self.residual_variance = full(),
             other => {
                 return Err(format!(
                     "Unknown LayerState field '{other}'. Valid fields: {}.",
@@ -217,6 +260,7 @@ pub const LAYER_STATE_FIELDS: &[&str] = &[
     "expected_precision_vol",
     "effective_precision_vol",
     "volatility_prediction_error",
+    "residual_variance",
 ];
 
 /// Per-node static parameters for one layer. Each field is length `n_nodes`.
@@ -370,6 +414,13 @@ pub struct DeepNet {
     /// [`DeepNet::carry_precisions`]); with `false` it starts every sample from
     /// its prior precision.
     pub carry_precision: bool,
+    /// Whether the uncertainty of a value parent crosses its coupling function with
+    /// the moments of the function under the predicted belief of the parent
+    /// (`coupling_moments="exact"`) instead of its first-order Taylor expansion at
+    /// the expected mean of the parent (`coupling_moments="taylor"`, the default).
+    /// Read through [`DeepNet::exact_moments`]. Mirrors the JAX
+    /// `DeepNetwork(coupling_moments=...)`.
+    pub exact_coupling_moments: bool,
 }
 
 impl DeepNet {
@@ -460,10 +511,21 @@ impl DeepNet {
             predict_precision: true,
             feedforward_uncertainty: false,
             carry_precision: true,
+            exact_coupling_moments: false,
         })
     }
 
+    /// Whether the sweeps take the exact moments of the coupling functions. The
+    /// moments are taken under the uncertainty that the value parents propagate, so
+    /// `exact_coupling_moments` applies only with `feedforward_uncertainty` and
+    /// `predict_precision`. The prediction and the update sweeps read the same
+    /// value, so that both use the same linearisation.
+    pub fn exact_moments(&self) -> bool {
+        self.exact_coupling_moments && self.feedforward_uncertainty && self.predict_precision
+    }
+
     /// Override the network-level settings (builder style).
+    #[allow(clippy::too_many_arguments)]
     pub fn with_settings(
         mut self,
         volatility_updates: VolatilityUpdate,
@@ -472,6 +534,7 @@ impl DeepNet {
         predict_precision: bool,
         feedforward_uncertainty: bool,
         carry_precision: bool,
+        exact_coupling_moments: bool,
     ) -> Self {
         self.volatility_updates = volatility_updates;
         self.max_posterior_precision = max_posterior_precision;
@@ -479,6 +542,7 @@ impl DeepNet {
         self.predict_precision = predict_precision;
         self.feedforward_uncertainty = feedforward_uncertainty;
         self.carry_precision = carry_precision;
+        self.exact_coupling_moments = exact_coupling_moments;
         self
     }
 
@@ -490,20 +554,42 @@ impl DeepNet {
     /// π + π̄ − π̂ = π̄ + π_y: the variance the value parents added to this
     /// sample's prediction is left out, since the next prediction adds it
     /// afresh (mirrors `carry_precisions` in the JAX backend).
+    ///
+    /// `residual` is the variance of the residuals of the linearised coupling
+    /// functions of the value parents, which the prediction with the exact coupling
+    /// moments counts in 1/π̄ (see [`Self::carried_residual`]). The next prediction
+    /// adds it afresh too, so the layer carries π_y + 1 / (1/π̄ − residual), with the
+    /// variance floored at the inverse of `max_posterior_precision` against
+    /// rounding. `None` carries π̄ as it is.
     #[inline]
     pub(crate) fn carried_precision(
         &self,
         precision: Float,
         conditional: Float,
         marginal: Float,
+        residual: Option<Float>,
     ) -> Option<Float> {
         if !self.carry_precision {
             None
         } else if self.feedforward_uncertainty {
+            let conditional = match residual {
+                Some(residual) => {
+                    1.0 / (1.0 / conditional - residual).max(1.0 / self.max_posterior_precision)
+                }
+                None => conditional,
+            };
             Some(precision + (conditional - marginal).max(0.0))
         } else {
             Some(precision)
         }
+    }
+
+    /// Whether the precision that `layer` carries leaves out its residual variance:
+    /// with the exact coupling moments, for every layer but the observation layer,
+    /// whose precision is the precision of its observation noise and is not carried.
+    #[inline]
+    pub(crate) fn carried_residual(&self, layer: &Layer) -> bool {
+        self.exact_moments() && !layer.is_input_layer
     }
 
     /// Replace each volatile layer's posterior precision with the precision it
@@ -515,11 +601,22 @@ impl DeepNet {
             return;
         }
         let carry = self.carry_precision;
-        for layer in self.layers.iter_mut() {
-            if layer.kind != LayerKind::Volatile {
+        for i in 0..self.layers.len() {
+            if self.layers[i].kind != LayerKind::Volatile {
                 continue;
             }
-            if carry {
+            let with_residual = self.carried_residual(&self.layers[i]);
+            let floor = 1.0 / self.max_posterior_precision;
+            let layer = &mut self.layers[i];
+            if carry && with_residual {
+                // Exact coupling moments: the carried precision leaves out the
+                // residual variance of the linearised coupling functions.
+                ndarray::Zip::from(&mut layer.state.precision)
+                    .and(&layer.state.conditional_expected_precision)
+                    .and(&layer.state.expected_precision)
+                    .and(&layer.state.residual_variance)
+                    .for_each(|p, &c, &e, &r| *p += (1.0 / (1.0 / c - r).max(floor) - e).max(0.0));
+            } else if carry {
                 ndarray::Zip::from(&mut layer.state.precision)
                     .and(&layer.state.conditional_expected_precision)
                     .and(&layer.state.expected_precision)
@@ -616,6 +713,59 @@ mod tests {
         assert_eq!(LayerKind::parse("volatile").unwrap(), LayerKind::Volatile);
         assert_eq!(LayerKind::parse("binary-state").unwrap(), LayerKind::Binary);
         assert!(LayerKind::parse("nope").is_err());
+    }
+
+    #[test]
+    fn test_carried_precision_leaves_out_the_residual_variance() {
+        let configs = vec![
+            LayerConfig::new(2),
+            LayerConfig::new(3),
+            LayerConfig::new(4),
+        ];
+        // Exact coupling moments, with the uncertainty of the value parents.
+        let mut net = DeepNet::from_configs(&configs).unwrap().with_settings(
+            VolatilityUpdate::Unbounded,
+            1e10,
+            1e-6,
+            true,
+            true,
+            true,
+            true,
+        );
+        assert!(net.exact_moments());
+        // Hidden layer: posterior 5, conditional 2 (variance 0.5, of which 0.3 is
+        // residual), marginal 1. Without the residual the predicted precision is
+        // 1 / 0.2 = 5, so the layer carries 5 + (5 - 1) = 9 instead of 5 + (2 - 1).
+        for index in 0..2 {
+            let state = &mut net.layers[index].state;
+            state.precision.fill(5.0);
+            state.conditional_expected_precision.fill(2.0);
+            state.expected_precision.fill(1.0);
+            state.residual_variance.fill(0.3);
+        }
+        net.carry_precisions();
+        assert!(net.layers[1]
+            .state
+            .precision
+            .iter()
+            .all(|&p| (p - 9.0).abs() < 1e-4));
+        // The observation layer keeps the canonical rule: its precision is the
+        // precision of its observation noise.
+        assert!(net.layers[0]
+            .state
+            .precision
+            .iter()
+            .all(|&p| (p - 6.0).abs() < 1e-6));
+
+        // Without the exact moments the residual is not read.
+        net.exact_coupling_moments = false;
+        net.layers[1].state.precision.fill(5.0);
+        net.carry_precisions();
+        assert!(net.layers[1]
+            .state
+            .precision
+            .iter()
+            .all(|&p| (p - 6.0).abs() < 1e-6));
     }
 
     #[test]

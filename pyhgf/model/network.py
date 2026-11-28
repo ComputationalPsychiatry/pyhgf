@@ -12,6 +12,7 @@ from jax.lax import scan, switch
 from jax.tree_util import Partial, tree_map
 from jax.typing import ArrayLike
 
+from pyhgf.coupling import check_coupling_moments
 from pyhgf.model import (
     add_binary_state,
     add_categorical_state,
@@ -55,6 +56,9 @@ class Network:
     mean_field_updates :
         If ``False`` (default), use the relaxed prediction and posterior updates. If
         ``True``, use the original mean-field updates.
+    coupling_moments :
+        How the relaxed updates take the uncertainty of a value parent through its
+        coupling function: ``"taylor"`` (default) or ``"exact"``.
 
     Attributes
     ----------
@@ -83,6 +87,7 @@ class Network:
         max_posterior_precision: float = 1e10,
         mean_field_updates: bool = False,
         precision_clipping_value: float = 1e-6,
+        coupling_moments: str = "taylor",
     ) -> None:
         r"""Initialise an empty neural network.
 
@@ -123,6 +128,26 @@ class Network:
             (default ``1e-6``) keeps the bound from creating flat, zero-gradient
             plateaus that hurt gradient-based inference (HMC/NUTS, optimisation). Shared
             with the vectorised JAX and Rust backends.
+        coupling_moments :
+            How the relaxed updates take the uncertainty of a value parent :math:`b`
+            through a non-linear coupling function :math:`g`. With ``"taylor"``
+            (default), the coupling function is replaced by its first-order Taylor
+            expansion at the mean of the parent: the child is predicted from
+            :math:`g(\hat{\mu}_b)`, the parent adds the variance
+            :math:`g'(\hat{\mu}_b)^2 / \hat{\pi}_b` to this prediction, and its
+            posterior update uses :math:`g'` and :math:`g''`. With ``"exact"``, the
+            coupling function is replaced by its statistical linearisation under the
+            predicted belief :math:`x_b \sim \mathcal{N}(\hat{\mu}_b, 1/\hat{\pi}_b)` of
+            the parent: the child is predicted from :math:`\mathbb{E}[g(x_b)]`, the
+            parent adds the variance :math:`\mathrm{Var}[g(x_b)]` to this prediction,
+            and its posterior update uses the mean slope :math:`\mathbb{E}[g'(x_b)]`
+            (see :func:`pyhgf.updates.prediction.continuous.predict_value_coupling_variance`).
+            The moments are in closed form for the identity, the rectified linear
+            unit and the leaky rectified linear unit, and computed by Gauss-Hermite
+            quadrature for the other coupling functions (see
+            :class:`pyhgf.coupling.Coupling`). The two settings are the same for a
+            linear coupling. ``"exact"`` requires the relaxed updates: combining it
+            with ``mean_field_updates=True`` raises a ``ValueError``.
 
         References
         ----------
@@ -130,6 +155,7 @@ class Network:
           Mathys, C. (2026). The generalized hierarchical Gaussian filter.
           doi:10.7554/elife.110174.1
         """
+        check_coupling_moments(coupling_moments, mean_field_updates)
         self.edges: Edges = ()
         self.n_nodes: int = 0  # number of nodes in the network
         self.node_trajectories: dict = {}
@@ -150,6 +176,7 @@ class Network:
         self.last_attributes: Optional[Attributes] = None
         self.volatility_updates = volatility_updates
         self.mean_field_updates = mean_field_updates
+        self.coupling_moments = coupling_moments
         self.max_posterior_precision = float(max_posterior_precision)
         self.precision_clipping_value = float(precision_clipping_value)
 
@@ -216,6 +243,7 @@ class Network:
                 network=self,
                 volatility_updates=self.volatility_updates,
                 mean_field_updates=self.mean_field_updates,
+                coupling_moments=self.coupling_moments,
             )
 
         # create the belief propagation function

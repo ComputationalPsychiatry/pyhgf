@@ -6,9 +6,8 @@
 from typing import Callable, NamedTuple, Optional, Union
 
 import jax.numpy as jnp
-from jax import grad as jgrad
-from jax import vmap
 
+from pyhgf.coupling import IDENTITY, Coupling
 from pyhgf.typing.vectorised import LayerState
 
 # The accepted weight-update kinds. All three share the same base term and
@@ -28,6 +27,7 @@ def learning_weights_vectorised(
     parent_has_constant: bool = False,
     child_kind: str = "continuous",
     child_evidence: Optional[jnp.ndarray] = None,
+    coupling_moments: str = "taylor",
 ) -> tuple:
     r"""Per-layer weight-learning factors for the vectorised deep network.
 
@@ -48,6 +48,22 @@ def learning_weights_vectorised(
     Both are strictly *local*: what one weight gets reads only the prediction
     error and precision at its child and the activation at its parent, never a
     reduction over the other parents or children in the layer.
+
+    **The parent-side factor** is the activation of the parent that the weight
+    multiplies. With ``coupling_moments="taylor"``, it is the coupling function at
+    the parent's posterior mean, :math:`h_i = g(\mu_i)`. With
+    ``coupling_moments="exact"`` and a non-linear coupling function, the child is
+    predicted from :math:`\sum_i w_{ai} \, \mathbb{E}[g(x_i)]` under the predicted
+    belief :math:`x_i \sim \mathcal{N}(\hat{\mu}_i, 1/\hat{\pi}_i)` of the parent
+    (:func:`~pyhgf.updates.vectorised.volatile.prediction.vectorised_layer_prediction`),
+    and the factor is this mean, :math:`h_i = \mathbb{E}[g(x_i)]`: the derivative of
+    the child's prediction with respect to the weight, so that :math:`u \otimes h`
+    is the gradient of the prediction error that the sweep computed. The two
+    factors differ most for a parent below the kink of a rectified linear unit,
+    where :math:`g(\mu_i)` is close to zero and :math:`\mathbb{E}[g(x_i)]` is not.
+    The identity coupling (:data:`pyhgf.coupling.IDENTITY`) keeps the posterior mean
+    :math:`h_i = \mu_i` under both settings, so that a linear network learns the
+    same weights under both.
 
     **The child-side gradient factor** starts from the value prediction error
     :math:`\delta = \mu_\text{child} - \hat{\mu}_\text{child}`, and *kind*
@@ -142,6 +158,12 @@ def learning_weights_vectorised(
         construction. The gradient factor is unaffected: it reads the child's
         posterior precision either way. ``None`` (default) recovers the evidence
         from the cache.
+    coupling_moments :
+        ``"taylor"`` (default) takes the parent-side factor :math:`g(\mu_i)` at the
+        parent's posterior mean. ``"exact"`` takes the mean
+        :math:`\mathbb{E}[g(x_i)]` of a non-linear coupling function under the
+        parent's predicted belief, which is the activation an exact prediction
+        uses, and leaves the factor of the identity coupling at the posterior mean.
 
     Returns
     -------
@@ -163,9 +185,18 @@ def learning_weights_vectorised(
     if kind not in SEPARABLE_KINDS:
         raise ValueError(f"Unknown kind '{kind}'. Expected one of {SEPARABLE_KINDS}.")
 
-    # The shared parent-side factor, h_i = g(mu_i). A constant input node
-    # contributes a fixed activation of 1.0, so its weight counts as usage 1.
-    h = coupling_fn(parent_state.mean)
+    # The shared parent-side factor: h_i = g(mu_i) or, with the exact moments and a
+    # non-linear coupling, the mean E[g(x_i)] under the parent's predicted belief,
+    # which the prediction of the child read. The identity coupling keeps the
+    # posterior mean. A constant input node contributes a fixed activation of 1.0,
+    # so its weight counts as usage 1.
+    coupling = Coupling.from_callable(coupling_fn)
+    if coupling_moments == "exact" and coupling is not IDENTITY:
+        h, _, _ = coupling.moments(
+            parent_state.expected_mean, 1.0 / parent_state.expected_precision
+        )
+    else:
+        h = coupling_fn(parent_state.mean)
     if parent_has_constant:
         h = jnp.concatenate([h, jnp.ones(1)])
     h = jnp.where(jnp.isfinite(h), h, 0.0)
@@ -435,6 +466,7 @@ def evidence_pullback(
     weights: jnp.ndarray,
     coupling_fn: Callable,
     parent_has_constant: bool = False,
+    coupling_moments: str = "taylor",
 ) -> jnp.ndarray:
     r"""Carry the evidence precision up one layer, by the squared-coupling recursion.
 
@@ -462,6 +494,13 @@ def evidence_pullback(
     with respect to :math:`W_{ai}`, under the same diagonal treatment (cross
     terms between different parents of one child are dropped).
 
+    With ``coupling_moments="exact"``, the coefficient of the linear map is the mean
+    slope of the coupling function under the predicted belief
+    :math:`x_i \sim \mathcal{N}(\hat{\mu}_i, 1/\hat{\pi}_i)` of the parent,
+    :math:`c = W_{ai}\,\mathbb{E}[g'(x_i)]`, as in the posterior update of the
+    parent
+    (:func:`~pyhgf.updates.vectorised.volatile.posterior.vectorised_posterior_update_precision_value_level`).
+
     Computed from the evidence carried in the walk rather than recovered as
     :math:`\pi_a - \hat\pi_a` from the filter's cache. The two agree in exact
     arithmetic, but the difference of two large nearly-equal precisions loses
@@ -488,6 +527,10 @@ def evidence_pullback(
         mean.
     parent_has_constant :
         Whether *weights* carries that trailing bias column.
+    coupling_moments :
+        ``"taylor"`` (default) takes the derivative of the coupling function at the
+        parent's expected mean. ``"exact"`` takes its mean slope under the parent's
+        predicted belief.
 
     Returns
     -------
@@ -505,7 +548,11 @@ def evidence_pullback(
     # amplifying the message instead of attenuating it.
     floored = jnp.maximum(child_evidence, 0.0)
     softened = floored / (1.0 + child_process_noise * floored)
-    coupling_prime = vmap(jgrad(coupling_fn))(parent_state.expected_mean)
+    _, coupling_prime, _ = Coupling.from_callable(coupling_fn).linearise(
+        parent_state.expected_mean,
+        1.0 / parent_state.expected_precision,
+        coupling_moments,
+    )
     pulled = jnp.matmul(weights.T**2, softened) * coupling_prime**2
     return jnp.where(jnp.isfinite(pulled), jnp.maximum(pulled, 0.0), 0.0)
 

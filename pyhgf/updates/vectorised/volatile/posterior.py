@@ -7,9 +7,8 @@ import dataclasses
 from typing import Callable
 
 import jax.numpy as jnp
-from jax import grad as jgrad
-from jax import vmap
 
+from pyhgf.coupling import Coupling
 from pyhgf.typing.vectorised import LayerState
 
 
@@ -20,6 +19,7 @@ def vectorised_posterior_update_precision_value_level(
     coupling_fn: Callable,
     child_is_input_layer: bool = False,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
 ) -> jnp.ndarray:
     r"""Update the precision of the value level for all nodes in a layer.
 
@@ -72,6 +72,16 @@ def vectorised_posterior_update_precision_value_level(
         the continuous layers of :mod:`pyhgf.updates.vectorised.continuous` keep
         the second-order term.
 
+    With ``coupling_moments="exact"``, the coupling function is replaced by its
+    statistical linearisation under the predicted belief
+    :math:`x_b \sim \mathcal{N}(\hat{\mu}_b, 1/\hat{\pi}_b)` of the layer, as in
+    :func:`~pyhgf.updates.vectorised.volatile.prediction.vectorised_layer_prediction`:
+    :math:`g'` is the mean slope :math:`A = \mathbb{E}[g'(x_b)]`, so that each child
+    contributes :math:`(\alpha A)^2 \, \bar{\pi}_a \pi_y / (\bar{\pi}_a + \pi_y)`,
+    with the variance of the residual of the linear function counted in
+    :math:`\bar{\pi}_a`. A linear function has no second-order term, so this update
+    is first-order under both settings.
+
     .. note::
 
         Unlike the standard continuous-state posterior updates elsewhere in the toolbox,
@@ -90,8 +100,8 @@ def vectorised_posterior_update_precision_value_level(
         Weight matrix connecting child to parent, shape
         ``(n_children, n_parents)``.
     coupling_fn :
-        Coupling function. The first derivative is computed inline via
-        ``jax.grad``.
+        Coupling function, with its first derivative read from its
+        :class:`pyhgf.coupling.Coupling`.
     child_is_input_layer :
         If True, the child is a clamped observation leaf (binary or continuous
         output). The fully observed limit (:math:`\pi_y \to \infty`) applies and
@@ -107,6 +117,11 @@ def vectorised_posterior_update_precision_value_level(
         If ``True``, skip the posterior-step relaxation entirely and weight every
         child contribution by the canonical predicted precision
         :math:`\hat{\pi}_a`, as in the mean-field update.
+    coupling_moments :
+        ``"taylor"`` (default) linearises the coupling function with its derivatives
+        at the expected mean of the layer. ``"exact"`` uses its statistical
+        linearisation under the predicted belief of the layer. Not read with
+        ``mean_field_updates``.
 
     Returns
     -------
@@ -119,8 +134,13 @@ def vectorised_posterior_update_precision_value_level(
        Mathys, C. (2026). The generalized hierarchical Gaussian filter.
        doi:10.7554/elife.110174.1
     """
-    # Coupling derivatives at parent expected means
-    coupling_prime = vmap(jgrad(coupling_fn))(layer.expected_mean)
+    # Slope of the coupling function at the parent expected means: its derivative
+    # or, with the exact moments, its mean slope under the predicted belief.
+    _, coupling_prime, _ = Coupling.from_callable(coupling_fn).linearise(
+        layer.expected_mean,
+        1.0 / layer.expected_precision,
+        "taylor" if mean_field_updates else coupling_moments,
+    )
 
     # Effective child precision under the posterior-step relaxation:
     #     π̄_a · π_y / (π̄_a + π_y),    π_y = π_a − π̂_a.
@@ -168,6 +188,7 @@ def vectorised_posterior_update_mean_value_level(
     coupling_fn: Callable,
     posterior_precision: jnp.ndarray,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
 ) -> jnp.ndarray:
     r"""Update the mean of the value level for all nodes in a layer.
 
@@ -186,7 +207,9 @@ def vectorised_posterior_update_mean_value_level(
     (``posterior_precision``); contributions accumulate across children and are
     divided by :math:`\pi_b` once, after summation. For leaves :math:`\pi_y = 0`
     and :math:`g_a` collapses to :math:`\hat{\pi}_a`, recovering the canonical
-    gain.
+    gain. With ``coupling_moments="exact"``, :math:`g'(\hat{\mu}_b)` is replaced by
+    the mean slope :math:`\mathbb{E}[g'(x_b)]` under the predicted belief
+    :math:`x_b \sim \mathcal{N}(\hat{\mu}_b, 1/\hat{\pi}_b)` of the layer.
 
     .. note::
 
@@ -206,8 +229,8 @@ def vectorised_posterior_update_mean_value_level(
         Weight matrix connecting child to parent, shape
         ``(n_children, n_parents)``.
     coupling_fn :
-        Coupling function. The first derivative is computed inline via
-        ``jax.grad``.
+        Coupling function, with its first derivative read from its
+        :class:`pyhgf.coupling.Coupling`.
     posterior_precision :
         Already-updated value-level posterior precision :math:`\pi_b` for the
         parent layer; the precision-weighted PE is divided by this once, after
@@ -215,14 +238,23 @@ def vectorised_posterior_update_mean_value_level(
     mean_field_updates :
         If ``True``, replace the joint-Gaussian gain by the canonical predicted
         precision :math:`\hat{\pi}_a`, as in the mean-field update.
+    coupling_moments :
+        ``"taylor"`` (default) takes the derivative of the coupling function at the
+        expected mean of the layer. ``"exact"`` takes its mean slope under the
+        predicted belief of the layer. Not read with ``mean_field_updates``.
 
     Returns
     -------
     jnp.ndarray
         Posterior mean for each node in the parent layer.
     """
-    # Coupling derivatives at parent expected means
-    coupling_prime = vmap(jgrad(coupling_fn))(layer.expected_mean)
+    # Slope of the coupling function at the parent expected means: its derivative
+    # or, with the exact moments, its mean slope under the predicted belief.
+    _, coupling_prime, _ = Coupling.from_callable(coupling_fn).linearise(
+        layer.expected_mean,
+        1.0 / layer.expected_precision,
+        "taylor" if mean_field_updates else coupling_moments,
+    )
 
     # Precision-weighted PE from children. From the joint Gaussian posterior over
     # (x_a, x_b), the per-child contribution is
@@ -266,6 +298,7 @@ def vectorised_layer_posterior_update(
     max_posterior_precision: float = 1e10,
     child_is_input_layer: bool = False,
     mean_field_updates: bool = False,
+    coupling_moments: str = "taylor",
 ) -> LayerState:
     """Update the value-level posterior for all nodes in a parent layer.
 
@@ -285,8 +318,8 @@ def vectorised_layer_posterior_update(
         ``(n_children, n_parents)`` or ``(n_children, n_parents + 1)``
         when the parent layer includes a constant input node.
     coupling_fn :
-        Coupling function. The first derivative is computed inline via
-        ``jax.grad`` in the two helpers.
+        Coupling function. The first derivative is read from its
+        :class:`pyhgf.coupling.Coupling` in the two helpers.
     parent_has_constant :
         If True, the last column of *weights* corresponds to the constant input node and
         is stripped before computing the posterior update.
@@ -299,6 +332,10 @@ def vectorised_layer_posterior_update(
     mean_field_updates :
         If ``True``, both helpers use the mean-field forms (canonical child
         predicted precision, no posterior-step relaxation).
+    coupling_moments :
+        ``"taylor"`` (default) or ``"exact"``: whether both helpers linearise the
+        coupling function with its derivatives or with its statistical linearisation
+        under the predicted belief of the layer.
 
     Returns
     -------
@@ -318,6 +355,7 @@ def vectorised_layer_posterior_update(
             coupling_fn,
             child_is_input_layer=child_is_input_layer,
             mean_field_updates=mean_field_updates,
+            coupling_moments=coupling_moments,
         ),
         layer.expected_precision,
         max_posterior_precision,
@@ -330,6 +368,7 @@ def vectorised_layer_posterior_update(
         coupling_fn,
         posterior_precision,
         mean_field_updates=mean_field_updates,
+        coupling_moments=coupling_moments,
     )
 
     return dataclasses.replace(
