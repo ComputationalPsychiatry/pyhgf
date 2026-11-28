@@ -127,6 +127,18 @@ pub struct LayerState {
     /// layer carries to the next sample leaves it out (see
     /// [`DeepNet::carried_precision`]).
     pub residual_variance: Vector,
+    /// Statistical linearisation of the coupling function of the layer under its
+    /// predicted belief N(μ̂, 1/π̂): the mean E[g(x)]. The three `linear_*` fields
+    /// are written once per prediction sweep by [`Self::cache_linearisation`], with
+    /// the exact coupling moments, and read by the prediction of the child layer,
+    /// the posterior update of the layer, the weight gradient and the input
+    /// prediction error, so that the moments are evaluated once per sweep.
+    pub linear_value: Vector,
+    /// Mean slope E[g'(x)] of the coupling function (see `linear_value`).
+    pub linear_slope: Vector,
+    /// Variance of the residual of the linearised coupling function,
+    /// Var[g(x)] − E[g'(x)]²/π̂ (see `linear_value`).
+    pub linear_residual: Vector,
 }
 
 impl LayerState {
@@ -159,7 +171,30 @@ impl LayerState {
             effective_precision_vol: vol(0.0),
             volatility_prediction_error: vol(0.0),
             residual_variance: zeros(),
+            linear_value: zeros(),
+            linear_slope: zeros(),
+            linear_residual: zeros(),
         }
+    }
+
+    /// Evaluate the statistical linearisation of `coupling_fn` under the predicted
+    /// belief of every node of the layer, N(μ̂, 1/π̂), into the `linear_*` fields.
+    /// Called on a parent layer by the prediction sweep with the exact coupling
+    /// moments, before its child is predicted; the belief does not change until the
+    /// next prediction sweep, so the update sweep and the weight gradient read the
+    /// same values.
+    pub fn cache_linearisation(&mut self, coupling_fn: &crate::math::CouplingFn) {
+        ndarray::Zip::from(&mut self.linear_value)
+            .and(&mut self.linear_slope)
+            .and(&mut self.linear_residual)
+            .and(&self.expected_mean)
+            .and(&self.expected_precision)
+            .for_each(|value, slope, residual, &m, &p| {
+                let (v, s, r) = coupling_fn.linearise_engine(m as f64, 1.0 / p as f64);
+                *value = v as Float;
+                *slope = s as Float;
+                *residual = r as Float;
+            });
     }
 
     /// Number of nodes in the layer.

@@ -22,9 +22,8 @@ pub fn categorical_prediction(
     exact_moments: bool,
 ) {
     let mut coupled_parents = if exact_moments {
-        ndarray::Zip::from(&parent.expected_mean)
-            .and(&parent.expected_precision)
-            .map_collect(|&m, &p| (coupling_fn.moments)(m as f64, 1.0 / p as f64).0 as Float)
+        // Mean E[g] cached by the prediction sweep for this step.
+        parent.linear_value.clone()
     } else {
         with_coupling!(coupling_fn, |f, _df, _d2f| parent
             .expected_mean

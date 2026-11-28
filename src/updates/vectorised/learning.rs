@@ -53,9 +53,8 @@ pub fn weight_gradient_factors(
 ) -> (Vector, Vector) {
     let pe = &child.mean - &child.expected_mean;
     let mut coupled_parent = if exact_moments && coupling_fn.kind != CouplingKind::Linear {
-        ndarray::Zip::from(&parent.expected_mean)
-            .and(&parent.expected_precision)
-            .map_collect(|&m, &p| (coupling_fn.moments)(m as f64, 1.0 / p as f64).0 as Float)
+        // Mean E[g] cached by the prediction sweep for this step.
+        parent.linear_value.clone()
     } else {
         with_coupling!(coupling_fn, |f, _df, _d2f| parent
             .mean
@@ -169,7 +168,9 @@ mod tests {
         child.mean = Array1::from_vec(vec![1.0]);
         child.expected_mean = Array1::from_vec(vec![0.0]);
 
-        let factor = |coupling: &CouplingFn, exact_moments: bool| {
+        let mut factor = |coupling: &CouplingFn, exact_moments: bool| {
+            // The prediction sweep caches the linearisation before the gradient.
+            parent.cache_linearisation(coupling);
             weight_gradient_factors(
                 &parent,
                 &child,

@@ -80,18 +80,17 @@ pub fn layer_prediction(
     // With the exact moments, g is replaced by its statistical linearisation under
     // each parent's predicted belief N(μ̂, 1/π̂): the activation is E[g], the slope
     // is A = E[g'], and the residual of the linear function has the variance
-    // Var[g] − A²/π̂, kept per parent in `residual`.
+    // Var[g] − A²/π̂, kept per parent in `residual`. The three are read from the
+    // parent's `linear_*` fields, which the sweep computed once for this step.
     let mut coupled = Array1::<Float>::zeros(p);
     let mut ppv = Array1::<Float>::zeros(p);
     let mut residual = Array1::<Float>::zeros(p);
     if exact_moments {
         for j in 0..n_parent {
-            let precision = parent.expected_precision[j] as f64;
-            let (expected_value, slope, residual_j) =
-                coupling_fn.linearise(parent.expected_mean[j] as f64, 1.0 / precision);
-            coupled[j] = expected_value as Float;
-            ppv[j] = (slope * slope / precision) as Float;
-            residual[j] = residual_j as Float;
+            let slope = parent.linear_slope[j];
+            coupled[j] = parent.linear_value[j];
+            ppv[j] = slope * slope / parent.expected_precision[j];
+            residual[j] = parent.linear_residual[j];
         }
     } else {
         with_coupling!(coupling_fn, |f, df, _d2f| {

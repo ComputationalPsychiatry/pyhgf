@@ -121,6 +121,31 @@ impl CouplingFn {
             (coupling_variance - slope * slope * variance).max(0.0),
         )
     }
+
+    /// [`Self::linearise`] for the vectorised engine. In single precision (the
+    /// default engine), the rectified linear units take the distribution function of
+    /// the normal distribution from a rational approximation of absolute error below
+    /// $10^{-7}$ ([`normal_tail_single`]), which is below the resolution of the
+    /// engine and several times cheaper than [`normal_cdf`]. With the `f64` feature
+    /// this is [`Self::linearise`].
+    #[inline]
+    pub fn linearise_engine(&self, mean: f64, variance: f64) -> (f64, f64, f64) {
+        #[cfg(not(feature = "f64"))]
+        let (value, coupling_variance, slope) = match self.kind {
+            CouplingKind::Relu => rectifier_moments_with(mean, variance, 0.0, normal_tail_single),
+            CouplingKind::LeakyRelu => {
+                rectifier_moments_with(mean, variance, 0.01, normal_tail_single)
+            }
+            _ => (self.moments)(mean, variance),
+        };
+        #[cfg(feature = "f64")]
+        let (value, coupling_variance, slope) = (self.moments)(mean, variance);
+        (
+            value,
+            slope,
+            (coupling_variance - slope * slope * variance).max(0.0),
+        )
+    }
 }
 
 /// Tag identifying one of the named coupling functions.
@@ -247,6 +272,26 @@ pub fn normal_cdf(z: f64) -> f64 {
 /// Returns `(E[g], Var[g], E[g'])`. The negative slope `s = 0` gives the rectified
 /// linear unit and `s = 1` the identity. Mirrors `pyhgf.coupling.leaky_relu_moments`.
 pub fn rectifier_moments(mean: f64, variance: f64, negative_slope: f64) -> (f64, f64, f64) {
+    rectifier_moments_with(mean, variance, negative_slope, |a| normal_cdf(-a))
+}
+
+/// Mass of the standard normal distribution beyond `a >= 0`, $\Phi(-a)$, from the
+/// rational approximation of the complementary error function used by [`gelu`]
+/// (absolute error below $10^{-7}$). For the single precision engine.
+#[cfg_attr(feature = "f64", allow(dead_code))]
+#[inline]
+fn normal_tail_single(a: f64) -> f64 {
+    0.5 * erfc(a / std::f64::consts::SQRT_2)
+}
+
+/// [`rectifier_moments`] with the mass beyond `|z|`, $\Phi(-|z|)$, given by `tail`.
+#[inline]
+fn rectifier_moments_with(
+    mean: f64,
+    variance: f64,
+    negative_slope: f64,
+    tail: impl Fn(f64) -> f64,
+) -> (f64, f64, f64) {
     let variance = if variance.is_nan() {
         f64::NAN
     } else {
@@ -256,7 +301,7 @@ pub fn rectifier_moments(mean: f64, variance: f64, negative_slope: f64) -> (f64,
     let sigma = variance.max(f64::MIN_POSITIVE).sqrt();
     let z = (mean / sigma).clamp(-40.0, 40.0);
     // Φ(z) and Φ(−z) from one evaluation of the tail beyond |z|.
-    let tail = normal_cdf(-z.abs());
+    let tail = tail(z.abs());
     let (cdf, survival) = if z >= 0.0 {
         (1.0 - tail, tail)
     } else {
@@ -1058,6 +1103,35 @@ mod tests {
                     "{:?} moments at ({mean}, {variance}): expected {expected}, got {actual}",
                     coupling.kind
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn test_engine_linearisation_matches_the_precise_one() {
+        // The vectorised engine takes the distribution function of the rectified
+        // linear units from a rational approximation: its linearisation stays
+        // within the resolution of single precision of the precise one.
+        for coupling in [&RELU, &LEAKY_RELU, &TANH] {
+            for (mean, variance) in [
+                (-2.0, 0.5),
+                (-0.75, 1.0),
+                (0.0, 1.0),
+                (0.4, 2.25),
+                (3.0, 0.3),
+            ] {
+                let precise = coupling.linearise(mean, variance);
+                let engine = coupling.linearise_engine(mean, variance);
+                for (a, b) in [precise.0, precise.1, precise.2]
+                    .into_iter()
+                    .zip([engine.0, engine.1, engine.2])
+                {
+                    assert!(
+                        (a - b).abs() < 2e-6,
+                        "{:?} at ({mean}, {variance}): precise {a}, engine {b}",
+                        coupling.kind
+                    );
+                }
             }
         }
     }

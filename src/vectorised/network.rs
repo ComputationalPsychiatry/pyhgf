@@ -156,7 +156,15 @@ impl DeepNet {
         for i in (1..n).rev() {
             let (lower, upper) = self.layers.split_at_mut(i);
             let child = &mut lower[i - 1];
-            let parent = &upper[0];
+            let parent = &mut upper[0];
+            if exact_moments {
+                // One evaluation of the moments per layer and sweep: the prediction
+                // of the child, the posterior update of this layer and the weight
+                // gradient all read it.
+                let coupling_fn = parent.coupling_fn;
+                parent.state.cache_linearisation(coupling_fn);
+            }
+            let parent = &*parent;
             let weights = parent.weights_in.as_ref().expect("parent has no weights");
             predict_child(
                 child,
@@ -302,12 +310,10 @@ impl DeepNet {
         if top.coupling_fn.kind != crate::math::CouplingKind::Linear {
             if self.exact_moments() {
                 // Mean slope E[g'] under the top layer's predicted belief, as in the
-                // interior posterior mean update.
-                let moments = top.coupling_fn.moments;
+                // interior posterior mean update, cached by the prediction sweep.
                 ndarray::Zip::from(&mut routed)
-                    .and(&top.state.expected_mean)
-                    .and(&top.state.expected_precision)
-                    .for_each(|r, &m, &ep| *r *= moments(m as f64, 1.0 / ep as f64).2 as Float);
+                    .and(&top.state.linear_slope)
+                    .for_each(|r, &slope| *r *= slope);
             } else {
                 crate::math::with_coupling!(top.coupling_fn, |_f, df, _d2f| {
                     ndarray::Zip::from(&mut routed)

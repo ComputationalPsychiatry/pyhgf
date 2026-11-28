@@ -166,6 +166,20 @@ def test_moments_are_differentiable_at_zero_variance(name):
         assert all(bool(jnp.isfinite(gradient)) for gradient in gradients)
 
 
+@pytest.mark.parametrize("mean", [-0.8, 0.0, 0.6])
+def test_closed_form_moments_gradients(mean):
+    """The mean of a rectified linear unit has the mean slope as derivative.
+
+    For a Gaussian of unit variance, the derivative of E[max(x, 0)] with respect to the
+    mean is the mass above zero, which is also the mean slope. This holds at a mean of
+    exactly 0, where the argument of the distribution function changes sign.
+    """
+    relu = COUPLINGS["relu"]
+    derivative = jax.grad(lambda m: relu.moments(m, 1.0)[0])(mean)
+    np.testing.assert_allclose(derivative, stats.norm.cdf(mean), rtol=1e-5)
+    np.testing.assert_allclose(derivative, relu.moments(mean, 1.0)[2], rtol=1e-5)
+
+
 def test_resolve_coupling_fn():
     """Names, functions and couplings resolve to couplings created once."""
     assert resolve_coupling_fn(None) is None

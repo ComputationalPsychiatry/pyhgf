@@ -43,9 +43,8 @@ pub fn layer_posterior_update(
     };
 
     let coupling_prime = if exact_moments {
-        ndarray::Zip::from(&parent.expected_mean)
-            .and(&parent.expected_precision)
-            .map_collect(|&m, &p| (coupling_fn.moments)(m as f64, 1.0 / p as f64).2 as Float)
+        // Mean slope cached by the prediction sweep for this step.
+        parent.linear_slope.clone()
     } else {
         with_coupling!(coupling_fn, |_f, df, _d2f| parent
             .expected_mean

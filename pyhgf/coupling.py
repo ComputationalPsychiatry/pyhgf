@@ -16,7 +16,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import Array
-from jax.scipy.special import ndtr
+from jax.scipy.special import erfc
 from jax.typing import ArrayLike
 
 
@@ -78,7 +78,12 @@ def leaky_relu_moments(
     tiny = jnp.finfo(mean.dtype).tiny
     sigma = jnp.sqrt(jnp.maximum(variance, tiny))
     z = jnp.clip(mean / sigma, -40.0, 40.0)
-    cdf, survival = ndtr(z), ndtr(-z)
+    # Φ(z) and Φ(−z) from one evaluation of the mass beyond |z|,
+    # Φ(−|z|) = erfc(|z| / √2) / 2. |z| is written with `where`, whose derivative at
+    # z = 0 is that of z, so that the derivative of Φ at 0 is the density.
+    tail = 0.5 * erfc(jnp.where(z >= 0.0, z, -z) * np.sqrt(0.5))
+    cdf = jnp.where(z >= 0.0, 1.0 - tail, tail)
+    survival = jnp.where(z >= 0.0, tail, 1.0 - tail)
     pdf = jnp.exp(-0.5 * z**2) / np.sqrt(2.0 * np.pi)
 
     slope = negative_slope + (1.0 - negative_slope) * cdf
