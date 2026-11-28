@@ -427,90 +427,64 @@ mod tests {
         }
     }
 
-    /// Parent and child layers, and the weights between them, of the curved-coupling
-    /// tests: three parents and two interior children.
-    fn curved_coupling_layers() -> (LayerState, LayerState, Matrix) {
-        let mut parent = LayerState::create(3, true);
-        parent.expected_mean = Array1::from_vec(vec![0.3, -0.6, 1.1]);
-        parent.expected_precision = Array1::from_vec(vec![1.2, 0.9, 2.2]);
-        let mut child = LayerState::create(2, true);
-        child.precision = Array1::from_vec(vec![3.0, 2.4]);
-        child.expected_precision = Array1::from_vec(vec![2.0, 1.5]);
-        child.conditional_expected_precision = Array1::from_vec(vec![2.5, 1.8]);
-        child.value_prediction_error = Array1::from_vec(vec![0.4, -0.7]);
-        let weights = Matrix::from_shape_vec((2, 3), vec![0.8, -0.5, 0.3, -0.4, 0.9, 0.6]).unwrap();
-        (parent, child, weights)
-    }
-
-    /// Compare the posterior of the parents to the values of the JAX kernel on the
-    /// same inputs (`test_integrating_other_parents_with_curved_coupling` in
+    /// With a tanh coupling, the other parents enter through the slope that the
+    /// prediction step gives them: the derivative of the coupling function at their
+    /// predicted means, or its mean slope under their predicted beliefs with the
+    /// exact coupling moments. This is also the slope of the edge being updated, and
+    /// the precision is first-order in the coupling function. The expected values
+    /// come from the JAX kernel on the same inputs
+    /// (`test_integrating_other_parents_with_curved_coupling` in
     /// `tests/test_updates/posterior/test_relaxed_edge_factors.py`).
-    fn assert_matches_jax(
-        parent: &LayerState,
-        expected_precision: [f64; 3],
-        expected_mean: [f64; 3],
-    ) {
-        for m in 0..3 {
-            let (p, e) = (parent.precision[m] as f64, expected_precision[m]);
-            assert!(
-                (p - e).abs() < 1e-5 * e,
-                "parent {m}: precision {p} vs JAX {e}"
-            );
-            let (mu, e) = (parent.mean[m] as f64, expected_mean[m]);
-            assert!(
-                (mu - e).abs() < 1e-5 * (1.0 + e.abs()),
-                "parent {m}: mean {mu} vs JAX {e}"
-            );
-        }
-    }
-
-    /// With a tanh coupling, the other parents enter through the derivative of the
-    /// coupling function at their predicted means, and the precision is first-order
-    /// in the coupling function.
     #[test]
     fn test_integrating_other_parents_with_curved_coupling() {
-        let (mut parent, child, weights) = curved_coupling_layers();
-        layer_posterior_update(
-            &mut parent,
-            &child,
-            &weights,
-            resolve_coupling_fn("tanh"),
-            false,
-            1e10,
-            false,
-            false, // exact_moments
-            true,
-        );
-        assert_matches_jax(
-            &parent,
-            [1.6092200770131118, 1.1962781289380784, 2.2266348300871837],
-            [0.8512406330237166, -1.3480584013452446, 1.048347784353152],
-        );
-    }
-
-    /// With the exact coupling moments, the other parents enter through the mean
-    /// slope of the coupling function under their predicted beliefs, the slope of
-    /// the prediction step, which is also the slope of the edge being updated.
-    #[test]
-    fn test_integrating_other_parents_with_exact_moments() {
-        let (mut parent, child, weights) = curved_coupling_layers();
         let coupling_fn = resolve_coupling_fn("tanh");
-        parent.cache_linearisation(coupling_fn);
-        layer_posterior_update(
-            &mut parent,
-            &child,
-            &weights,
-            coupling_fn,
-            false,
-            1e10,
-            false,
-            true, // exact_moments
-            true,
-        );
-        assert_matches_jax(
-            &parent,
-            [1.3969053308793788, 1.073988550186877, 2.243046824140868],
-            [0.756508702322462, -1.258488016643296, 1.0325545280990016],
-        );
+        let weights = Matrix::from_shape_vec((2, 3), vec![0.8, -0.5, 0.3, -0.4, 0.9, 0.6]).unwrap();
+        for (exact_moments, expected_precision, expected_mean) in [
+            (
+                false,
+                [1.6092200770131118, 1.1962781289380784, 2.2266348300871837],
+                [0.8512406330237166, -1.3480584013452446, 1.048347784353152],
+            ),
+            (
+                true,
+                [1.3969053308793788, 1.073988550186877, 2.243046824140868],
+                [0.756508702322462, -1.258488016643296, 1.0325545280990016],
+            ),
+        ] {
+            let mut parent = LayerState::create(3, true);
+            parent.expected_mean = Array1::from_vec(vec![0.3, -0.6, 1.1]);
+            parent.expected_precision = Array1::from_vec(vec![1.2, 0.9, 2.2]);
+            parent.cache_linearisation(coupling_fn);
+            let mut child = LayerState::create(2, true);
+            child.precision = Array1::from_vec(vec![3.0, 2.4]);
+            child.expected_precision = Array1::from_vec(vec![2.0, 1.5]);
+            child.conditional_expected_precision = Array1::from_vec(vec![2.5, 1.8]);
+            child.value_prediction_error = Array1::from_vec(vec![0.4, -0.7]);
+
+            layer_posterior_update(
+                &mut parent,
+                &child,
+                &weights,
+                coupling_fn,
+                false,
+                1e10,
+                false,
+                exact_moments,
+                true,
+            );
+
+            for m in 0..3 {
+                let (p, e) = (parent.precision[m] as f64, expected_precision[m]);
+                assert!(
+                    (p - e).abs() < 1e-5 * e,
+                    "exact_moments={exact_moments} parent {m}: precision {p} vs JAX {e}"
+                );
+                let (mu, e) = (parent.mean[m] as f64, expected_mean[m]);
+                assert!(
+                    (mu - e).abs() < 1e-5 * (1.0 + e.abs()),
+                    "exact_moments={exact_moments} parent {m}: mean {mu} vs JAX {e}"
+                );
+            }
+        }
     }
 }

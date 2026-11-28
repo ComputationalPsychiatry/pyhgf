@@ -33,59 +33,6 @@ try:
 except ImportError:  # jax releases exporting it from jax.experimental only
     from jax.experimental import enable_x64
 
-WEIGHTS = np.array([[0.8, -1.3, 0.5]])
-PARENT_PRECISIONS = np.array([1.2, 0.7, 2.0])
-CONDITIONAL_PRECISION = 1.5
-EVIDENCE_PRECISION = 2.5
-RESIDUAL = 0.9
-
-
-def _exact_parent_posteriors(
-    evidence_precision: float,
-) -> tuple[np.ndarray, np.ndarray]:
-    r"""Marginal posterior precision and mean shift of every parent, by conditioning.
-
-    The child :math:`x_a = W x + \varepsilon`, with :math:`\varepsilon` of variance
-    :math:`1/\bar{\pi}_a`, is observed with noise of variance :math:`1/\pi_y`, at
-    ``RESIDUAL`` from its prediction.
-    """
-    weights = WEIGHTS[0]
-    marginal_variance = 1 / CONDITIONAL_PRECISION + np.sum(
-        weights**2 / PARENT_PRECISIONS
-    )
-    total_variance = marginal_variance + 1 / evidence_precision
-    covariance = weights / PARENT_PRECISIONS
-    variance = 1 / PARENT_PRECISIONS - covariance**2 / total_variance
-    return 1 / variance, covariance / total_variance * RESIDUAL
-
-
-def _child_and_parent(clamped: bool) -> tuple[LayerState, LayerState]:
-    """Child and parent layer states for one observation of the child."""
-    weights = WEIGHTS[0]
-    marginal = 1 / (1 / CONDITIONAL_PRECISION + np.sum(weights**2 / PARENT_PRECISIONS))
-    if clamped:
-        # A clamped leaf keeps its stored precision at the conditional predicted
-        # precision, and its prediction error is the raw residual.
-        precision = expected = CONDITIONAL_PRECISION
-        prediction_error = RESIDUAL
-    else:
-        expected = marginal
-        precision = marginal + EVIDENCE_PRECISION
-        prediction_error = EVIDENCE_PRECISION * RESIDUAL / precision
-    child = dataclasses.replace(
-        LayerState.create(1, has_volatility_parent=False),
-        precision=jnp.array([precision]),
-        expected_precision=jnp.array([expected]),
-        conditional_expected_precision=jnp.array([CONDITIONAL_PRECISION]),
-        value_prediction_error=jnp.array([prediction_error]),
-    )
-    parent = dataclasses.replace(
-        LayerState.create(3, has_volatility_parent=False),
-        expected_mean=jnp.zeros(3),
-        expected_precision=jnp.asarray(PARENT_PRECISIONS),
-    )
-    return child, parent
-
 
 def test_leave_one_out_sum_keeps_precision_with_a_dominant_entry():
     """Each entry is the sum of the other columns of its row, without cancellation."""
@@ -102,34 +49,63 @@ def test_leave_one_out_sum_keeps_precision_with_a_dominant_entry():
 
 @pytest.mark.parametrize("clamped", [False, True], ids=["interior", "clamped"])
 def test_integrating_other_parents_is_exact_for_linear_coupling(clamped):
-    """Each parent of a child with three linear parents gets its exact posterior.
+    r"""Each parent of a child with three linear parents gets its exact posterior.
 
+    The child :math:`x_a = W x + \varepsilon`, with :math:`\varepsilon` of variance
+    :math:`1/\bar{\pi}_a`, is observed at ``residual`` from its prediction: exactly
+    when it is clamped, and with noise of variance :math:`1/\pi_y` otherwise.
     Conditioning the child on every parent instead treats the other two as known, and
     every parent gains more precision than the exact posterior gives it.
     """
-    with enable_x64(True):
-        child, parent = _child_and_parent(clamped)
-        evidence = np.inf if clamped else EVIDENCE_PRECISION
-        exact_precision, exact_shift = _exact_parent_posteriors(evidence)
+    weights = np.array([0.8, -1.3, 0.5])
+    parent_precisions = np.array([1.2, 0.7, 2.0])
+    conditional_precision, evidence_precision, residual = 1.5, 2.5, 0.9
 
-        updated = vectorised_layer_posterior_update(
-            parent,
-            child,
-            jnp.asarray(WEIGHTS),
-            lambda x: x,
-            child_is_input_layer=clamped,
-            integrate_other_parents=True,
+    # Marginal posterior of every parent, by conditioning the joint Gaussian.
+    marginal_variance = 1 / conditional_precision + np.sum(
+        weights**2 / parent_precisions
+    )
+    total_variance = marginal_variance + (0.0 if clamped else 1 / evidence_precision)
+    covariance = weights / parent_precisions
+    exact_precision = 1 / (1 / parent_precisions - covariance**2 / total_variance)
+    exact_shift = covariance / total_variance * residual
+
+    if clamped:
+        # A clamped leaf keeps its stored precision at the conditional predicted
+        # precision, and its prediction error is the raw residual.
+        precision = expected = conditional_precision
+        prediction_error = residual
+    else:
+        expected = 1 / marginal_variance
+        precision = expected + evidence_precision
+        prediction_error = evidence_precision * residual / precision
+
+    with enable_x64(True):
+        child = dataclasses.replace(
+            LayerState.create(1, has_volatility_parent=False),
+            precision=jnp.array([precision]),
+            expected_precision=jnp.array([expected]),
+            conditional_expected_precision=jnp.array([conditional_precision]),
+            value_prediction_error=jnp.array([prediction_error]),
+        )
+        parent = dataclasses.replace(
+            LayerState.create(3, has_volatility_parent=False),
+            expected_mean=jnp.zeros(3),
+            expected_precision=jnp.asarray(parent_precisions),
+        )
+        updated, conditioned_on_all = (
+            vectorised_layer_posterior_update(
+                parent,
+                child,
+                jnp.asarray(weights[None, :]),
+                lambda x: x,
+                child_is_input_layer=clamped,
+                integrate_other_parents=integrate,
+            )
+            for integrate in (True, False)
         )
         assert np.allclose(np.asarray(updated.precision), exact_precision, rtol=1e-10)
         assert np.allclose(np.asarray(updated.mean), exact_shift, rtol=1e-10)
-
-        conditioned_on_all = vectorised_layer_posterior_update(
-            parent,
-            child,
-            jnp.asarray(WEIGHTS),
-            lambda x: x,
-            child_is_input_layer=clamped,
-        )
         assert np.all(np.asarray(conditioned_on_all.precision) > exact_precision)
 
 
@@ -141,9 +117,8 @@ def test_integrating_other_parents_with_curved_coupling(coupling_moments):
     the slope that the prediction step gives them: the derivative of the coupling at
     their predicted means, or its mean slope under their predicted beliefs with the
     exact coupling moments. The posterior precision is first-order in the coupling
-    function. The values are those of the Rust kernel tests
-    ``test_integrating_other_parents_with_curved_coupling`` and
-    ``test_integrating_other_parents_with_exact_moments``.
+    function. The values are those of the Rust kernel test
+    ``test_integrating_other_parents_with_curved_coupling``.
     """
     with enable_x64(True):
         child = dataclasses.replace(

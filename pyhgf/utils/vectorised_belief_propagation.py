@@ -1188,7 +1188,10 @@ def _input_prediction_error(network: VectorisedNetwork) -> jnp.ndarray:
     :func:`pyhgf.updates.vectorised.volatile.posterior.vectorised_posterior_update_mean_value_level`),
     :math:`W` the weight matrix connecting the child into the top layer
     (bias column excluded), and :math:`g'` the derivative of the top layer's
-    coupling function at the clamped predictors.
+    coupling function at the clamped predictors. When the update integrates the
+    other parents of each child (:func:`_integrates_other_parents`), the gain
+    depends on the edge and the message to the predictor :math:`m` is
+    :math:`g'(\hat{\mu}_m) \sum_a W_{a,m} \, g_{a|m} \, \delta_a`.
 
     With unit precisions and an identity coupling this reduces to
     :math:`W^\top \delta_a` — the error multiplied back through the weights.

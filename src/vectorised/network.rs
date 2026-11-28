@@ -314,6 +314,21 @@ impl DeepNet {
         let cols = w.ncols() - usize::from(top.add_constant_input);
         let w = w.slice(s![.., ..cols]);
 
+        // Slope of the top layer's coupling function, as in the interior posterior
+        // mean update: the mean slope E[g'] under its predicted belief, cached by
+        // the prediction sweep, with the exact moments, and g'(μ̂) otherwise. `None`
+        // for a linear coupling.
+        let slope = if top.coupling_fn.kind == crate::math::CouplingKind::Linear {
+            None
+        } else if self.exact_moments() {
+            Some(top.state.linear_slope.clone())
+        } else {
+            Some(crate::math::with_coupling!(
+                top.coupling_fn,
+                |_f, df, _d2f| top.state.expected_mean.mapv(|m| df(m as f64) as Float)
+            ))
+        };
+
         // Relaxed gain of the child layer, identical to the gain of the
         // interior posterior mean update, so the top layer sees exactly the
         // message any interior layer would see.
@@ -324,21 +339,11 @@ impl DeepNet {
         ) {
             // One gain per edge, the child's other parents integrated over their
             // predicted beliefs (see `volatile::posterior::add_edge_messages`).
-            // The slope of each parent is the one of the prediction step: the mean
-            // slope E[g'] with the exact moments, g'(μ̂) otherwise.
-            let parent_variance = if self.exact_moments() {
-                ndarray::Zip::from(&top.state.linear_slope)
+            let parent_variance = match &slope {
+                Some(slope) => ndarray::Zip::from(slope)
                     .and(&top.state.expected_precision)
-                    .map_collect(|&slope, &ep| slope * slope / ep)
-            } else {
-                crate::math::with_coupling!(top.coupling_fn, |_f, df, _d2f| {
-                    ndarray::Zip::from(&top.state.expected_mean)
-                        .and(&top.state.expected_precision)
-                        .map_collect(|&m, &ep| {
-                            let gp = df(m as f64) as Float;
-                            gp * gp / ep
-                        })
-                })
+                    .map_collect(|&slope, &ep| slope * slope / ep),
+                None => top.state.expected_precision.mapv(|ep| 1.0 / ep),
             };
             let mut precision_sum = Vector::zeros(cols);
             let mut message = Vector::zeros(cols);
@@ -374,20 +379,8 @@ impl DeepNet {
                 });
             w.t().dot(&message)
         };
-        if top.coupling_fn.kind != crate::math::CouplingKind::Linear {
-            if self.exact_moments() {
-                // Mean slope E[g'] under the top layer's predicted belief, as in the
-                // interior posterior mean update, cached by the prediction sweep.
-                ndarray::Zip::from(&mut routed)
-                    .and(&top.state.linear_slope)
-                    .for_each(|r, &slope| *r *= slope);
-            } else {
-                crate::math::with_coupling!(top.coupling_fn, |_f, df, _d2f| {
-                    ndarray::Zip::from(&mut routed)
-                        .and(&top.state.expected_mean)
-                        .for_each(|r, &m| *r *= df(m as f64) as Float);
-                });
-            }
+        if let Some(slope) = &slope {
+            routed *= slope;
         }
         routed
     }

@@ -10,7 +10,10 @@ from jax.tree_util import Partial
 
 from pyhgf.coupling import resolve_coupling_fn
 from pyhgf.typing import Edges
-from pyhgf.updates.prediction.continuous import is_noise_child
+from pyhgf.updates.prediction.continuous import (
+    is_noise_child,
+    predict_value_coupling_variance,
+)
 
 # ----------------------------------------------------------------------------------
 # Shared building blocks
@@ -78,28 +81,24 @@ def _relaxed_child_factors(
             \frac{\left(t \, \alpha_{c,a} \, A_c\right)^2}{\hat{\pi}_c},
 
     with :math:`\bar{\pi}_a` the conditional predicted precision of :math:`a`
-    (stored in ``temp``), which conditions on every value parent, :math:`t` the time
-    step for a continuous state child and 1 for an input node, which its value
-    parents generate rather than drift, and :math:`A_c` the slope of the linear
-    function that replaces the coupling function of :math:`c` in the prediction
-    step (:func:`pyhgf.updates.prediction.continuous.predict_value_coupling_variance`):
-    :math:`g'_{c,a}(\hat{\mu}_c)` with ``coupling_moments="taylor"`` and the mean slope
-    :math:`\mathbb{E}[g'_{c,a}(x_c)]` under the predicted belief of :math:`c` with
-    ``coupling_moments="exact"``. The sum holds the terms of the value-coupling
-    variance of the prediction step without the term of :math:`b`. With
-    ``"exact"``, the variance of the residuals of the linear functions of every
-    parent, :math:`b` included, does not depend on :math:`x_b` and is part of
-    :math:`\bar{\pi}_a`. The joint Gaussian of
-    :math:`(x_a, x_b)` with this conditional has the marginal predicted precision
-    :math:`\hat{\pi}_a` for :math:`x_a`, the precision the child was updated against,
-    so the factors give the exact marginal posterior of :math:`x_b` from the
-    evidence of :math:`a` for linear coupling. The contributions of several value
-    children add up to the exact marginal posterior when no two children of
-    :math:`b` share another value parent; otherwise each edge leaves out what the
-    other children say about the shared parents, and the sum is an approximation.
-    When :math:`b` is the only value parent, :math:`\bar{\pi}_{a|b} =
-    \bar{\pi}_a`. Using :math:`\bar{\pi}_a` with several value parents would treat
-    the other parents as known and overstate what :math:`a` says about :math:`b`.
+    (stored in ``temp``), which conditions on every value parent. The sum is the
+    slope variance of the prediction step
+    (:func:`pyhgf.updates.prediction.continuous.predict_value_coupling_variance`)
+    without the term of :math:`b`, so it takes the time step :math:`t` and the
+    slopes :math:`A_c` of the linearised coupling functions as the prediction does,
+    under both settings of ``coupling_moments``. With ``"exact"``, the variance of
+    the residuals of the linear functions of every parent, :math:`b` included, does
+    not depend on :math:`x_b` and is part of :math:`\bar{\pi}_a`. When :math:`b` is
+    the only value parent, :math:`\bar{\pi}_{a|b} = \bar{\pi}_a`.
+
+    The joint Gaussian of :math:`(x_a, x_b)` with this conditional has the marginal
+    predicted precision :math:`\hat{\pi}_a` for :math:`x_a`, the precision the child
+    was updated against, so the factors give the exact marginal posterior of
+    :math:`x_b` from the evidence of :math:`a` for linear coupling. The contributions
+    of several value children add up to the exact marginal posterior when no two
+    children of :math:`b` share another value parent; otherwise each edge leaves out
+    what the other children say about the shared parents, and the sum is an
+    approximation.
 
     The gain :math:`g_{a|b}` is the factor of the mean update, whose shift is
     proportional to :math:`g_{a|b} \, \alpha \, g'(\mu_b) \, \delta_a`. The
@@ -126,41 +125,18 @@ def _relaxed_child_factors(
     if child_node_type not in (2, 6):
         return child_expected_precision, child_expected_precision
 
-    child_is_leaf = (
-        edges[value_child_idx].value_children is None
-        and edges[value_child_idx].volatility_children is None
+    # π̄_{a|b}: the predicted precision of x_a given x_b alone. The other value
+    # parents of a add the variance of the prediction step, Σ_{c ≠ b} (t α_c A_c)² / π̂_c.
+    other_parents_variance, _ = predict_value_coupling_variance(
+        attributes, edges, value_child_idx, coupling_moments, excluded_parent=parent_idx
     )
-
-    # Variance that the other value parents c of the child add to its prediction
-    # through the slopes of their linearised coupling functions, as in the prediction
-    # step: Σ_{c ≠ b} (t · α_c · A_c)² / π̂_c, with t = 1 for an input node.
-    time_scale = 1.0 if child_is_leaf else attributes[-1]["time_step"]
-    other_parents_variance = 0.0
-    for other_idx, alpha in zip(
-        edges[value_child_idx].value_parents,  # type: ignore
-        attributes[value_child_idx]["value_coupling_parents"],
-    ):
-        if other_idx == parent_idx:
-            continue
-        position = edges[other_idx].value_children.index(value_child_idx)
-        coupling = resolve_coupling_fn(edges[other_idx].coupling_fn[position])
-        if coupling is None:  # linear coupling
-            slope = 1.0
-        else:
-            _, slope, _ = coupling.linearise(
-                attributes[other_idx]["expected_mean"],
-                1.0 / attributes[other_idx]["expected_precision"],
-                coupling_moments,
-            )
-        other_parents_variance += (time_scale * alpha * slope) ** 2 / attributes[
-            other_idx
-        ]["expected_precision"]
-
-    # π̄_{a|b}: the predicted precision of x_a given x_b alone, with the other value
-    # parents of a integrated over their predicted beliefs.
     child_cond = 1.0 / (
         1.0 / attributes[value_child_idx]["temp"]["conditional_expected_precision"]
         + other_parents_variance
+    )
+    child_is_leaf = (
+        edges[value_child_idx].value_children is None
+        and edges[value_child_idx].volatility_children is None
     )
     if child_is_leaf:
         # Observed leaf: the fully observed limit π_y → ∞ of both factors.

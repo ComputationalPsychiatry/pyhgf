@@ -168,10 +168,9 @@ def _relaxed_factors(
 def _value_precision_pwpe(
     eval_mean: jnp.ndarray,
     child: ValueChild,
+    parent: LayerState,
     mean_field_updates: bool = False,
     slope: Optional[jnp.ndarray] = None,
-    *,
-    parent: LayerState,
 ) -> jnp.ndarray:
     r"""Value-coupling precision-weighted prediction error.
 
@@ -223,11 +222,10 @@ def _value_precision_pwpe(
 def _value_mean_pwpe(
     eval_mean: jnp.ndarray,
     child: ValueChild,
+    parent: LayerState,
     node_precision: jnp.ndarray,
     mean_field_updates: bool = False,
     slope: Optional[jnp.ndarray] = None,
-    *,
-    parent: LayerState,
 ) -> jnp.ndarray:
     r"""Value-coupling mean shift, accumulated across child nodes.
 
@@ -475,7 +473,7 @@ def vectorised_continuous_posterior_update_standard(
     pwpe = jnp.zeros_like(layer.precision)
     if value_child is not None:
         pwpe = pwpe + _value_precision_pwpe(
-            eval_mean, value_child, mean_field_updates, slope, parent=layer
+            eval_mean, value_child, layer, mean_field_updates, slope
         )
     if volatility_child is not None:
         pwpe = pwpe + _volatility_precision_pwpe_standard(volatility_child)
@@ -488,10 +486,10 @@ def vectorised_continuous_posterior_update_standard(
         mean_pwpe = mean_pwpe + _value_mean_pwpe(
             eval_mean,
             value_child,
+            layer,
             posterior_precision,
             mean_field_updates,
             slope,
-            parent=layer,
         )
     if volatility_child is not None:
         mean_pwpe = mean_pwpe + _volatility_mean_pwpe(
@@ -566,10 +564,10 @@ def vectorised_continuous_posterior_update_ehgf(
         mean_pwpe = mean_pwpe + _value_mean_pwpe(
             eval_mean,
             value_child,
+            layer,
             layer.expected_precision,
             mean_field_updates,
             slope,
-            parent=layer,
         )
     if volatility_child is not None:
         mean_pwpe = mean_pwpe + _volatility_mean_pwpe(
@@ -582,7 +580,7 @@ def vectorised_continuous_posterior_update_ehgf(
     pwpe = jnp.zeros_like(layer.precision)
     if value_child is not None:
         pwpe = pwpe + _value_precision_pwpe(
-            posterior_mean, value_child, mean_field_updates, slope, parent=layer
+            posterior_mean, value_child, layer, mean_field_updates, slope
         )
     if volatility_child is not None:
         pwpe = pwpe + _volatility_precision_pwpe_ehgf(

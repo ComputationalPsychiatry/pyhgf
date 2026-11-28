@@ -636,33 +636,24 @@ fn gain_and_effective(child: &BatchedLayerState, child_is_input_layer: bool) -> 
 /// `(n_parent, n_samples)`, holding Σ_a W[a, m]² π_eff(a|m) and Σ_a W[a, m] g(a|m) δ_a
 /// (see [`add_edge_messages`]). The factors depend on the edge, so the sums are not
 /// matrix products: each sample runs the per-sample pass, in parallel over samples.
+/// `slope` is the slope A_m of the linear function that replaces the coupling
+/// function of the parents in the prediction step, or `None` for a linear coupling.
 fn batched_edge_messages(
     parent: &BatchedLayerState,
     child: &BatchedLayerState,
     w: ArrayView2<Float>,
-    parent_layer: &Layer,
+    slope: Option<&Matrix>,
     child_is_input_layer: bool,
-    exact_moments: bool,
 ) -> (Matrix, Matrix) {
     let (n_child, n_parent) = w.dim();
     let n_samples = child.mean.ncols();
     // h[m, s] = A_m² / π̂_m, so that W[a, m]² h[m, s] is the variance that the edge
-    // adds to the prediction of the child. A_m is the slope of the linear function
-    // that replaces the coupling function in the prediction step: the mean slope
-    // E[g'] cached by the prediction sweep with the exact moments, g'(μ̂_m) otherwise.
-    let parent_variance = if exact_moments {
-        Zip::from(&parent.linear_slope)
+    // adds to the prediction of the child.
+    let parent_variance = match slope {
+        Some(slope) => Zip::from(slope)
             .and(&parent.expected_precision)
-            .map_collect(|&slope, &ep| slope * slope / ep)
-    } else {
-        crate::math::with_coupling!(parent_layer.coupling_fn, |_f, df, _d2f| {
-            Zip::from(&parent.expected_mean)
-                .and(&parent.expected_precision)
-                .map_collect(|&m, &ep| {
-                    let gp = df(m as f64) as Float;
-                    gp * gp / ep
-                })
-        })
+            .map_collect(|&slope, &ep| slope * slope / ep),
+        None => parent.expected_precision.mapv(|ep| 1.0 / ep),
     };
     let columns: Vec<(Vector, Vector)> = (0..n_samples)
         .into_par_iter()
@@ -723,14 +714,28 @@ fn batched_posterior_update(
         weights.view()
     };
 
+    // Slope of the coupling function at the parents: the mean slope E[g'] under
+    // their predicted beliefs, cached by the prediction sweep, with the exact
+    // moments, and g'(μ̂) otherwise. `None` for a linear coupling, g' ≡ 1, which
+    // needs no derivative matrix.
+    let coupling_prime = if parent_layer.coupling_fn.kind == crate::math::CouplingKind::Linear {
+        None
+    } else if exact_moments {
+        Some(parent.linear_slope.clone())
+    } else {
+        Some(crate::math::with_coupling!(
+            parent_layer.coupling_fn,
+            |_f, df, _d2f| parent.expected_mean.mapv(|m| df(m as f64) as Float)
+        ))
+    };
+
     let (pc1_base, msg) = if integrate_other_parents {
         batched_edge_messages(
             parent,
             child,
             w,
-            parent_layer,
+            coupling_prime.as_ref(),
             child_is_input_layer,
-            exact_moments,
         )
     } else {
         let w2 = w.mapv(|x| x * x);
@@ -740,8 +745,7 @@ fn batched_posterior_update(
         (w2.t().dot(&eff), w.t().dot(&gd))
     };
 
-    if parent_layer.coupling_fn.kind == crate::math::CouplingKind::Linear {
-        // Linear coupling: g' ≡ 1, so no derivative matrix is needed.
+    let Some(coupling_prime) = coupling_prime else {
         Zip::from(&mut parent.precision)
             .and(&parent.expected_precision)
             .and(&pc1_base)
@@ -752,20 +756,7 @@ fn batched_posterior_update(
             .and(&parent.precision)
             .for_each(|m, &em, &mg, &pp| *m = em + mg / pp);
         return;
-    }
-
-    let mut coupling_prime = Matrix::zeros(parent.expected_mean.raw_dim());
-    if exact_moments {
-        // Statistical linearisation: the mean slope E[g'] under the parent's
-        // predicted belief, cached by the prediction sweep.
-        coupling_prime.assign(&parent.linear_slope);
-    } else {
-        crate::math::with_coupling!(parent_layer.coupling_fn, |_f, df, _d2f| {
-            Zip::from(&mut coupling_prime)
-                .and(&parent.expected_mean)
-                .for_each(|p, &m| *p = df(m as f64) as Float);
-        });
-    }
+    };
 
     // Precision: clip(π̂_b + pc1·g'²), first-order in the coupling function as in
     // `layer_posterior_update`.
@@ -915,6 +906,22 @@ pub fn batched_input_prediction_error(net: &DeepNet, states: &[BatchedLayerState
     let cols = w.ncols() - usize::from(top_layer.add_constant_input);
     let w = w.slice(s![.., ..cols]);
 
+    // Slope of the top layer's coupling function, as in the interior posterior mean
+    // update: the mean slope E[g'] under its predicted belief, cached by the
+    // prediction sweep, with the exact moments, and g'(μ̂) otherwise. `None` for a
+    // linear coupling.
+    let top = &states[n - 1];
+    let slope = if top_layer.coupling_fn.kind == crate::math::CouplingKind::Linear {
+        None
+    } else if net.exact_moments() {
+        Some(top.linear_slope.clone())
+    } else {
+        Some(crate::math::with_coupling!(
+            top_layer.coupling_fn,
+            |_f, df, _d2f| top.expected_mean.mapv(|m| df(m as f64) as Float)
+        ))
+    };
+
     // Relaxed gain of the child layer, identical to the gain of the
     // interior posterior mean update.
     let mut routed = if integrates_other_parents(
@@ -923,15 +930,7 @@ pub fn batched_input_prediction_error(net: &DeepNet, states: &[BatchedLayerState
         net.predict_precision,
     ) {
         // One gain per edge (see `batched_edge_messages`).
-        let (_, message) = batched_edge_messages(
-            &states[n - 1],
-            child,
-            w,
-            top_layer,
-            child_layer.is_input_layer,
-            net.exact_moments(),
-        );
-        message
+        batched_edge_messages(top, child, w, slope.as_ref(), child_layer.is_input_layer).1
     } else {
         // Fused directly into the message: gain∘δ in one pass, no gain matrix
         // materialised.
@@ -947,20 +946,8 @@ pub fn batched_input_prediction_error(net: &DeepNet, states: &[BatchedLayerState
             });
         w.t().dot(&message)
     };
-    if top_layer.coupling_fn.kind != crate::math::CouplingKind::Linear {
-        if net.exact_moments() {
-            // Mean slope E[g'] under the top layer's predicted belief, as in the
-            // interior posterior mean update, cached by the prediction sweep.
-            Zip::from(&mut routed)
-                .and(&states[n - 1].linear_slope)
-                .for_each(|r, &slope| *r *= slope);
-        } else {
-            crate::math::with_coupling!(top_layer.coupling_fn, |_f, df, _d2f| {
-                Zip::from(&mut routed)
-                    .and(&states[n - 1].expected_mean)
-                    .for_each(|r, &m| *r *= df(m as f64) as Float);
-            });
-        }
+    if let Some(slope) = &slope {
+        routed *= slope;
     }
     routed
 }

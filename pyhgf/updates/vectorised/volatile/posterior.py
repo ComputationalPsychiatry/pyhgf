@@ -181,15 +181,10 @@ def vectorised_posterior_update_precision_value_level(
         :class:`pyhgf.coupling.Coupling`.
     child_is_input_layer :
         If True, the child is a clamped observation leaf (binary or continuous
-        output). The fully observed limit (:math:`\pi_y \to \infty`) applies and
-        the posterior-step relaxation reduces to the conditional predicted
-        precision :math:`\bar{\pi}_a`. We short-circuit to
-        ``child.conditional_expected_precision`` (which equals
-        ``child.expected_precision`` for a leaf): pyhgf's leaf convention sets
-        :math:`\pi_a = \hat{\pi}_a` for the binary PE and never updates
-        :math:`\pi_a` for a continuous leaf, so :math:`\pi_y = 0` and the
-        harmonic-combination form would incorrectly zero out the contribution.
-        Defaults to ``False`` (interior child, full posterior-step relaxation).
+        output), and the effective precision takes its fully observed limit
+        (:math:`\pi_y \to \infty`), :math:`\bar{\pi}_{a|b}`. A leaf keeps
+        :math:`\pi_a = \hat{\pi}_a`, so :math:`\pi_y = 0` and the interior form
+        would cancel its contribution. Defaults to ``False`` (interior child).
     mean_field_updates :
         If ``True``, skip the posterior-step relaxation entirely and weight every
         child contribution by the canonical predicted precision
